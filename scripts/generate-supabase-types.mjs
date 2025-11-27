@@ -2,13 +2,31 @@
 /**
  * Generate Supabase TypeScript types from the database schema
  * Uses the Supabase client to introspect the database
+ *
+ * REQUIRES: Environment variables SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
+ * Usage: SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/generate-supabase-types.mjs
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { writeFileSync } from 'fs';
 
-const SUPABASE_URL = 'https://ieqvhgqubvfruqfjggqf.supabase.co';
-const SUPABASE_SERVICE_KEY = 'SUPABASE_SERVICE_ROLE_KEY_PLACEHOLDER';
+// Read from environment variables - NEVER hardcode secrets
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+  console.error('❌ Error: Missing required environment variables');
+  console.error('');
+  console.error('Required:');
+  console.error('  - SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL)');
+  console.error('  - SUPABASE_SERVICE_ROLE_KEY');
+  console.error('');
+  console.error('Usage:');
+  console.error('  SUPABASE_URL=https://xxx.supabase.co SUPABASE_SERVICE_ROLE_KEY=xxx node scripts/generate-supabase-types.mjs');
+  console.error('');
+  console.error('Or use the Supabase CLI with access token:');
+  console.error('  SUPABASE_ACCESS_TOKEN=<token> npx supabase gen types typescript --project-id <project-id>');
+  process.exit(1);
+}
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
@@ -45,7 +63,7 @@ async function generateTypes() {
   console.log('Tables in database:', tables?.map(t => t.table_name).join(', '));
   console.log('\nTo generate types properly, you need to:');
   console.log('1. Get a Supabase access token from: https://supabase.com/dashboard/account/tokens');
-  console.log('2. Run: SUPABASE_ACCESS_TOKEN=<token> npx supabase gen types typescript --project-id ieqvhgqubvfruqfjggqf');
+  console.log('2. Run: SUPABASE_ACCESS_TOKEN=<token> npx supabase gen types typescript --project-id <your-project-id>');
 }
 
 generateTypes().catch(console.error);

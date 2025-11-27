@@ -16,11 +16,18 @@ async function reloadSchema() {
     process.exit(1);
   }
 
+  const dbUser = process.env.SUPABASE_DB_USER;
+  if (!dbUser) {
+    console.error('Error: SUPABASE_DB_USER environment variable is not set');
+    console.error('Format: postgres.<project-ref> (e.g., postgres.abc123xyz)');
+    process.exit(1);
+  }
+
   const client = new Client({
     host: process.env.SUPABASE_DB_HOST || 'aws-0-eu-central-1.pooler.supabase.com',
     port: parseInt(process.env.SUPABASE_DB_PORT || '5432', 10),
     database: process.env.SUPABASE_DB_NAME || 'postgres',
-    user: process.env.SUPABASE_DB_USER || 'postgres.ieqvhgqubvfruqfjggqf',
+    user: dbUser,
     password: dbPassword,
     ssl: {
       rejectUnauthorized: false

@@ -2,13 +2,31 @@
 /**
  * Regenerate Supabase TypeScript types from the live database
  * This script connects to your Supabase database and generates complete type definitions
+ *
+ * REQUIRES: Environment variables SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
+ * Usage: SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/regenerate-supabase-types.mjs
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { writeFileSync } from 'fs';
 
-const SUPABASE_URL = 'https://ieqvhgqubvfruqfjggqf.supabase.co';
-const SUPABASE_SERVICE_KEY = 'SUPABASE_SERVICE_ROLE_KEY_PLACEHOLDER';
+// Read from environment variables - NEVER hardcode secrets
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+  console.error('❌ Error: Missing required environment variables');
+  console.error('');
+  console.error('Required:');
+  console.error('  - SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL)');
+  console.error('  - SUPABASE_SERVICE_ROLE_KEY');
+  console.error('');
+  console.error('Usage:');
+  console.error('  SUPABASE_URL=https://xxx.supabase.co SUPABASE_SERVICE_ROLE_KEY=xxx node scripts/regenerate-supabase-types.mjs');
+  console.error('');
+  console.error('Or set them in your .env.local file and use:');
+  console.error('  npx dotenv -e .env.local -- node scripts/regenerate-supabase-types.mjs');
+  process.exit(1);
+}
 
 console.log('🔄 Connecting to Supabase database...\n');
 
