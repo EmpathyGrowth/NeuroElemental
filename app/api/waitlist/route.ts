@@ -97,9 +97,10 @@ export const POST = createPublicRoute(async (request) => {
 
 /**
  * DELETE /api/waitlist
- * Remove email from waitlist
+ * Remove email from waitlist (admin only for security)
+ * Users cannot delete arbitrary emails - prevents abuse
  */
-export const DELETE = createPublicRoute(async (request) => {
+export const DELETE = createAdminRoute(async (request) => {
   const { searchParams } = new URL(request.url);
   const email = searchParams.get('email');
 

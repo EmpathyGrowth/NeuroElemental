@@ -49,6 +49,10 @@ export const GET = createAuthenticatedRoute(async (req, context, user) => {
 - `getCurrentUser()` manually
 - `NextResponse.json()` directly
 
+**Exceptions**:
+- SSO/OAuth routes may use `NextResponse.redirect()` for authentication flows
+- File export routes may use `NextResponse` with custom headers for binary data
+
 ### 2. Database - Repository Pattern ONLY
 
 ```typescript

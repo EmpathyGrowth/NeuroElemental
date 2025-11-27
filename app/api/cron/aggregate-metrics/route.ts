@@ -7,7 +7,7 @@
 
 import { logger } from '@/lib/logging';
 import { getSupabaseServer } from '@/lib/db'
-import { createCronRoute, successResponse } from '@/lib/api'
+import { createCronRoute, successResponse, internalError } from '@/lib/api'
 import { getCurrentTimestamp } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
@@ -56,7 +56,7 @@ export const GET = createCronRoute(async (request, _context) => {
 
   if (orgsError) {
     logger.error('Failed to fetch organizations for metrics aggregation', new Error(orgsError.message))
-    throw new Error(`Failed to fetch organizations: ${orgsError.message}`)
+    throw internalError(`Failed to fetch organizations: ${orgsError.message}`)
   }
 
   const results: AggregationResult[] = []

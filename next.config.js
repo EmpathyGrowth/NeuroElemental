@@ -4,9 +4,29 @@ const { withSentryConfig } = require('@sentry/nextjs')
 const nextConfig = {
   images: {
     remotePatterns: [
+      // Supabase storage
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: '*.supabase.co',
+      },
+      // Specific Supabase project
+      {
+        protocol: 'https',
+        hostname: 'ieqvhgqubvfruqfjggqf.supabase.co',
+      },
+      // Stripe
+      {
+        protocol: 'https',
+        hostname: '*.stripe.com',
+      },
+      // Common image CDNs
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
       },
     ],
   },

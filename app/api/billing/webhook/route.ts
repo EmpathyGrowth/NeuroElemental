@@ -118,20 +118,41 @@ export const POST = createPublicRoute(async (request, _context) => {
  */
 async function logWebhookEvent(event: Stripe.Event): Promise<void> {
   try {
-    const supabase = getSupabaseServer()
+    // Extract only safe, non-PII fields for logging
+    // Cast to unknown first to safely access properties
+    const eventObject = event.data.object as unknown as Record<string, unknown>
 
-    await supabase.from('activity_logs').insert({
-      action: `billing.${event.type}`,
-      entity_type: 'billing_event',
-      entity_id: event.id,
-      metadata: {
-        event_type: event.type,
-        // Serialize Stripe event data to plain JSON
-        event_data: JSON.parse(JSON.stringify(event.data.object)),
-        processed: true,
-      },
-      created_at: new Date(event.created * 1000).toISOString(),
-    })
+    // Get organization ID from subscription metadata if available
+    const subscriptionMetadata = eventObject.metadata as Record<string, string> | undefined
+    const organizationId = subscriptionMetadata?.organization_id
+
+    // Only log if we have an organization context
+    if (organizationId) {
+      const { logActivity } = await import('@/lib/db')
+      await logActivity({
+        organization_id: organizationId,
+        action_type: `billing.${event.type}`,
+        entity_type: 'billing_event',
+        entity_id: event.id,
+        description: `Billing event: ${event.type}`,
+        metadata: {
+          // Only log safe identifiers, not full event data (may contain PII)
+          object_id: String(eventObject.id ?? ''),
+          object_type: String(eventObject.object ?? ''),
+          customer_id: typeof eventObject.customer === 'string' ? eventObject.customer : null,
+          subscription_id: typeof eventObject.subscription === 'string' ? eventObject.subscription : null,
+          status: String(eventObject.status ?? ''),
+        },
+      })
+    } else {
+      // Log without organization context for events without metadata
+      logger.info(`[Webhook] Billing event ${event.type} (no org context)`, {
+        data: {
+          eventId: event.id,
+          objectId: String(eventObject.id ?? ''),
+        }
+      })
+    }
   } catch (error) {
     // Non-critical: Log failure but don't block webhook processing
     const err = error instanceof Error ? error : new Error(String(error))

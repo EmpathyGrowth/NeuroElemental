@@ -267,10 +267,18 @@ export const MiniAssessment = memo(() => {
         {/* Progress bar */}
         <div className="mb-6">
           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
-            <span>Question {currentQuestion + 1} of {questions.length}</span>
-            <span>{Math.round(progress)}% complete</span>
+            <span id="progress-label">Question {currentQuestion + 1} of {questions.length}</span>
+            <span id="progress-percent">{Math.round(progress)}% complete</span>
           </div>
-          <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+          <div
+            className="h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden"
+            role="progressbar"
+            aria-valuenow={Math.round(progress)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-labelledby="progress-label"
+            aria-describedby="progress-percent"
+          >
             <div
               className="h-full bg-gradient-to-r from-purple-600 to-blue-600 transition-all duration-300"
               style={{ width: `${progress}%` }}
