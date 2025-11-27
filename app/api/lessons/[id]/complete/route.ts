@@ -47,15 +47,15 @@ interface CompletionResponse {
   certificateNumber?: string;
 }
 
-export const POST = createAuthenticatedRoute<{ lessonId: string }>(
-  async (request: NextRequest, context: RouteContext<{ lessonId: string }>, user) => {
-    const { lessonId } = await context.params;
+export const POST = createAuthenticatedRoute<{ id: string }>(
+  async (request: NextRequest, context: RouteContext<{ id: string }>, user) => {
+    const { id } = await context.params;
     const supabase = await getSupabaseServer();
 
     // Mark lesson as complete
     const completionData: LessonCompletionInsert = {
       user_id: user.id,
-      lesson_id: lessonId,
+      lesson_id: id,
       ...getCompletionTimestamp(),
     };
     const { error } = await supabase
@@ -72,7 +72,7 @@ export const POST = createAuthenticatedRoute<{ lessonId: string }>(
     const { data: lesson } = await supabase
       .from('course_lessons')
       .select('course_id')
-      .eq('id', lessonId)
+      .eq('id', id)
       .single() as { data: LessonRecord | null; error: unknown };
 
     if (lesson) {
