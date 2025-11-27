@@ -11,7 +11,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
     errorResponse,
     unauthorizedError,
+    internalError,
 } from './error-handler';
+import { getCronSecret } from '@/lib/utils/env';
 
 /**
  * Handler function type for authenticated routes
@@ -229,10 +231,19 @@ export function createCronRoute<TParams = {}>(
     context: RouteContext<TParams>
   ): Promise<NextResponse> => {
     try {
-      // Verify CRON_SECRET
-      const cronSecret = request.headers.get('x-cron-secret')
-      if (!cronSecret || cronSecret !== process.env.CRON_SECRET) {
-        return errorResponse(unauthorizedError('Invalid CRON_SECRET'))
+      // Get expected CRON_SECRET - throws if not configured
+      let expectedSecret: string
+      try {
+        expectedSecret = getCronSecret()
+      } catch {
+        // Log but return generic error to avoid leaking config state
+        return errorResponse(internalError('Cron authentication not configured'))
+      }
+
+      // Verify the provided secret matches
+      const providedSecret = request.headers.get('x-cron-secret')
+      if (!providedSecret || providedSecret !== expectedSecret) {
+        return errorResponse(unauthorizedError('Invalid cron authentication'))
       }
 
       return await handler(request, context)

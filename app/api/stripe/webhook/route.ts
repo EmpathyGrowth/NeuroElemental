@@ -9,15 +9,13 @@
 import { getSupabaseServer } from '@/lib/db';
 import { emailService } from '@/lib/email';
 import { stripe } from '@/lib/stripe/config';
-import { successResponse, createPublicRoute, badRequestError } from '@/lib/api';
+import { successResponse, createPublicRoute, badRequestError, internalError } from '@/lib/api';
 import Stripe from 'stripe';
-import { getCurrentTimestamp } from '@/lib/utils';
+import { getCurrentTimestamp, getStripeWebhookSecret } from '@/lib/utils';
 import { logger } from '@/lib/logging';
 
 // Force dynamic rendering for webhooks
 export const dynamic = 'force-dynamic';
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 /** User profile for lookup */
 interface UserProfile {
@@ -57,9 +55,12 @@ export const POST = createPublicRoute(async (request, _context) => {
   }
 
   // Validate webhook secret is configured
-  if (!webhookSecret) {
-    logger.error('STRIPE_WEBHOOK_SECRET is not configured');
-    throw badRequestError('Webhook not configured');
+  let webhookSecret: string;
+  try {
+    webhookSecret = getStripeWebhookSecret();
+  } catch (err) {
+    logger.error('STRIPE_WEBHOOK_SECRET is not configured', err instanceof Error ? err : undefined);
+    throw internalError('Webhook not configured');
   }
 
   // Verify webhook signature
