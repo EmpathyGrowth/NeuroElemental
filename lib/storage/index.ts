@@ -7,5 +7,7 @@ export {
   uploadFile,
   deleteFile,
   getSignedUrl,
+  extractPathFromUrl,
+  formatFileSize,
   type UploadOptions,
 } from './upload'

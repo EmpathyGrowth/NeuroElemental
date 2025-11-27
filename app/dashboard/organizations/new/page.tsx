@@ -5,7 +5,7 @@
  * Create a new organization
  */
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -14,8 +14,21 @@ import { Label } from '@/components/ui/label'
 import { ArrowLeft, Building2, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 
+/** Delay in ms before redirecting after successful creation */
+const REDIRECT_DELAY = 1000
+
 export default function CreateOrganizationPage() {
   const router = useRouter()
+  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
@@ -62,9 +75,9 @@ export default function CreateOrganizationPage() {
       toast.success(`${name} has been created`)
 
       // Redirect to organization dashboard
-      setTimeout(() => {
+      redirectTimeoutRef.current = setTimeout(() => {
         router.push(`/dashboard/organizations/${data.organization.id}`)
-      }, 1000)
+      }, REDIRECT_DELAY)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to create organization')
       setCreating(false)

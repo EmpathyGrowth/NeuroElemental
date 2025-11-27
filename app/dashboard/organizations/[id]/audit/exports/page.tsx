@@ -225,8 +225,8 @@ export default function AuditExportsPage() {
       setCreateExportOpen(false)
       resetExportForm()
       fetchData()
-    } catch (err: any) {
-      toast.error(err.message)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create export')
     } finally {
       setCreating(false)
     }
@@ -269,8 +269,8 @@ export default function AuditExportsPage() {
       setCreateScheduleOpen(false)
       resetScheduleForm()
       fetchData()
-    } catch (err: any) {
-      toast.error(err.message)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create schedule')
     } finally {
       setCreatingSchedule(false)
     }
@@ -302,8 +302,8 @@ export default function AuditExportsPage() {
       document.body.removeChild(a)
 
       toast.success(`Downloading ${filename}`)
-    } catch (err: any) {
-      toast.error(err.message)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to download export')
     }
   }
 
@@ -322,8 +322,8 @@ export default function AuditExportsPage() {
       toast.success('Export job has been deleted')
 
       fetchData()
-    } catch (err: any) {
-      toast.error(err.message)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete export job')
     }
   }
 
@@ -342,8 +342,8 @@ export default function AuditExportsPage() {
       toast.success(`Schedule has been ${isActive ? 'paused' : 'activated'}`)
 
       fetchData()
-    } catch (err: any) {
-      toast.error(err.message)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update schedule')
     }
   }
 
@@ -362,8 +362,8 @@ export default function AuditExportsPage() {
       toast.success('Export schedule has been deleted')
 
       fetchData()
-    } catch (err: any) {
-      toast.error(err.message)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete schedule')
     }
   }
 
@@ -689,7 +689,7 @@ export default function AuditExportsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Export Format</Label>
-                  <Select value={exportFormat} onValueChange={(val: any) => setExportFormat(val)}>
+                  <Select value={exportFormat} onValueChange={(val) => setExportFormat(val as 'csv' | 'json' | 'xlsx')}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -842,7 +842,7 @@ export default function AuditExportsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Frequency *</Label>
-                  <Select value={scheduleFrequency} onValueChange={(val: any) => setScheduleFrequency(val)}>
+                  <Select value={scheduleFrequency} onValueChange={(val) => setScheduleFrequency(val as 'daily' | 'weekly' | 'monthly')}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -913,7 +913,7 @@ export default function AuditExportsPage() {
 
                 <div className="space-y-2">
                   <Label>Export Format *</Label>
-                  <Select value={scheduleFormat} onValueChange={(val: any) => setScheduleFormat(val)}>
+                  <Select value={scheduleFormat} onValueChange={(val) => setScheduleFormat(val as 'csv' | 'json' | 'xlsx')}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

@@ -149,6 +149,15 @@ export {
   type PricingLimits,
 } from './pricing'
 
+// Quizzes
+export {
+  QuizRepository,
+  quizRepository,
+  type QuizQuestion,
+  type QuizWithQuestions,
+  type QuizAttemptResult,
+} from './quizzes'
+
 // Typed RPC function wrappers
 export {
   getAuditLogForExport,

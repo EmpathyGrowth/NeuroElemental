@@ -46,8 +46,8 @@ const TrustBar = ({ className }: { className?: string }) => {
     )}>
       <div className="container mx-auto px-4 py-4">
         <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
-          {metrics.map((metric, index) => (
-            <TrustMetricItem key={index} {...metric} />
+          {metrics.map((metric) => (
+            <TrustMetricItem key={metric.label} {...metric} />
           ))}
         </div>
       </div>

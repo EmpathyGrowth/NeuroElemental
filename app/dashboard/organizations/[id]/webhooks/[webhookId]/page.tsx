@@ -41,7 +41,7 @@ interface Delivery {
   next_retry_at: string | null
   delivered_at: string | null
   created_at: string
-  payload: any
+  payload: Record<string, unknown>
 }
 
 export default function WebhookDeliveriesPage() {

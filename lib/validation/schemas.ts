@@ -598,16 +598,21 @@ export const quizSubmitSchema = z.object({
  * }
  * ```
  */
+/** Quiz question schema */
+export const quizQuestionSchema = z.object({
+  id: z.string().optional(),
+  question: z.string().min(1, 'Question is required'),
+  type: z.enum(['multiple_choice', 'true_false', 'short_answer']),
+  options: z.array(z.string()).optional(),
+  correct_answer: z.union([z.string(), z.boolean()]),
+  points: positiveIntSchema.default(1),
+  explanation: z.string().optional(),
+})
+
 export const quizCreateSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title must be 200 characters or less'),
   passing_score: percentageSchema.default(70),
-  questions: z.array(z.object({
-    question: z.string().min(1, 'Question is required'),
-    type: z.enum(['multiple_choice', 'true_false', 'short_answer']),
-    options: z.array(z.string()).optional(),
-    correct_answer: z.any(),
-    points: positiveIntSchema.default(1),
-  })),
+  questions: z.array(quizQuestionSchema),
 })
 
 // ============================================

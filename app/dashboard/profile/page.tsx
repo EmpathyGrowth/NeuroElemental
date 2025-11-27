@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/components/auth/auth-provider';
 import { updateUserProfile } from '@/lib/auth/supabase';
 import { Button } from '@/components/ui/button';
@@ -13,15 +13,28 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Mail, Calendar, Shield, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+/** Delay in ms before hiding success message */
+const SUCCESS_MESSAGE_DELAY = 3000;
+
 export default function ProfilePage() {
   const { user, profile, refetchProfile } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const successTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +53,7 @@ export default function ProfilePage() {
       } else {
         setSuccess(true);
         await refetchProfile();
-        setTimeout(() => setSuccess(false), 3000);
+        successTimeoutRef.current = setTimeout(() => setSuccess(false), SUCCESS_MESSAGE_DELAY);
       }
     } catch (_error) {
       setError('An unexpected error occurred');

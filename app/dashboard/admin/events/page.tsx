@@ -100,8 +100,8 @@ export default function AdminEventsPage() {
     const startDate = new Date(e.start_datetime);
     return startDate > new Date() && e.is_published;
   }).length;
-  const totalRegistrations = (events || []).reduce((sum: any, e: any) => sum + (e.spots_taken || 0), 0);
-  const totalRevenue = (events || []).reduce((sum: any, e: any) => sum + ((e.price_usd || 0) * (e.spots_taken || 0)), 0);
+  const totalRegistrations = (events || []).reduce((sum: number, e) => sum + (e.spots_taken || 0), 0);
+  const totalRevenue = (events || []).reduce((sum: number, e) => sum + ((e.price_usd || 0) * (e.spots_taken || 0)), 0);
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -188,6 +188,7 @@ export default function AdminEventsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
+                aria-label="Search events"
               />
             </div>
             <Button variant="outline">
@@ -245,7 +246,7 @@ export default function AdminEventsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredEvents.map((event: any) => {
+                {filteredEvents.map((event) => {
                   const EventTypeIcon = eventTypeIcons[event.event_type as keyof typeof eventTypeIcons];
                   const fillRate = event.capacity ? ((event.spots_taken || 0) / event.capacity) * 100 : 0;
 
@@ -300,7 +301,7 @@ export default function AdminEventsPage() {
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" aria-label="Open event actions menu">
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>

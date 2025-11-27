@@ -664,7 +664,7 @@ export default function SSOPage() {
               <Label>Provider Type</Label>
               <Select
                 value={formData.provider_type}
-                onValueChange={(value: any) => setFormData({ ...formData, provider_type: value })}
+                onValueChange={(value) => setFormData({ ...formData, provider_type: value as 'saml' | 'oauth' | 'oidc' })}
                 disabled={!!provider}
               >
                 <SelectTrigger>

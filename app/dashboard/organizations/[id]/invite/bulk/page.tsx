@@ -238,7 +238,7 @@ export default function BulkInvitePage() {
             {/* Role Selection */}
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <Select value={role} onValueChange={(value: any) => setRole(value)}>
+              <Select value={role} onValueChange={(value) => setRole(value as 'admin' | 'member')}>
                 <SelectTrigger id="role">
                   <SelectValue />
                 </SelectTrigger>

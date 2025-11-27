@@ -318,7 +318,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {(fullCourse.modules || []).map((module: any, idx: number) => (
+                    {(fullCourse.modules || []).map((module: { title: string; lessons: number; duration: string; description: string }, idx: number) => (
                       <div key={idx} className="border rounded-lg p-4 hover:border-primary/50 transition-colors">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">

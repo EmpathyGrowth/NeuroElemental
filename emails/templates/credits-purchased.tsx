@@ -38,7 +38,7 @@ export const CreditsPurchasedEmail = ({
 
   const creditTypeFormatted = creditType
     .split('_')
-    .map((word: any) => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
 
   return (

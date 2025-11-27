@@ -156,7 +156,7 @@ export default function AdminCouponsPage() {
         <CardContent>
           {loading ? (
             <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i: any) => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
@@ -180,7 +180,7 @@ export default function AdminCouponsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {coupons.map((coupon: any) => {
+                  {coupons.map((coupon) => {
                     const usagePercent = getUsagePercentage(
                       coupon.uses_count,
                       coupon.max_uses

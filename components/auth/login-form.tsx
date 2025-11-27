@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signIn, signInWithOAuth } from '@/lib/auth/supabase';
@@ -12,6 +12,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { logger } from '@/lib/logging';
 
+/** Delay in ms before redirecting after successful login */
+const REDIRECT_DELAY = 500;
+
 export function LoginForm() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -19,6 +22,7 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -26,6 +30,15 @@ export function LoginForm() {
       router.push('/dashboard');
     }
   }, [user, authLoading, router]);
+
+  // Cleanup redirect timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,9 +56,9 @@ export function LoginForm() {
       } else {
         logger.info('Login successful!', data);
         // Wait a moment for auth state to update, then redirect
-        setTimeout(() => {
+        redirectTimeoutRef.current = setTimeout(() => {
           router.push('/dashboard');
-        }, 500);
+        }, REDIRECT_DELAY);
       }
     } catch (error) {
       logger.error('Login exception:', error as Error);

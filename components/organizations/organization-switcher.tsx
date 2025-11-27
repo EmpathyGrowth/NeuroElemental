@@ -8,7 +8,7 @@
 import { logger } from '@/lib/logging';
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, ChevronsUpDown, Plus, Building2 } from 'lucide-react'
+import { Check, ChevronsUpDown, Plus, Building2, AlertCircle, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,6 +25,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+
+/** Timeout in ms for fetch operations */
+const FETCH_TIMEOUT = 10000
 
 interface Organization {
   id: string
@@ -45,6 +48,7 @@ export function OrganizationSwitcher({
   const [open, setOpen] = useState(false)
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null)
   const router = useRouter()
 
@@ -62,14 +66,27 @@ export function OrganizationSwitcher({
   }, [currentOrgId, organizations])
 
   const fetchOrganizations = async () => {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+
+    setError(null)
+    setLoading(true)
+
     try {
-      const res = await fetch('/api/organizations')
+      const res = await fetch('/api/organizations', { signal: controller.signal })
       if (!res.ok) throw new Error('Failed to fetch organizations')
       const data = await res.json()
       setOrganizations(data.organizations || [])
     } catch (error) {
-      logger.error('Error fetching organizations:', error as Error)
+      if (error instanceof Error && error.name === 'AbortError') {
+        logger.error('Organization fetch timed out', new Error('Request timeout'))
+        setError('Request timed out')
+      } else {
+        logger.error('Error fetching organizations:', error as Error)
+        setError('Failed to load organizations')
+      }
     } finally {
+      clearTimeout(timeoutId)
       setLoading(false)
     }
   }
@@ -97,6 +114,23 @@ export function OrganizationSwitcher({
           <Building2 className="h-4 w-4" />
           Loading...
         </span>
+      </Button>
+    )
+  }
+
+  if (error) {
+    return (
+      <Button
+        variant="outline"
+        className="w-[240px] justify-between text-destructive"
+        onClick={fetchOrganizations}
+        aria-label="Retry loading organizations"
+      >
+        <span className="flex items-center gap-2">
+          <AlertCircle className="h-4 w-4" />
+          <span className="truncate">{error}</span>
+        </span>
+        <RefreshCw className="h-4 w-4 shrink-0" />
       </Button>
     )
   }

@@ -191,19 +191,19 @@ export default function CreditHistoryPage() {
     exportToCSVWithTimestamp<CreditTransaction>(filteredTransactions, 'credit-history', [
       { key: 'created_at', label: 'Date', format: (v: string) => formatDate(v) },
       { key: 'created_at', label: 'Time', format: (v) => new Date(v).toLocaleTimeString() },
-      { key: 'user', label: 'User', format: (u: any) => u?.full_name || u?.email || 'System' },
+      { key: 'user', label: 'User', format: (u: CreditTransaction['user']) => u?.full_name || u?.email || 'System' },
       { key: 'transaction_type', label: 'Type' },
       { key: 'credit_type', label: 'Credit Type' },
       {
         key: 'amount',
         label: 'Amount',
-        format: (v, row: any) => row.transaction_type === 'add' ? `+${v}` : `-${v}`
+        format: (v, row) => row?.transaction_type === 'add' ? `+${v}` : `-${v}`
       },
       { key: 'payment_id', label: 'Payment ID', format: (v) => v || '' },
       {
         key: 'metadata',
         label: 'Notes',
-        format: (m: any) => m?.notes || m?.course_name || ''
+        format: (m: CreditTransaction['metadata']) => m?.notes || m?.course_name || ''
       },
     ])
 
@@ -359,6 +359,7 @@ export default function CreditHistoryPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-8"
+                  aria-label="Search credit history"
                 />
               </div>
 

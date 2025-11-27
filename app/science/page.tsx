@@ -87,6 +87,7 @@ export default function SciencePage() {
                   type="email"
                   placeholder="Enter your email"
                   className="px-4 py-3 rounded-xl border border-border bg-background/50 focus:ring-2 focus:ring-primary/50 focus:outline-none min-w-[280px]"
+                  aria-label="Email address for whitepaper download"
                 />
                 <Button className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 min-h-[44px]">
                   <Download className="w-5 h-5" />

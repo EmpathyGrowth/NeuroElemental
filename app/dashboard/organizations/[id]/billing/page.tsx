@@ -117,7 +117,10 @@ interface BillingData {
   subscription: OrganizationSubscription | null
   plan: SubscriptionPlan | null
   paymentMethod: PaymentMethod | null
-  upcomingInvoice: any
+  upcomingInvoice: {
+    amount_due: number
+    currency: string
+  } | null
 }
 
 export default function BillingDashboardPage() {

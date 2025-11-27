@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/auth/auth-provider';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { QuizPlayer, type Quiz, type QuizResult } from '@/components/quiz';
+import { VideoPlayer } from '@/components/video';
 import {
   CheckCircle2,
   PlayCircle,
@@ -14,11 +16,14 @@ import {
   ChevronLeft,
   Clock,
   FileText,
-  Video
+  Video,
+  ClipboardCheck,
+  Trophy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DOMPurify from 'isomorphic-dompurify';
 import { logger } from '@/lib/logging';
+import { toast } from 'sonner';
 
 interface Lesson {
   id: string;
@@ -31,7 +36,17 @@ interface Lesson {
   is_free: boolean;
   hasAccess: boolean;
   isCompleted: boolean;
+  has_quiz?: boolean;
 }
+
+interface QuizProgress {
+  attempts_count: number;
+  best_score: number | null;
+  has_passed: boolean;
+  last_attempt: string | null;
+}
+
+type ViewMode = 'lesson' | 'quiz';
 
 export default function CourseLearnPage({ params }: { params: { slug: string } }) {
   const { user } = useAuth();
@@ -41,6 +56,12 @@ export default function CourseLearnPage({ params }: { params: { slug: string } }
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(false);
   const [course, setCourse] = useState<any>(null);
+
+  // Quiz state
+  const [viewMode, setViewMode] = useState<ViewMode>('lesson');
+  const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null);
+  const [quizProgress, setQuizProgress] = useState<QuizProgress | null>(null);
+  const [loadingQuiz, setLoadingQuiz] = useState(false);
 
   useEffect(() => {
     fetchCourseAndLessons();
@@ -100,7 +121,7 @@ export default function CourseLearnPage({ params }: { params: { slug: string } }
 
         // Move to next lesson or show completion
         if (data.courseCompleted) {
-          alert(`Congratulations! You've completed the course. Certificate: ${data.certificateNumber}`);
+          toast.success(`Congratulations! You've completed the course. Certificate: ${data.certificateNumber}`);
           router.push('/dashboard/student/certificates');
         } else {
           const currentIndex = lessons.findIndex(l => l.id === currentLesson.id);
@@ -120,6 +141,73 @@ export default function CourseLearnPage({ params }: { params: { slug: string } }
   const progress = lessons.length > 0
     ? (lessons.filter(l => l.isCompleted).length / lessons.length) * 100
     : 0;
+
+  // Fetch quiz for the current lesson
+  const fetchLessonQuiz = useCallback(async (lessonId: string) => {
+    setLoadingQuiz(true);
+    setCurrentQuiz(null);
+    setQuizProgress(null);
+    try {
+      const res = await fetch(`/api/lessons/${lessonId}/quiz`);
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentQuiz(data.quiz);
+        setQuizProgress(data.user_progress);
+      }
+    } catch (error) {
+      logger.error('Error fetching quiz:', error instanceof Error ? error : new Error(String(error)));
+    } finally {
+      setLoadingQuiz(false);
+    }
+  }, []);
+
+  // Handle quiz submission
+  const handleQuizSubmit = useCallback(async (answers: Record<string, string | boolean>): Promise<QuizResult> => {
+    if (!currentQuiz) throw new Error('No quiz loaded');
+
+    const res = await fetch(`/api/quizzes/${currentQuiz.id}/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers }),
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to submit quiz');
+    }
+
+    return res.json();
+  }, [currentQuiz]);
+
+  // Handle quiz completion
+  const handleQuizComplete = useCallback((result: QuizResult) => {
+    if (result.passed) {
+      toast.success('Quiz passed! Great job!');
+      // Update quiz progress state
+      setQuizProgress(prev => prev ? {
+        ...prev,
+        has_passed: true,
+        best_score: Math.max(result.score, prev.best_score || 0),
+        attempts_count: prev.attempts_count + 1,
+      } : null);
+    } else {
+      toast.error(`Quiz not passed. You need ${result.passing_score}% to pass.`);
+    }
+  }, []);
+
+  // Switch to quiz view
+  const startQuiz = useCallback(() => {
+    if (currentLesson) {
+      fetchLessonQuiz(currentLesson.id);
+      setViewMode('quiz');
+    }
+  }, [currentLesson, fetchLessonQuiz]);
+
+  // Switch back to lesson view
+  const backToLesson = useCallback(() => {
+    setViewMode('lesson');
+    setCurrentQuiz(null);
+  }, []);
 
   if (loading) {
     return (
@@ -203,7 +291,34 @@ export default function CourseLearnPage({ params }: { params: { slug: string } }
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            {currentLesson ? (
+            {viewMode === 'quiz' && currentQuiz ? (
+              /* Quiz View */
+              <div className="space-y-4">
+                <Button variant="outline" onClick={backToLesson} className="mb-4">
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Back to Lesson
+                </Button>
+                {loadingQuiz ? (
+                  <Card className="p-8">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+                      <p className="mt-4 text-muted-foreground">Loading quiz...</p>
+                    </div>
+                  </Card>
+                ) : (
+                  <QuizPlayer
+                    quiz={currentQuiz}
+                    onSubmit={handleQuizSubmit}
+                    onComplete={handleQuizComplete}
+                    onRetry={() => {
+                      setCurrentQuiz(null);
+                      if (currentLesson) fetchLessonQuiz(currentLesson.id);
+                    }}
+                    allowRetry={true}
+                  />
+                )}
+              </div>
+            ) : currentLesson ? (
               <Card className="p-8">
                 {/* Lesson Header */}
                 <div className="mb-6">
@@ -232,11 +347,10 @@ export default function CourseLearnPage({ params }: { params: { slug: string } }
 
                 {/* Video Player */}
                 {currentLesson.video_url && (
-                  <div className="mb-8 aspect-video bg-black rounded-lg overflow-hidden">
-                    <iframe
-                      src={currentLesson.video_url}
-                      className="w-full h-full"
-                      allowFullScreen
+                  <div className="mb-8">
+                    <VideoPlayer
+                      url={currentLesson.video_url}
+                      title={currentLesson.title}
                     />
                   </div>
                 )}
@@ -246,6 +360,36 @@ export default function CourseLearnPage({ params }: { params: { slug: string } }
                   <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentLesson.content) }} />
                 </div>
 
+                {/* Quiz Section */}
+                {currentLesson.has_quiz && (
+                  <div className="mb-8 p-6 bg-muted/50 rounded-lg border">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <ClipboardCheck className="w-6 h-6 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">Lesson Quiz</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Test your knowledge of this lesson
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        {quizProgress?.has_passed && (
+                          <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                            <Trophy className="w-4 h-4" />
+                            Passed ({quizProgress.best_score}%)
+                          </span>
+                        )}
+                        <Button onClick={startQuiz} disabled={loadingQuiz}>
+                          {loadingQuiz ? 'Loading...' : quizProgress?.has_passed ? 'Retake Quiz' : 'Take Quiz'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Navigation */}
                 <div className="flex items-center justify-between pt-6 border-t">
                   <Button
@@ -254,6 +398,7 @@ export default function CourseLearnPage({ params }: { params: { slug: string } }
                       const currentIndex = lessons.findIndex(l => l.id === currentLesson.id);
                       if (currentIndex > 0) {
                         setCurrentLesson(lessons[currentIndex - 1]);
+                        setViewMode('lesson');
                       }
                     }}
                     disabled={lessons.findIndex(l => l.id === currentLesson.id) === 0}
@@ -282,6 +427,7 @@ export default function CourseLearnPage({ params }: { params: { slug: string } }
                       const currentIndex = lessons.findIndex(l => l.id === currentLesson.id);
                       if (currentIndex < lessons.length - 1) {
                         setCurrentLesson(lessons[currentIndex + 1]);
+                        setViewMode('lesson');
                       }
                     }}
                     disabled={lessons.findIndex(l => l.id === currentLesson.id) === lessons.length - 1}

@@ -121,12 +121,12 @@ export default function InstructorsPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            {instructors.map((instructor: any) => (
+            {instructors.map((instructor) => (
               <Card key={instructor.id} className="glass-card hover:shadow-xl transition-all duration-300">
                 <CardHeader>
                   <div className="flex items-start gap-4">
                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
-                      {instructor.name.split(' ').map((n: any) => n[0]).join('')}
+                      {instructor.name.split(' ').map((n) => n[0]).join('')}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-2">
@@ -160,7 +160,7 @@ export default function InstructorsPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {instructor.specializations.map((spec: any) => (
+                    {instructor.specializations.map((spec) => (
                       <Badge key={spec} variant="outline">{spec}</Badge>
                     ))}
                   </div>

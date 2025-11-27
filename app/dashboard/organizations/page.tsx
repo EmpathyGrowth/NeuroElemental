@@ -50,7 +50,7 @@ export default function OrganizationsPage() {
 
   const getTotalCredits = (credits: Record<string, number> | null) => {
     if (!credits) return 0
-    return Object.values(credits).reduce((sum: any, val: any) => sum + val, 0)
+    return Object.values(credits).reduce((sum, val) => sum + val, 0)
   }
 
   const getRoleIcon = (role: string) => {
@@ -85,7 +85,7 @@ export default function OrganizationsPage() {
         <div className="space-y-6">
           <Skeleton className="h-12 w-64" />
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((i: any) => (
+            {[1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-48" />
             ))}
           </div>
@@ -138,7 +138,7 @@ export default function OrganizationsPage() {
           </Card>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {(organizations || []).map((org: any) => (
+            {(organizations || []).map((org) => (
               <Card
                 key={org.id}
                 className="hover:border-primary/50 transition-colors cursor-pointer"

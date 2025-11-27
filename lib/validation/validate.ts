@@ -6,6 +6,90 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
+// ============================================================================
+// Query Parameter Helpers
+// ============================================================================
+
+/**
+ * Safely parse an integer from a query parameter string
+ *
+ * Handles NaN, negative numbers, and out-of-range values safely.
+ * Returns the fallback value if the input is invalid.
+ *
+ * @param value - String value from query parameter (or null)
+ * @param fallback - Default value to use if parsing fails
+ * @param options - Optional min/max constraints
+ * @returns Parsed integer or fallback value
+ *
+ * @example
+ * ```typescript
+ * const limit = safeParseInt(searchParams.get('limit'), 20, { min: 1, max: 100 })
+ * const offset = safeParseInt(searchParams.get('offset'), 0, { min: 0 })
+ * ```
+ */
+export function safeParseInt(
+  value: string | null,
+  fallback: number,
+  options?: { min?: number; max?: number }
+): number {
+  if (value === null || value === '') {
+    return fallback
+  }
+
+  const parsed = parseInt(value, 10)
+
+  // Check for NaN
+  if (isNaN(parsed)) {
+    return fallback
+  }
+
+  // Apply min constraint
+  if (options?.min !== undefined && parsed < options.min) {
+    return options.min
+  }
+
+  // Apply max constraint
+  if (options?.max !== undefined && parsed > options.max) {
+    return options.max
+  }
+
+  return parsed
+}
+
+/**
+ * Sanitize a search query string
+ *
+ * Removes potentially dangerous characters and limits length.
+ * Safe for use in Supabase ilike queries.
+ *
+ * @param input - Raw search input from query parameter
+ * @param maxLength - Maximum length of sanitized string (default: 100)
+ * @returns Sanitized search string
+ *
+ * @example
+ * ```typescript
+ * const search = sanitizeSearchQuery(searchParams.get('search'))
+ * if (search) {
+ *   query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`)
+ * }
+ * ```
+ */
+export function sanitizeSearchQuery(
+  input: string | null,
+  maxLength: number = 100
+): string {
+  if (!input) {
+    return ''
+  }
+
+  // Remove characters that could be problematic in SQL-like patterns
+  // Allow: alphanumeric, spaces, hyphens, underscores, and common punctuation
+  return input
+    .replace(/[^a-zA-Z0-9\s\-_.,!?'"]/g, '')
+    .trim()
+    .slice(0, maxLength)
+}
+
 /**
  * Validation result type
  * 

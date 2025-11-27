@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2, Save, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { logger } from '@/lib/logging';
 
 const eventTypes = [
@@ -89,16 +90,17 @@ export default function NewEventPage() {
       });
 
       if (response.ok) {
+        toast.success('Event created successfully');
         router.push('/dashboard/admin/events');
       } else {
         const error = await response.json();
-        alert(`Error: ${error.error}`);
+        toast.error(error.error || 'Failed to create event');
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
 
       logger.error('Error creating event:', err as Error);
-      alert('Failed to create event');
+      toast.error('Failed to create event');
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/components/auth/auth-provider';
 import { updatePassword, signOut } from '@/lib/auth/supabase';
 import { useRouter } from 'next/navigation';
@@ -33,9 +33,13 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+/** Delay in ms before hiding password success message */
+const PASSWORD_SUCCESS_DELAY = 5000;
+
 export default function SettingsPage() {
   const { } = useAuth();
   const router = useRouter();
+  const passwordSuccessTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [_currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -43,6 +47,15 @@ export default function SettingsPage() {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (passwordSuccessTimeoutRef.current) {
+        clearTimeout(passwordSuccessTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Notification preferences
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -137,7 +150,7 @@ export default function SettingsPage() {
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
-        setTimeout(() => setPasswordSuccess(false), 5000);
+        passwordSuccessTimeoutRef.current = setTimeout(() => setPasswordSuccess(false), PASSWORD_SUCCESS_DELAY);
       }
     } catch (_error) {
       setPasswordError('An unexpected error occurred');

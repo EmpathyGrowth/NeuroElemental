@@ -225,7 +225,7 @@ export default function StudentCoursesPage() {
                         )}
                       </div>
                       <Button asChild>
-                        <Link href={`/dashboard/student/courses/${course.course_slug}`}>
+                        <Link href={`/dashboard/student/courses/${course.course_id}`}>
                           <PlayCircle className="w-4 h-4 mr-2" />
                           Continue
                         </Link>
@@ -288,7 +288,7 @@ export default function StudentCoursesPage() {
                       </div>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" asChild>
-                          <Link href={`/dashboard/student/courses/${course.course_slug}`}>
+                          <Link href={`/dashboard/student/courses/${course.course_id}`}>
                             Review Course
                           </Link>
                         </Button>

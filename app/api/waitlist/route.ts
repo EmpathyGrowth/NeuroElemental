@@ -1,8 +1,9 @@
 import { badRequestError, createAdminRoute, createPublicRoute, internalError, successResponse, validateRequest } from '@/lib/api';
 import { addToWaitlist, getAllWaitlistEntries, getWaitlistCount, isEmailOnWaitlist, removeFromWaitlist } from '@/lib/db';
 import { sendWaitlistConfirmation } from '@/lib/email';
-import { log } from '@/lib/logging';
+import { logger } from '@/lib/logging';
 import { waitlistCreateSchema } from '@/lib/validation/schemas';
+import { safeParseInt } from '@/lib/validation';
 
 /**
  * GET /api/waitlist
@@ -12,8 +13,8 @@ export const GET = createAdminRoute(async (request) => {
   const { searchParams } = new URL(request.url);
   const statusParam = searchParams.get('status') || undefined;
   const status = statusParam as 'pending' | 'approved' | 'rejected' | undefined;
-  const limit = parseInt(searchParams.get('limit') || '50');
-  const offset = parseInt(searchParams.get('offset') || '0');
+  const limit = safeParseInt(searchParams.get('limit'), 50, { min: 1, max: 100 });
+  const offset = safeParseInt(searchParams.get('offset'), 0, { min: 0 });
   const count_only = searchParams.get('count') === 'true';
 
   if (count_only) {
@@ -61,7 +62,7 @@ export const POST = createPublicRoute(async (request) => {
   });
 
   if (error) {
-    log.error('Error adding to waitlist', error, {
+    logger.error('Error adding to waitlist', error instanceof Error ? error : new Error(String(error)), {
       endpoint: 'POST /api/waitlist',
       email,
     });
@@ -79,7 +80,7 @@ export const POST = createPublicRoute(async (request) => {
     to: email,
     name: name || undefined,
   }).catch((err) => {
-    log.error('Failed to send waitlist confirmation email', err, {
+    logger.error('Failed to send waitlist confirmation email', err instanceof Error ? err : new Error(String(err)), {
       endpoint: 'POST /api/waitlist',
       email,
     });
@@ -110,7 +111,7 @@ export const DELETE = createPublicRoute(async (request) => {
   const { error } = await removeFromWaitlist(email);
 
   if (error) {
-    log.error('Error removing from waitlist', error, {
+    logger.error('Error removing from waitlist', error instanceof Error ? error : new Error(String(error)), {
       endpoint: 'DELETE /api/waitlist',
       email,
     });

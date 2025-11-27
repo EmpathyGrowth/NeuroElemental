@@ -584,7 +584,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {fullEvent.agenda.map((item: any, idx: number) => (
+                    {fullEvent.agenda.map((item: { time: string; title: string; description: string }, idx: number) => (
                       <div key={idx} className="flex gap-4">
                         <div className="flex-shrink-0 w-32 text-sm font-medium text-primary">
                           {item.time}

@@ -120,8 +120,8 @@ export default function AdminInvitationsPage() {
     }
   }
 
-  const activeInvitations = invitations?.filter((inv: any) => !isExpired(inv.expires_at)) ?? []
-  const expiredInvitations = invitations?.filter((inv: any) => isExpired(inv.expires_at)) ?? []
+  const activeInvitations = invitations?.filter((inv) => !isExpired(inv.expires_at)) ?? []
+  const expiredInvitations = invitations?.filter((inv) => isExpired(inv.expires_at)) ?? []
 
   return (
     <div className="space-y-6">
@@ -179,7 +179,7 @@ export default function AdminInvitationsPage() {
         <CardContent>
           {loading ? (
             <div className="space-y-3">
-              {[1, 2, 3, 4, 5, 6].map((i: any) => (
+              {[1, 2, 3, 4, 5, 6].map((i) => (
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
@@ -204,7 +204,7 @@ export default function AdminInvitationsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invitations.map((invitation: any) => {
+                  {invitations.map((invitation) => {
                     const status = getExpirationStatus(invitation.expires_at)
 
                     return (

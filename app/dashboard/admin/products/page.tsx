@@ -85,8 +85,8 @@ export default function AdminProductsPage() {
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const totalRevenue = products.reduce((sum: any, p: any) => sum + p.revenue, 0);
-  const totalSales = products.reduce((sum: any, p: any) => sum + p.sales, 0);
+  const totalRevenue = products.reduce((sum, p) => sum + p.revenue, 0);
+  const totalSales = products.reduce((sum, p) => sum + p.sales, 0);
   const activeProducts = products.filter(p => p.isActive).length;
 
   return (
@@ -164,6 +164,7 @@ export default function AdminProductsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
+                aria-label="Search products"
               />
             </div>
             <Button variant="outline">All Types</Button>
@@ -192,7 +193,7 @@ export default function AdminProductsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProducts.map((product: any) => (
+              {filteredProducts.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell>
                     <div>
@@ -224,7 +225,7 @@ export default function AdminProductsPage() {
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" aria-label="Open product actions menu">
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>

@@ -51,7 +51,7 @@ export const GET = createAdminRoute(async (request) => {
       .select('*', { count: 'exact', head: true })
     analytics.overview.totalUsers = count || 0
   } catch (error) {
-    logger.info('Error fetching total users:', { data: error })
+    logger.error('Error fetching total users:', error instanceof Error ? error : new Error(String(error)))
   }
 
   // Fetch user growth (compare current period to previous period)
@@ -73,7 +73,7 @@ export const GET = createAdminRoute(async (request) => {
       ? Math.round(((current - previous) / previous) * 100 * 10) / 10
       : current > 0 ? 100 : 0
   } catch (error) {
-    logger.info('Error calculating user growth:', { data: error })
+    logger.error('Error calculating user growth:', error instanceof Error ? error : new Error(String(error)))
   }
 
   // Fetch total revenue from credit transactions
@@ -110,7 +110,7 @@ export const GET = createAdminRoute(async (request) => {
       ? Math.round(((currentPeriodRevenue - previousPeriodRevenue) / previousPeriodRevenue) * 100 * 10) / 10
       : currentPeriodRevenue > 0 ? 100 : 0
   } catch (error) {
-    logger.info('Error fetching revenue:', { data: error })
+    logger.error('Error fetching revenue:', error instanceof Error ? error : new Error(String(error)))
   }
 
   // Fetch total courses
@@ -120,7 +120,7 @@ export const GET = createAdminRoute(async (request) => {
       .select('*', { count: 'exact', head: true })
     analytics.overview.totalCourses = count || 0
   } catch (error) {
-    logger.info('Error fetching courses count:', { data: error })
+    logger.error('Error fetching courses count:', error instanceof Error ? error : new Error(String(error)))
   }
 
   // Fetch total events
@@ -130,7 +130,7 @@ export const GET = createAdminRoute(async (request) => {
       .select('*', { count: 'exact', head: true })
     analytics.overview.totalEvents = count || 0
   } catch (error) {
-    logger.info('Error fetching events count:', { data: error })
+    logger.error('Error fetching events count:', error instanceof Error ? error : new Error(String(error)))
   }
 
   // Fetch active subscriptions (count enrollments as proxy for active subscriptions)
@@ -141,7 +141,7 @@ export const GET = createAdminRoute(async (request) => {
       .eq('status', 'active')
     analytics.overview.activeSubscriptions = count || 0
   } catch (error) {
-    logger.info('Error fetching active subscriptions:', { data: error })
+    logger.error('Error fetching active subscriptions:', error instanceof Error ? error : new Error(String(error)))
   }
 
   // Build daily charts for revenue and users
@@ -211,7 +211,7 @@ export const GET = createAdminRoute(async (request) => {
       })
     })
   } catch (error) {
-    logger.info('Error building daily charts:', { data: error })
+    logger.error('Error building daily charts:', error instanceof Error ? error : new Error(String(error)))
   }
 
   // Fetch course stats
@@ -246,7 +246,7 @@ export const GET = createAdminRoute(async (request) => {
         .slice(0, 5)
     }
   } catch (error) {
-    logger.info('Error fetching course stats:', { data: error })
+    logger.error('Error fetching course stats:', error instanceof Error ? error : new Error(String(error)))
   }
 
   // Fetch event stats
@@ -279,7 +279,7 @@ export const GET = createAdminRoute(async (request) => {
         .slice(0, 5)
     }
   } catch (error) {
-    logger.info('Error fetching event stats:', { data: error })
+    logger.error('Error fetching event stats:', error instanceof Error ? error : new Error(String(error)))
   }
 
   // Fetch user demographics by role
@@ -312,7 +312,7 @@ export const GET = createAdminRoute(async (request) => {
       .filter(d => d.value > 0)
       .sort((a, b) => b.value - a.value)
   } catch (error) {
-    logger.info('Error fetching user demographics:', { data: error })
+    logger.error('Error fetching user demographics:', error instanceof Error ? error : new Error(String(error)))
   }
 
   // Fetch top instructors
@@ -328,19 +328,56 @@ export const GET = createAdminRoute(async (request) => {
       .limit(10)
 
     if (instructors) {
-      // For each instructor, count their students
+      // For each instructor, get their courses and calculate stats
       const instructorStats = await Promise.all(
         instructors.map(async (instructor) => {
-          const { count: studentCount } = await supabase
-            .from('course_enrollments')
-            .select('*', { count: 'exact', head: true })
-            .eq('instructor_id', instructor.id)
+          // Get instructor's courses
+          const { data: instructorCourses } = await supabase
+            .from('courses')
+            .select('id')
+            .eq('created_by', instructor.id)
+
+          const courseIds = instructorCourses?.map((c) => c.id) || []
+
+          let studentCount = 0
+          let revenue = 0
+          let avgRating = 0
+
+          if (courseIds.length > 0) {
+            // Count students enrolled in instructor's courses
+            const { count } = await supabase
+              .from('course_enrollments')
+              .select('*', { count: 'exact', head: true })
+              .in('course_id', courseIds)
+
+            studentCount = count || 0
+
+            // Sum revenue from enrollments
+            const { data: enrollments } = await supabase
+              .from('course_enrollments')
+              .select('amount_paid')
+              .in('course_id', courseIds)
+
+            revenue = enrollments?.reduce((sum, e) => sum + (e.amount_paid || 0), 0) || 0
+
+            // Get average rating from course reviews
+            const { data: reviews } = await supabase
+              .from('course_reviews')
+              .select('rating')
+              .in('course_id', courseIds)
+
+            if (reviews?.length) {
+              avgRating = Math.round(
+                (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) * 10
+              ) / 10
+            }
+          }
 
           return {
             name: instructor.full_name || instructor.email || 'Unknown',
-            students: studentCount || 0,
-            revenue: 0, // Would need transaction data
-            rating: 0, // Would need reviews data
+            students: studentCount,
+            revenue: revenue / 100, // Convert cents to dollars
+            rating: avgRating,
           }
         })
       )
@@ -350,7 +387,7 @@ export const GET = createAdminRoute(async (request) => {
         .slice(0, 5)
     }
   } catch (error) {
-    logger.info('Error fetching top instructors:', { data: error })
+    logger.error('Error fetching top instructors:', error instanceof Error ? error : new Error(String(error)))
   }
 
   // Top pages - requires page view tracking integration (e.g., Vercel Analytics, Google Analytics)
@@ -400,7 +437,7 @@ export const GET = createAdminRoute(async (request) => {
     // If no transaction data, return empty array rather than fake placeholders
     // The frontend should handle empty state appropriately
   } catch (error) {
-    logger.info('Error calculating revenue by category:', { data: error })
+    logger.error('Error calculating revenue by category:', error instanceof Error ? error : new Error(String(error)))
   }
 
   return successResponse(analytics)

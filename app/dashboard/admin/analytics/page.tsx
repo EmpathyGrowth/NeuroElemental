@@ -387,7 +387,7 @@ export default function AdminAnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
-                  <Tooltip formatter={(value: any) => `$${(value / 100).toFixed(2)}`} />
+                  <Tooltip formatter={(value: number) => `$${(value / 100).toFixed(2)}`} />
                   <Legend />
                   <Area type="monotone" dataKey="subscriptions" stackId="1" stroke="#8884d8" fill="#8884d8" name="Subscriptions" />
                   <Area type="monotone" dataKey="oneTime" stackId="1" stroke="#82ca9d" fill="#82ca9d" name="One-time" />

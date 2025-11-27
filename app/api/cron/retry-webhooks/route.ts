@@ -6,7 +6,7 @@
  */
 
 import { retryPendingDeliveries } from '@/lib/webhooks/deliver'
-import { log } from '@/lib/logging'
+import { logger } from '@/lib/logging'
 import { createCronRoute, internalError, successResponse } from '@/lib/api'
 import { getCurrentTimestamp } from '@/lib/utils'
 
@@ -21,7 +21,7 @@ export const GET = createCronRoute(async (_request, _context) => {
   const result = await retryPendingDeliveries()
 
   if (!result.success) {
-    log.error('Error retrying webhooks', result.error, {
+    logger.error('Error retrying webhooks', result.error instanceof Error ? result.error : new Error(String(result.error)), {
       endpoint: 'GET /api/cron/retry-webhooks'
     })
     throw internalError('Failed to retry deliveries')

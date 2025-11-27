@@ -395,13 +395,19 @@ export async function changePlan(
       orgSub.stripe_subscription_id
     )
 
+    // Ensure subscription has items
+    const firstItem = stripeSubscription.items.data[0]
+    if (!firstItem) {
+      return { success: false, error: 'No subscription items found' }
+    }
+
     // Update subscription in Stripe with new price
     const updatedSubscription = await stripe.subscriptions.update(
       orgSub.stripe_subscription_id,
       {
         items: [
           {
-            id: stripeSubscription.items.data[0].id,
+            id: firstItem.id,
             price: newPlan.stripe_price_id,
           },
         ],
@@ -997,6 +1003,12 @@ export async function calculateProration(
       orgSub.stripe_subscription_id
     )
 
+    // Ensure subscription has items
+    const firstItem = subscription.items.data[0]
+    if (!firstItem) {
+      return { success: false, error: 'No subscription items found' }
+    }
+
     // Create upcoming invoice preview with new price
     const upcomingInvoice = await stripe.invoices.createPreview({
       customer: subscription.customer as string,
@@ -1004,7 +1016,7 @@ export async function calculateProration(
       subscription_details: {
         items: [
           {
-            id: subscription.items.data[0].id,
+            id: firstItem.id,
             price: newPlan.stripe_price_id,
           },
         ],

@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useRef, useEffect } from 'react';
 import {
   Zap,
   Battery,
@@ -20,11 +20,26 @@ import {
 } from 'lucide-react';
 import { ElementalIcons } from '@/components/icons/elemental-icons';
 
+/** Delay in ms before hiding copy feedback */
+const COPY_FEEDBACK_DELAY = 2000;
+/** Delay in ms before hiding email sent feedback */
+const EMAIL_SENT_FEEDBACK_DELAY = 3000;
+
 function ResultsContent() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [copied, setCopied] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const emailTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      if (emailTimeoutRef.current) clearTimeout(emailTimeoutRef.current);
+    };
+  }, []);
 
   const elements = [
     {
@@ -91,18 +106,18 @@ function ResultsContent() {
     const url = window.location.href;
     navigator.clipboard.writeText(url);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    copyTimeoutRef.current = setTimeout(() => setCopied(false), COPY_FEEDBACK_DELAY);
   };
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setEmailSent(true);
-    setTimeout(() => setEmailSent(false), 3000);
+    emailTimeoutRef.current = setTimeout(() => setEmailSent(false), EMAIL_SENT_FEEDBACK_DELAY);
   };
 
   const getEnergyPattern = () => {
     const _avgScore =
-      elements.reduce((sum: any, el: any) => sum + el.score, 0) / elements.length;
+      elements.reduce((sum: number, el) => sum + el.score, 0) / elements.length;
     if (topElement.energyType === 'Extroverted') {
       return 'You thrive on external stimulation and social energy. Your battery recharges through interaction, novelty, and action.';
     } else if (topElement.energyType === 'Introverted') {
@@ -185,7 +200,7 @@ function ResultsContent() {
 
             <Card className="p-8 glass-card border-white/40">
               <div className="space-y-6">
-                {sortedElements.map((element: any) => (
+                {sortedElements.map((element) => (
                   <div key={element.name}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-3">
@@ -274,7 +289,7 @@ function ResultsContent() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
-              {topThree.map((element: any) => (
+              {topThree.map((element) => (
                 <Card
                   key={element.name}
                   className="p-6 glass-card border-white/40 hover:shadow-xl transition-all group"
@@ -311,7 +326,7 @@ function ResultsContent() {
             <div className="grid md:grid-cols-3 gap-6 mb-12">
               <Card className="p-6 glass-card border-white/40 hover:shadow-xl transition-all">
                 <div className="flex gap-1 mb-4">
-                  {[1, 2, 3, 4, 5].map((star: any) => (
+                  {[1, 2, 3, 4, 5].map((star) => (
                     <span key={star} className="text-yellow-500 text-xl">⭐</span>
                   ))}
                 </div>
@@ -331,7 +346,7 @@ function ResultsContent() {
 
               <Card className="p-6 glass-card border-white/40 hover:shadow-xl transition-all">
                 <div className="flex gap-1 mb-4">
-                  {[1, 2, 3, 4, 5].map((star: any) => (
+                  {[1, 2, 3, 4, 5].map((star) => (
                     <span key={star} className="text-yellow-500 text-xl">⭐</span>
                   ))}
                 </div>
@@ -351,7 +366,7 @@ function ResultsContent() {
 
               <Card className="p-6 glass-card border-white/40 hover:shadow-xl transition-all">
                 <div className="flex gap-1 mb-4">
-                  {[1, 2, 3, 4, 5].map((star: any) => (
+                  {[1, 2, 3, 4, 5].map((star) => (
                     <span key={star} className="text-yellow-500 text-xl">⭐</span>
                   ))}
                 </div>

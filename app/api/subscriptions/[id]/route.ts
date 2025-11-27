@@ -128,9 +128,13 @@ export const PUT = createAuthenticatedRoute<{ id: string }>(async (request, cont
     }
 
     const stripeSub = await stripe.subscriptions.retrieve(stripeSubId);
+    const firstItem = stripeSub.items.data[0];
+    if (!firstItem) {
+      throw badRequestError('No subscription items found');
+    }
     const stripSubUpdated = await stripe.subscriptions.update(stripeSubId, {
       items: [{
-        id: stripeSub.items.data[0].id,
+        id: firstItem.id,
         price: newPriceId,
       }],
       proration_behavior: 'always_invoice',

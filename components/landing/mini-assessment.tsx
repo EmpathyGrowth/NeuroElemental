@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 
+/** Delay in ms before transitioning to next question or result */
+const QUESTION_TRANSITION_DELAY = 300
+
 interface Question {
   id: number
   text: string
@@ -121,19 +124,22 @@ export const MiniAssessment = memo(() => {
     setAnswers(newAnswers)
 
     if (currentQuestion < questions.length - 1) {
-      timeoutRef.current = setTimeout(() => setCurrentQuestion(currentQuestion + 1), 300)
+      timeoutRef.current = setTimeout(() => setCurrentQuestion(currentQuestion + 1), QUESTION_TRANSITION_DELAY)
     } else {
-      timeoutRef.current = setTimeout(() => setShowResult(true), 300)
+      timeoutRef.current = setTimeout(() => setShowResult(true), QUESTION_TRANSITION_DELAY)
     }
   }
 
-  const calculateResult = () => {
+  const calculateResult = (): keyof typeof elementConfig => {
     const elementCounts: Record<string, number> = {}
     Object.values(answers).forEach(element => {
       elementCounts[element] = (elementCounts[element] || 0) + 1
     })
 
-    return Object.entries(elementCounts).sort((a, b) => b[1] - a[1])[0][0] as keyof typeof elementConfig
+    const sorted = Object.entries(elementCounts).sort((a, b) => b[1] - a[1])
+    // Default to 'electric' if no answers (shouldn't happen in normal flow)
+    const topElement = sorted[0]?.[0] ?? 'electric'
+    return topElement as keyof typeof elementConfig
   }
 
   const reset = () => {
@@ -287,6 +293,7 @@ export const MiniAssessment = memo(() => {
                   <button
                     key={option.value}
                     onClick={() => handleAnswer(option.element)}
+                    aria-label={`Select: ${option.label}`}
                     className={cn(
                       "flex items-center gap-3 p-4 rounded-xl border-2 transition-all",
                       "hover:border-purple-400 dark:hover:border-purple-600 hover:scale-[1.02]",
@@ -313,6 +320,7 @@ export const MiniAssessment = memo(() => {
 
         <button
           onClick={reset}
+          aria-label="Reset assessment and start over"
           className="mt-6 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors mx-auto block"
         >
           Start over

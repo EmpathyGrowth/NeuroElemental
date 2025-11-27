@@ -50,6 +50,9 @@ import {
 } from 'recharts'
 import { formatDistanceToNow } from 'date-fns'
 
+/** Interval in ms for refreshing rate limit status */
+const STATUS_REFRESH_INTERVAL = 30000;
+
 interface RateLimitConfig {
   tier: string
   requests_per_minute: number
@@ -129,17 +132,16 @@ export default function RateLimitsPage() {
   const [usageData, setUsageData] = useState<UsageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
-  const [_selectedTier, setSelectedTier] = useState<string>('')
-  const [usageDays, setUsageDays] = useState<string>('7')
+    const [usageDays, setUsageDays] = useState<string>('7')
 
   useEffect(() => {
     fetchRateLimitData()
     fetchViolations()
     fetchUsageData()
-    // Refresh status every 30 seconds
+    // Refresh status periodically
     const interval = setInterval(() => {
       fetchRateLimitData()
-    }, 30000)
+    }, STATUS_REFRESH_INTERVAL)
     return () => clearInterval(interval)
   }, [organizationId])
 
@@ -162,8 +164,7 @@ export default function RateLimitsPage() {
       setConfig(data.config)
       setStatus(data.status)
       setTiers(data.tiers || [])
-      setSelectedTier(data.config.tier)
-    } catch (error) {
+          } catch (error) {
       logger.error('Error fetching rate limit data', error instanceof Error ? error : undefined, { errorMsg: String(error) })
       toast.error('Error', {
         description: 'Failed to load rate limit configuration',
@@ -230,18 +231,17 @@ export default function RateLimitsPage() {
 
       const data = await res.json()
       setConfig(data.config)
-      setSelectedTier(newTier)
-
+      
       toast.success('Tier Updated', {
         description: `Successfully updated to ${newTier} tier`,
       })
 
       // Refresh data
       await fetchRateLimitData()
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Error updating tier', error instanceof Error ? error : undefined, { errorMsg: String(error) })
       toast.error('Error', {
-        description: error.message || 'Failed to update tier',
+        description: error instanceof Error ? error.message : 'Failed to update tier',
       })
     } finally {
       setUpdating(false)
@@ -287,12 +287,6 @@ export default function RateLimitsPage() {
   const calculatePercentage = (remaining: number, limit: number) => {
     const used = limit - remaining
     return (used / limit) * 100
-  }
-
-  const _getProgressColor = (percentage: number) => {
-    if (percentage >= 90) return 'bg-red-500'
-    if (percentage >= 75) return 'bg-amber-500'
-    return 'bg-green-500'
   }
 
   if (loading) {

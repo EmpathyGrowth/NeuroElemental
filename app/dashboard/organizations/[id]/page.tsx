@@ -107,7 +107,7 @@ export default function OrganizationPage() {
 
   const getTotalCredits = (credits: Record<string, number> | null) => {
     if (!credits) return 0
-    return Object.values(credits).reduce((sum: any, val: any) => sum + val, 0)
+    return Object.values(credits).reduce((sum, val) => sum + val, 0)
   }
 
   const getRoleIcon = (role: string) => {
@@ -425,7 +425,7 @@ export default function OrganizationPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {members.map((member: any) => (
+                        {members.map((member) => (
                           <TableRow key={member.user_id}>
                             <TableCell>
                               <div className="flex items-center gap-2">
@@ -503,7 +503,7 @@ export default function OrganizationPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {transactions.slice(0, 10).map((transaction: any) => (
+                        {transactions.slice(0, 10).map((transaction) => (
                           <TableRow key={transaction.id}>
                             <TableCell>
                               <Badge

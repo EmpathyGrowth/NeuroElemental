@@ -565,7 +565,7 @@ export default function OrganizationPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {members.map((member: any) => (
+                  {members.map((member) => (
                     <TableRow key={member.id}>
                       <TableCell className="font-medium">
                         {member.user.full_name || 'Unknown'}

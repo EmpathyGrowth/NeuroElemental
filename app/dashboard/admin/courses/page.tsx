@@ -83,8 +83,8 @@ export default function AdminCoursesPage() {
 
   const { totalRevenue, totalStudents, publishedCourses } = useMemo(
     () => ({
-      totalRevenue: (courses || []).reduce((sum: any, course: any) => sum + ((course.price_usd || 0) * (course.students || 0)), 0),
-      totalStudents: (courses || []).reduce((sum: any, course: any) => sum + (course.students || 0), 0),
+      totalRevenue: (courses || []).reduce((sum: number, course) => sum + ((course.price_usd || 0) * (course.students || 0)), 0),
+      totalStudents: (courses || []).reduce((sum: number, course) => sum + (course.students || 0), 0),
       publishedCourses: (courses || []).filter(c => c.is_published).length,
     }),
     [courses]
@@ -155,7 +155,7 @@ export default function AdminCoursesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${Math.round((courses || []).reduce((sum: any, c: any) => sum + c.price, 0) / (courses?.length || 1))}
+              ${Math.round((courses || []).reduce((sum: number, c) => sum + c.price, 0) / (courses?.length || 1))}
             </div>
             <p className="text-xs text-muted-foreground">
               Across {courses?.length || 0} courses
@@ -175,6 +175,7 @@ export default function AdminCoursesPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
+                aria-label="Search courses"
               />
             </div>
             <Button variant="outline">
@@ -231,7 +232,7 @@ export default function AdminCoursesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCourses.map((course: any) => (
+                {filteredCourses.map((course) => (
                   <TableRow key={course.id}>
                     <TableCell>
                       <div>
@@ -265,7 +266,7 @@ export default function AdminCoursesPage() {
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" aria-label="Open course actions menu">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>

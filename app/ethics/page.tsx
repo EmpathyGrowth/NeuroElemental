@@ -136,7 +136,7 @@ export default function EthicsPage() {
             </div>
 
             <div className="space-y-8">
-              {principles.map((principle: any) => (
+              {principles.map((principle) => (
                 <Card
                   key={principle.number}
                   className="p-8 glass-card border-border/50 hover:shadow-xl transition-all"

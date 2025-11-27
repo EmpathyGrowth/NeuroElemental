@@ -217,6 +217,7 @@ export default function InstructorResourcesPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
+              aria-label="Search resources"
             />
           </div>
         </CardContent>

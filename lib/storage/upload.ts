@@ -91,3 +91,34 @@ export async function getSignedUrl(
 
   return { url: data.signedUrl };
 }
+
+/**
+ * Extract file path from a Supabase storage URL
+ * URL format: https://{project}.supabase.co/storage/v1/object/public/{bucket}/{path}
+ */
+export function extractPathFromUrl(url: string): { bucket: string; path: string } | null {
+  try {
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split('/storage/v1/object/public/');
+    if (pathParts.length < 2) return null;
+
+    const [bucket, ...pathSegments] = pathParts[1].split('/');
+    return {
+      bucket,
+      path: pathSegments.join('/'),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Format bytes to human-readable size
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}

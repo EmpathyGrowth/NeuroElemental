@@ -17,6 +17,7 @@ import { ArrowLeft, Eye, Loader2, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { logger } from '@/lib/logging';
 
 const categories = [
@@ -73,16 +74,17 @@ export default function NewBlogPostPage() {
       });
 
       if (response.ok) {
+        toast.success('Post created successfully');
         router.push('/dashboard/admin/blog');
       } else {
         const error = await response.json();
-        alert(`Error: ${error.error}`);
+        toast.error(error.error || 'Failed to create post');
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
 
       logger.error('Error creating post:', err as Error);
-      alert('Failed to create post');
+      toast.error('Failed to create post');
     } finally {
       setLoading(false);
     }

@@ -5,7 +5,7 @@
  * Admin interface to create new promotional coupons
  */
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -23,8 +23,31 @@ import { ArrowLeft, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/utils'
 
+/** Delay in ms before redirecting after successful creation */
+const REDIRECT_DELAY = 1000
+
+interface CouponPayload {
+  code: string
+  discount_type: string
+  discount_value: number
+  applicable_to: string
+  max_uses?: number
+  course_id?: string
+  expires_at?: string
+}
+
 export default function CreateCouponPage() {
   const router = useRouter()
+  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const [code, setCode] = useState('')
   const [discountType, setDiscountType] = useState<string>('percentage')
@@ -62,7 +85,7 @@ export default function CreateCouponPage() {
     setCreating(true)
 
     try {
-      const payload: any = {
+      const payload: CouponPayload = {
         code: code.toUpperCase(),
         discount_type: discountType,
         discount_value: parseFloat(discountValue),
@@ -94,9 +117,9 @@ export default function CreateCouponPage() {
 
       toast.success(`Coupon ${code} created successfully`)
 
-      setTimeout(() => {
+      redirectTimeoutRef.current = setTimeout(() => {
         router.push('/dashboard/admin/coupons')
-      }, 1000)
+      }, REDIRECT_DELAY)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to create coupon')
       setCreating(false)

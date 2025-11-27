@@ -205,9 +205,6 @@ const courses_fallback: DisplayCourse[] = [
   },
 ];
 
-const _categories = ['All', 'Energy Management', 'Relationships', 'Professional Development', 'Family & Relationships'];
-const _difficulties = ['All Levels', 'Beginner', 'Intermediate', 'Advanced'];
-
 // Sample course features data (this would be in course modules/lessons in production)
 const courseFeatures: Record<string, string[]> = {
   'energy-management-fundamentals': [

@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2, Save, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { logger } from '@/lib/logging';
 
 const categories = [
@@ -84,16 +85,17 @@ export default function NewCoursePage() {
       });
 
       if (response.ok) {
+        toast.success('Course created successfully');
         router.push('/dashboard/admin/courses');
       } else {
         const error = await response.json();
-        alert(`Error: ${error.error}`);
+        toast.error(error.error || 'Failed to create course');
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
 
       logger.error('Error creating course:', err as Error);
-      alert('Failed to create course');
+      toast.error('Failed to create course');
     } finally {
       setLoading(false);
     }

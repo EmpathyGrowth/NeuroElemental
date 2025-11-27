@@ -2,7 +2,7 @@ import { RouteContext } from '@/lib/types/api';
 import { NextRequest } from 'next/server';
 import { getSupabaseServer } from '@/lib/db';
 import { badRequestError, createAuthenticatedRoute, successResponse } from '@/lib/api';
-import { getCompletionTimestamp, getCurrentTimestamp } from '@/lib/utils';
+import { getCompletionTimestamp, getCurrentTimestamp, getUpdateTimestamp } from '@/lib/utils';
 
 /** Lesson record with course_id */
 interface LessonRecord {
@@ -88,6 +88,22 @@ export const POST = createAuthenticatedRoute<{ lessonId: string }>(
         .select('lesson_id')
         .eq('user_id', user.id)
         .in('lesson_id', allLessons?.map((l) => l.id) || []) as { data: LessonCompletionResult[] | null; error: unknown };
+
+      // Calculate and update enrollment progress
+      if (allLessons && allLessons.length > 0) {
+        const completedCount = completions?.length || 0;
+        const progressPercentage = Math.round((completedCount / allLessons.length) * 100);
+
+        await supabase
+          .from('course_enrollments')
+          .update({
+            progress_percentage: progressPercentage,
+            last_accessed_at: new Date().toISOString(),
+            ...getUpdateTimestamp(),
+          })
+          .eq('user_id', user.id)
+          .eq('course_id', lesson.course_id);
+      }
 
       // Check if all lessons are complete
       if (allLessons && completions && completions.length === allLessons.length) {

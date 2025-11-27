@@ -17,6 +17,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function AdminSettingsPage() {
   const [siteName, setSiteName] = useState('NeuroElemental');
@@ -26,7 +27,7 @@ export default function AdminSettingsPage() {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
 
   const handleSave = () => {
-    alert('Settings saved! (In production, this would save to database)');
+    toast.success('Settings saved! (In production, this would save to database)');
   };
 
   return (
@@ -221,19 +222,19 @@ export default function AdminSettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Logo URL</Label>
-              <Input placeholder="/logo.svg" />
+              <Label htmlFor="logo-url">Logo URL</Label>
+              <Input id="logo-url" placeholder="/logo.svg" />
             </div>
 
             <div className="space-y-2">
-              <Label>Favicon URL</Label>
-              <Input placeholder="/favicon.ico" />
+              <Label htmlFor="favicon-url">Favicon URL</Label>
+              <Input id="favicon-url" placeholder="/favicon.ico" />
             </div>
 
             <div className="space-y-2">
-              <Label>Primary Color</Label>
+              <Label htmlFor="primary-color">Primary Color</Label>
               <div className="flex gap-2">
-                <Input value="#667eea" disabled className="font-mono" />
+                <Input id="primary-color" value="#667eea" disabled className="font-mono" />
                 <div className="w-12 h-10 rounded border" style={{ backgroundColor: '#667eea' }} />
               </div>
               <p className="text-xs text-muted-foreground">

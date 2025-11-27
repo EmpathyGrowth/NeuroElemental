@@ -38,6 +38,9 @@ import { useAsync } from '@/hooks/use-async';
 import { logger } from '@/lib/logging';
 import { formatDate } from '@/lib/utils';
 
+/** Delay in ms for debouncing search input */
+const SEARCH_DEBOUNCE_DELAY = 300;
+
 interface Resource {
   id: string;
   title: string;
@@ -97,7 +100,7 @@ export default function AdminResourcesPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
-    }, 300);
+    }, SEARCH_DEBOUNCE_DELAY);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
@@ -242,6 +245,7 @@ export default function AdminResourcesPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
+                aria-label="Search resources"
               />
             </div>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -309,7 +313,7 @@ export default function AdminResourcesPage() {
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" aria-label="Open resource actions menu">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>

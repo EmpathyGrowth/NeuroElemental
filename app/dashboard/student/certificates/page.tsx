@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,21 +11,94 @@ import {
   Share2,
   ExternalLink,
   CheckCircle,
+  Loader2,
+  Copy,
 } from 'lucide-react';
 import { formatDate, DATE_FORMATS } from '@/lib/utils';
+import { logger } from '@/lib/logging';
+import { toast } from 'sonner';
 
-// Sample certificates - in production, from database
-const certificates = [
-  {
-    id: 'cert-001',
-    courseTitle: 'Burnout Recovery Roadmap',
-    issuedAt: '2024-09-15',
-    verificationCode: 'NE-CERT-A1B2C3D4',
-    certificateUrl: '/certificates/cert-001.pdf',
-  },
-];
+interface Certificate {
+  id: string;
+  courseTitle: string;
+  courseCategory: string | null;
+  courseDuration: number | null;
+  issuedAt: string | null;
+  verificationCode: string;
+  certificateUrl: string | null;
+}
 
 export default function StudentCertificatesPage() {
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCertificates();
+  }, []);
+
+  const fetchCertificates = async () => {
+    try {
+      const response = await fetch('/api/certificates');
+      if (response.ok) {
+        const data = await response.json();
+        setCertificates(data.certificates || []);
+      }
+    } catch (error) {
+      logger.error('Error fetching certificates:', error instanceof Error ? error : new Error(String(error)));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownload = async (certificateId: string) => {
+    try {
+      const response = await fetch(`/api/export/certificates?id=${certificateId}&format=pdf`);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `certificate-${certificateId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        toast.success('Certificate downloaded!');
+      } else {
+        toast.error('Failed to download certificate');
+      }
+    } catch (error) {
+      logger.error('Error downloading certificate:', error instanceof Error ? error : new Error(String(error)));
+      toast.error('Failed to download certificate');
+    }
+  };
+
+  const handleCopyVerificationCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast.success('Verification code copied!');
+  };
+
+  const handleShareToLinkedIn = (cert: Certificate) => {
+    const verificationUrl = `${window.location.origin}/verify/${cert.verificationCode}`;
+    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(verificationUrl)}`;
+    window.open(linkedInUrl, '_blank', 'width=600,height=500');
+  };
+
+  const totalHours = certificates.reduce((sum, cert) => sum + (cert.courseDuration || 0), 0);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6 max-w-5xl">
+        <div className="min-h-[400px] flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-4" />
+            <p className="text-muted-foreground">Loading certificates...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6 max-w-5xl">
       <div className="mb-8">
@@ -53,7 +127,7 @@ export default function StudentCertificatesPage() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24.5</div>
+            <div className="text-2xl font-bold">{totalHours}</div>
             <p className="text-xs text-muted-foreground">Total time invested</p>
           </CardContent>
         </Card>
@@ -65,7 +139,7 @@ export default function StudentCertificatesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">100%</div>
-            <p className="text-xs text-muted-foreground">Of started courses</p>
+            <p className="text-xs text-muted-foreground">Of completed courses</p>
           </CardContent>
         </Card>
       </div>
@@ -73,7 +147,7 @@ export default function StudentCertificatesPage() {
       {/* Certificates */}
       {certificates.length > 0 ? (
         <div className="space-y-6">
-          {certificates.map((cert: any) => (
+          {certificates.map((cert) => (
             <Card key={cert.id} className="glass-card hover:shadow-xl transition-shadow">
               <CardContent className="p-8">
                 <div className="flex items-start gap-6">
@@ -89,27 +163,41 @@ export default function StudentCertificatesPage() {
                           Completed
                         </Badge>
                         <h3 className="text-2xl font-bold mb-2">{cert.courseTitle}</h3>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          Issued on {formatDate(cert.issuedAt, DATE_FORMATS.LONG)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Verification Code: <span className="font-mono font-semibold text-foreground">{cert.verificationCode}</span>
-                        </p>
+                        {cert.issuedAt && (
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Issued on {formatDate(cert.issuedAt, DATE_FORMATS.LONG)}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>Verification Code:</span>
+                          <span className="font-mono font-semibold text-foreground">{cert.verificationCode}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => handleCopyVerificationCode(cert.verificationCode)}
+                            aria-label="Copy verification code"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex gap-3">
-                      <Button>
+                    <div className="flex flex-wrap gap-3">
+                      <Button onClick={() => handleDownload(cert.id)}>
                         <Download className="w-4 h-4 mr-2" />
                         Download PDF
                       </Button>
-                      <Button variant="outline">
+                      <Button variant="outline" onClick={() => handleShareToLinkedIn(cert)}>
                         <Share2 className="w-4 h-4 mr-2" />
                         Share to LinkedIn
                       </Button>
-                      <Button variant="outline">
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Verify Online
+                      <Button variant="outline" asChild>
+                        <Link href={`/verify/${cert.verificationCode}`} target="_blank">
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Verify Online
+                        </Link>
                       </Button>
                     </div>
                   </div>
@@ -142,7 +230,7 @@ export default function StudentCertificatesPage() {
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <h4 className="font-semibold mb-2">✅ What You Get:</h4>
+              <h4 className="font-semibold mb-2">What You Get:</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>• Official NeuroElemental completion certificate</li>
                 <li>• Unique verification code</li>
@@ -152,7 +240,7 @@ export default function StudentCertificatesPage() {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">🎓 How to Earn:</h4>
+              <h4 className="font-semibold mb-2">How to Earn:</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>• Complete all course lessons</li>
                 <li>• Pass all quizzes (70% or higher)</li>

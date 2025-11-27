@@ -6,6 +6,7 @@
 import { NextRequest } from 'next/server'
 import { badRequestError } from './error-handler'
 import { getCurrentTimestamp } from '@/lib/utils'
+import { safeParseInt } from '@/lib/validation'
 
 /**
  * Extract and parse pagination parameters from query string
@@ -32,8 +33,8 @@ import { getCurrentTimestamp } from '@/lib/utils'
 export function getPaginationParams(request: NextRequest, defaults?: { page?: number; limit?: number }) {
   const { searchParams } = new URL(request.url)
 
-  const page = parseInt(searchParams.get('page') || String(defaults?.page || 1))
-  const limit = parseInt(searchParams.get('limit') || String(defaults?.limit || 50))
+  const page = safeParseInt(searchParams.get('page'), defaults?.page || 1, { min: 1 })
+  const limit = safeParseInt(searchParams.get('limit'), defaults?.limit || 50, { min: 1, max: 100 })
   const offset = (page - 1) * limit
 
   return { page, limit, offset }

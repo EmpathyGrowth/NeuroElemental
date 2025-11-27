@@ -6,9 +6,18 @@
 import { createAdminRoute, successResponse } from '@/lib/api'
 import { getSupabaseServer } from '@/lib/db'
 import { logger } from '@/lib/logging'
+import { extractPathFromUrl, formatFileSize } from '@/lib/storage'
+import { sanitizeSearchQuery } from '@/lib/validation'
 
 interface ResourceDownload {
   resource_id: string
+}
+
+interface StorageObject {
+  name: string
+  metadata: {
+    size?: number
+  } | null
 }
 
 /**
@@ -18,7 +27,7 @@ interface ResourceDownload {
 export const GET = createAdminRoute(async (request) => {
   const supabase = getSupabaseServer()
   const { searchParams } = new URL(request.url)
-  const search = searchParams.get('search') || ''
+  const search = sanitizeSearchQuery(searchParams.get('search'))
   const typeFilter = searchParams.get('type') || 'all'
   const categoryFilter = searchParams.get('category') || 'all'
 
@@ -28,7 +37,7 @@ export const GET = createAdminRoute(async (request) => {
       .from('instructor_resources')
       .select('id, title, description, file_url, resource_type, category, certification_level, created_at, created_by')
 
-    // Apply search filter
+    // Apply search filter (sanitized to prevent injection)
     if (search) {
       query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,category.ilike.%${search}%`)
     }
@@ -75,6 +84,45 @@ export const GET = createAdminRoute(async (request) => {
     // Get unique categories for filter dropdown
     const categories = [...new Set(resources?.map(r => r.category).filter(Boolean) || [])]
 
+    // Try to get file sizes from storage
+    const fileSizes: Record<string, number> = {}
+    let totalStorageBytes = 0
+    try {
+      // Group files by bucket
+      const filesByBucket: Record<string, string[]> = {}
+      resources?.forEach(resource => {
+        if (resource.file_url) {
+          const pathInfo = extractPathFromUrl(resource.file_url)
+          if (pathInfo) {
+            if (!filesByBucket[pathInfo.bucket]) {
+              filesByBucket[pathInfo.bucket] = []
+            }
+            filesByBucket[pathInfo.bucket].push(pathInfo.path)
+          }
+        }
+      })
+
+      // Query each bucket for file metadata
+      for (const [bucket, paths] of Object.entries(filesByBucket)) {
+        // Get the folder from the first path (all resources should be in same folder)
+        const folder = paths[0]?.split('/')[0] || ''
+        const { data: storageFiles } = await supabase.storage
+          .from(bucket)
+          .list(folder, { limit: 1000 })
+
+        if (storageFiles) {
+          const typedFiles = storageFiles as StorageObject[]
+          typedFiles.forEach(file => {
+            const size = file.metadata?.size || 0
+            fileSizes[`${bucket}/${folder}/${file.name}`] = size
+            totalStorageBytes += size
+          })
+        }
+      }
+    } catch (error) {
+      logger.error('Error fetching storage metadata:', error instanceof Error ? error : new Error(String(error)))
+    }
+
     // Transform resources to response format
     const formattedResources = resources?.map(resource => {
       // Determine icon type based on resource_type
@@ -85,6 +133,19 @@ export const GET = createAdminRoute(async (request) => {
         ? 'presentation'
         : 'pdf'
 
+      // Get file size from storage metadata
+      let fileSize = 'N/A'
+      if (resource.file_url) {
+        const pathInfo = extractPathFromUrl(resource.file_url)
+        if (pathInfo) {
+          const fullPath = `${pathInfo.bucket}/${pathInfo.path}`
+          const size = fileSizes[fullPath]
+          if (size) {
+            fileSize = formatFileSize(size)
+          }
+        }
+      }
+
       return {
         id: resource.id,
         title: resource.title,
@@ -92,7 +153,7 @@ export const GET = createAdminRoute(async (request) => {
         type,
         category: resource.category || 'Uncategorized',
         fileUrl: resource.file_url,
-        fileSize: 'N/A', // Would need storage metadata for actual size
+        fileSize,
         downloads: downloadCounts[resource.id] || 0,
         uploadedAt: resource.created_at,
         certificationLevel: resource.certification_level,
@@ -108,7 +169,7 @@ export const GET = createAdminRoute(async (request) => {
       totalResources,
       totalDownloads,
       categories: uniqueCategories,
-      storageUsed: 'N/A', // Would need storage API for actual usage
+      storageUsed: totalStorageBytes > 0 ? formatFileSize(totalStorageBytes) : 'N/A',
     }
 
     return successResponse({

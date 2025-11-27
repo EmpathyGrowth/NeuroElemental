@@ -30,6 +30,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import DOMPurify from 'isomorphic-dompurify';
+import { toast } from 'sonner';
 import { logger } from '@/lib/logging';
 
 interface Module {
@@ -162,7 +163,7 @@ export default function CourseModulesPage({ params }: { params: { slug: string }
           setCurrentLesson(nextModule.lessons[0]);
         } else {
           // Course completed
-          alert('Congratulations! You have completed the course!');
+          toast.success('Congratulations! You have completed the course!');
         }
       }
     } catch (error) {
@@ -191,9 +192,9 @@ export default function CourseModulesPage({ params }: { params: { slug: string }
   };
 
   const calculateOverallProgress = () => {
-    const totalLessons = modules.reduce((acc: any, m: any) => acc + m.lessons.length, 0);
-    const completedLessons = modules.reduce((acc: any, m: any) =>
-      acc + m.lessons.filter((l: any) => l.completed).length, 0
+    const totalLessons = modules.reduce((acc: number, m) => acc + m.lessons.length, 0);
+    const completedLessons = modules.reduce((acc: number, m) =>
+      acc + m.lessons.filter((l) => l.completed).length, 0
     );
     return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
   };
@@ -317,7 +318,7 @@ export default function CourseModulesPage({ params }: { params: { slug: string }
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <SheetTrigger asChild className="lg:hidden">
-                  <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+                  <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} aria-label="Open course navigation">
                     <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
@@ -411,7 +412,7 @@ export default function CourseModulesPage({ params }: { params: { slug: string }
 
                   <TabsContent value="resources" className="mt-6">
                     <div className="grid gap-4">
-                      {currentLesson.resources?.map((resource: any) => (
+                      {currentLesson.resources?.map((resource) => (
                         <Card key={resource.id}>
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between">

@@ -5,7 +5,7 @@
  * Accept invitations to join organizations
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Building2, CheckCircle2, XCircle, Mail } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/utils'
+
+/** Delay in ms before redirecting after accept/decline */
+const REDIRECT_DELAY = 1500
 
 interface InvitationDetails {
   id: string
@@ -33,6 +36,16 @@ export default function InvitationPage() {
   const params = useParams()
   const router = useRouter()
   const inviteId = params.id as string
+  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const [invitation, setInvitation] = useState<InvitationDetails | null>(null)
   const [loading, setLoading] = useState(true)
@@ -78,9 +91,9 @@ export default function InvitationPage() {
       toast.success(`You've joined ${invitation?.organization.name}`)
 
       // Redirect to organization dashboard
-      setTimeout(() => {
+      redirectTimeoutRef.current = setTimeout(() => {
         router.push(`/dashboard/organizations/${data.organizationId}`)
-      }, 1500)
+      }, REDIRECT_DELAY)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to accept invitation')
       setAccepting(false)
@@ -102,9 +115,9 @@ export default function InvitationPage() {
 
       toast.info('You have declined the invitation')
 
-      setTimeout(() => {
+      redirectTimeoutRef.current = setTimeout(() => {
         router.push('/dashboard')
-      }, 1500)
+      }, REDIRECT_DELAY)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to decline invitation')
       setDeclining(false)

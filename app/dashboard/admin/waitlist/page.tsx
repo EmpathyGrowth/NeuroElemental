@@ -132,7 +132,7 @@ export default function AdminWaitlistPage() {
         <CardContent>
           {loading ? (
             <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i: any) => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
@@ -154,7 +154,7 @@ export default function AdminWaitlistPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {entries?.map((entry: any) => (
+                  {entries?.map((entry) => (
                     <TableRow key={entry.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">

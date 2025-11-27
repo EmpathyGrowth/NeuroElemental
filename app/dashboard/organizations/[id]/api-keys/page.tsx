@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { logger } from '@/lib/logging'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -100,7 +100,6 @@ const SCOPE_GROUPS: ScopeGroup[] = [
 
 export default function ApiKeysPage() {
   const params = useParams()
-  const _router = useRouter()
   const organizationId = params.id as string
 
   const [keys, setKeys] = useState<ApiKey[]>([])
@@ -178,9 +177,9 @@ export default function ApiKeysPage() {
       toast.success('API Key Created', {
         description: 'Your API key has been created. Make sure to copy it now!',
       })
-    } catch (error: any) {
-      logger.error('Error creating API key:', error as Error)
-      toast.error(error.message || 'Failed to create API key')
+    } catch (error) {
+      logger.error('Error creating API key:', error instanceof Error ? error : new Error(String(error)))
+      toast.error(error instanceof Error ? error.message : 'Failed to create API key')
     } finally {
       setCreating(false)
     }

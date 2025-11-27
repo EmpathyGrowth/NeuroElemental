@@ -152,9 +152,9 @@ export default function ReportsPage() {
       toast.success('Report Generated', {
         description: 'Your report has been generated successfully',
       })
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Error generating report', error instanceof Error ? error : undefined, { errorMsg: String(error) })
-      toast.error(error.message || 'Failed to generate report')
+      toast.error(error instanceof Error ? error.message : 'Failed to generate report')
     } finally {
       setGenerating(false)
     }

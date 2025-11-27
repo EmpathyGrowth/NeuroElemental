@@ -5,7 +5,7 @@
  * Invite new members to organization
  */
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,10 +21,23 @@ import {
 import { ArrowLeft, Mail, UserPlus, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
+/** Delay in ms before redirecting after successful invitation */
+const REDIRECT_DELAY = 1500
+
 export default function InviteMemberPage() {
   const params = useParams()
   const router = useRouter()
   const orgId = params.id as string
+  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<string>('member')
@@ -59,9 +72,9 @@ export default function InviteMemberPage() {
       setRole('member')
 
       // Navigate back after a short delay
-      setTimeout(() => {
+      redirectTimeoutRef.current = setTimeout(() => {
         router.push(`/dashboard/organizations/${orgId}`)
-      }, 1500)
+      }, REDIRECT_DELAY)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to send invitation')
     } finally {

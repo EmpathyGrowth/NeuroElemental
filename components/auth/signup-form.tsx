@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { signUp, signInWithOAuth } from '@/lib/auth/supabase';
 import { Button } from '@/components/ui/button';
@@ -10,8 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, Loader2, CheckCircle } from 'lucide-react';
 
+/** Delay in ms before redirecting after successful signup */
+const REDIRECT_DELAY = 2000;
+
 export function SignupForm() {
-  const _router = useRouter();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,6 +20,16 @@ export function SignupForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup redirect timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,10 +57,10 @@ export function SignupForm() {
         setLoading(false);
       } else {
         setSuccess(true);
-        // Wait 2 seconds before redirecting
-        setTimeout(() => {
+        // Wait before redirecting
+        redirectTimeoutRef.current = setTimeout(() => {
           window.location.href = '/dashboard';
-        }, 2000);
+        }, REDIRECT_DELAY);
       }
     } catch (_err) {
       setError('An unexpected error occurred');

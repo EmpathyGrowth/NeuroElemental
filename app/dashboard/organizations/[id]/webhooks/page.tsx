@@ -225,10 +225,10 @@ export default function WebhooksPage() {
       toast.success('Webhook Created', {
         description: 'Your webhook has been created. Make sure to copy the secret!',
       })
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Error creating webhook', error instanceof Error ? error : undefined, { errorMsg: String(error) })
       toast.error('Error', {
-        description: error.message || 'Failed to create webhook',
+        description: error instanceof Error ? error.message : 'Failed to create webhook',
       })
     } finally {
       setCreating(false)

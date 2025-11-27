@@ -45,7 +45,7 @@ export function useAsync<T = unknown>(): UseAsyncReturn<T> {
       const data = await asyncFunc();
       setState({ data, loading: false, error: null });
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'An error occurred';
       setState({ data: null, loading: false, error: message });
       return null;
@@ -106,7 +106,7 @@ export function useAsyncEffect<T = unknown>(
         if (!cancelled) {
           setState({ data, loading: false, error: null });
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (!cancelled) {
           const message = error instanceof Error ? error.message : 'An error occurred';
           setState({ data: null, loading: false, error: message });

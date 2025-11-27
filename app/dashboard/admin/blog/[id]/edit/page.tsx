@@ -17,6 +17,7 @@ import { ArrowLeft, Loader2, Save, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { useAsync } from '@/hooks/use-async';
 import { logger } from '@/lib/logging';
 
@@ -28,6 +29,18 @@ const categories = [
   'Community',
   'Instructor Tips',
 ];
+
+interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string | null;
+  category: string | null;
+  tags: string[];
+  featured_image_url: string | null;
+  is_published: boolean;
+}
 
 interface EditBlogPostPageProps {
   params: Promise<{ id: string }>;
@@ -55,7 +68,7 @@ export default function EditBlogPostPage({ params }: EditBlogPostPageProps) {
     const response = await fetch('/api/blog');
     if (!response.ok) throw new Error('Failed to fetch posts');
     const posts = await response.json();
-    const post = posts.find((p: any) => p.id === id);
+    const post = posts.find((p: BlogPost) => p.id === id);
 
     if (post) {
       setTitle(post.title);
@@ -93,16 +106,17 @@ export default function EditBlogPostPage({ params }: EditBlogPostPageProps) {
       });
 
       if (response.ok) {
+        toast.success('Post updated successfully');
         router.push('/dashboard/admin/blog');
       } else {
         const error = await response.json();
-        alert(`Error: ${error.error}`);
+        toast.error(error.error || 'Failed to update post');
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
 
       logger.error('Error updating post:', err as Error);
-      alert('Failed to update post');
+      toast.error('Failed to update post');
     } finally {
       setSaving(false);
     }
@@ -121,13 +135,14 @@ export default function EditBlogPostPage({ params }: EditBlogPostPageProps) {
       });
 
       if (response.ok) {
+        toast.success('Post deleted successfully');
         router.push('/dashboard/admin/blog');
       } else {
-        alert('Failed to delete post');
+        toast.error('Failed to delete post');
       }
     } catch (error) {
       logger.error('Error deleting post:', error as Error);
-      alert('Failed to delete post');
+      toast.error('Failed to delete post');
     } finally {
       setSaving(false);
     }

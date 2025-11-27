@@ -4,6 +4,7 @@ import { memo } from 'react';
 
 const testimonials = [
   {
+    id: "sarah-designer",
     name: "Sarah J.",
     role: "Product Designer",
     quote: "Finally, a framework that doesn't make me feel broken for having a variable energy pattern. Understanding my 'Electric' nature changed how I structure my work week.",
@@ -11,6 +12,7 @@ const testimonials = [
     gradient: "from-yellow-400 to-amber-500"
   },
   {
+    id: "marcus-therapist",
     name: "Marcus T.",
     role: "Therapist",
     quote: "I use this with my neurodivergent clients. It provides a non-pathologizing language for them to explain their needs to partners and employers. Incredibly practical.",
@@ -18,6 +20,7 @@ const testimonials = [
     gradient: "from-blue-400 to-cyan-500"
   },
   {
+    id: "elena-entrepreneur",
     name: "Elena R.",
     role: "Entrepreneur",
     quote: "I used to burn out every 3 months. Learning about the 'Passion vs. Survival' states helped me catch the signs early. My business is finally sustainable.",
@@ -41,15 +44,15 @@ export const TestimonialsSection = memo(function TestimonialsSection() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {testimonials.map((t, i) => (
+          {testimonials.map((t) => (
             <Card
-              key={i}
+              key={t.id}
               className="p-8 glass-card border-border/50 hover:shadow-xl transition-all duration-300 relative group"
             >
               <Quote className="absolute top-6 right-6 w-8 h-8 text-muted-foreground/20 group-hover:text-primary/20 transition-colors" />
               <div className="flex gap-1 mb-6">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                {[1, 2, 3, 4, 5].map((starNum) => (
+                  <Star key={`${t.id}-star-${starNum}`} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                 ))}
               </div>
               <p className="text-foreground/90 mb-6 leading-relaxed italic">

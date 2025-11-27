@@ -73,7 +73,7 @@ export default function AdminOrganizationsPage() {
 
   const getTotalCredits = (credits: Record<string, number> | null) => {
     if (!credits) return 0
-    return Object.values(credits).reduce((sum: any, val: any) => sum + val, 0)
+    return Object.values(credits).reduce((sum, val) => sum + val, 0)
   }
 
   return (
@@ -138,7 +138,7 @@ export default function AdminOrganizationsPage() {
         <CardContent>
           {loading ? (
             <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i: any) => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
@@ -162,7 +162,7 @@ export default function AdminOrganizationsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {organizations.map((org: any) => (
+                  {organizations.map((org) => (
                     <TableRow key={org.id}>
                       <TableCell className="font-medium">{org.name}</TableCell>
                       <TableCell>

@@ -188,6 +188,7 @@ export default function AdminBlogPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
+                aria-label="Search posts"
               />
             </div>
             <Button variant="outline">
@@ -243,7 +244,7 @@ export default function AdminBlogPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPosts.map((post: any) => (
+                {filteredPosts.map((post) => (
                   <TableRow key={post.id}>
                     <TableCell>
                       <div>
@@ -278,7 +279,7 @@ export default function AdminBlogPage() {
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" aria-label="Open post actions menu">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>

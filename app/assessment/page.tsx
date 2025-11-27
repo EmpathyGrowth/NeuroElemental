@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { logger } from '@/lib/logging';
 
 // Rating scale labels
@@ -90,13 +90,26 @@ const sections = [
 // Calculate total questions
 const totalQuestions = sections.reduce((sum, section) => sum + section.questions.length, 0);
 
+/** Delay in ms before auto-advancing to next question */
+const AUTO_ADVANCE_DELAY = 300;
+
 export default function AssessmentPage() {
   const router = useRouter();
+  const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [showIntro, setShowIntro] = useState(true);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [isCalculating, setIsCalculating] = useState(false);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (autoAdvanceTimeoutRef.current) {
+        clearTimeout(autoAdvanceTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Load saved progress on mount
   useEffect(() => {
@@ -146,9 +159,9 @@ export default function AssessmentPage() {
     setAnswers(newAnswers);
 
     // Auto-advance to next question
-    setTimeout(() => {
+    autoAdvanceTimeoutRef.current = setTimeout(() => {
       moveToNextQuestion();
-    }, 300);
+    }, AUTO_ADVANCE_DELAY);
   };
 
   const moveToNextQuestion = () => {
@@ -383,7 +396,7 @@ export default function AssessmentPage() {
                 {/* Rating Scale */}
                 <div className="space-y-6">
                   <div className="grid grid-cols-5 gap-3">
-                    {[1, 2, 3, 4, 5].map((rating: any) => (
+                    {[1, 2, 3, 4, 5].map((rating) => (
                       <button
                         key={rating}
                         onClick={() => handleRating(rating)}
