@@ -1,0 +1,156 @@
+# NeuroElemental - Cline Rules
+
+## Project Overview
+Next.js 16 multi-tenant SaaS platform for neurodivergent education with B2B features.
+
+**Stack:** Next.js 16, React 19, TypeScript (strict), Supabase, Tailwind CSS 4, Radix UI
+**Status:** 100% production ready
+**Build:** TypeScript 0 errors | ESLint 0 errors | All RLS policies configured | All indexes optimized
+
+## Mandatory Patterns
+
+### 1. API Routes - Use Factory Pattern
+
+```typescript
+// REQUIRED PATTERN
+import { createAuthenticatedRoute, successResponse } from '@/lib/api';
+
+export const GET = createAuthenticatedRoute(async (request, context, user) => {
+  // Your logic
+  return successResponse({ data });
+});
+```
+
+**Factories:**
+- `createAuthenticatedRoute()` - Auth required
+- `createAdminRoute()` - Admin only
+- `createPublicRoute()` - Public/webhooks
+- `createCronRoute()` - Scheduled jobs
+- `createOptionalAuthRoute()` - Optional auth
+
+**NEVER:**
+- `export async function GET`
+- `getCurrentUser()` manually
+- `NextResponse.json()` directly
+
+### 2. Errors - Use Helpers
+
+```typescript
+import { notFoundError, badRequestError, forbiddenError } from '@/lib/api';
+
+throw notFoundError('Resource');
+throw badRequestError('Invalid');
+throw forbiddenError();
+```
+
+### 3. Supabase Clients
+
+```typescript
+// API Routes (service role)
+import { getSupabaseServer } from '@/lib/db';
+
+// Server Components
+import { createClient } from '@/lib/auth/supabase-server';
+
+// Client Components
+import { createClient } from '@/lib/supabase/client';
+```
+
+### 4. Timestamps
+
+```typescript
+import { getUpdateTimestamp, getCurrentTimestamp } from '@/lib/utils';
+
+.update({ ...data, ...getUpdateTimestamp() })
+```
+
+### 5. Logging
+
+```typescript
+import { logger } from '@/lib/logging';
+logger.info('Message');
+logger.error('Error', error);
+// Never: console.log
+```
+
+## Barrel Exports (USE THESE)
+
+```typescript
+// API utilities
+import { createAuthenticatedRoute, successResponse, notFoundError } from '@/lib/api';
+
+// Database
+import { getSupabaseServer, courseRepository, userRepository } from '@/lib/db';
+
+// Logging
+import { logger, serverLogger } from '@/lib/logging';
+
+// Email
+import { emailService, sendLowCreditsWarning } from '@/lib/email';
+
+// Billing
+import { stripe, getOrganizationSubscription } from '@/lib/billing';
+
+// Analytics
+import { trackApiUsage, getOrganizationStats } from '@/lib/analytics';
+
+// Storage
+import { uploadFile, deleteFile } from '@/lib/storage';
+
+// API Keys
+import { createApiKey, validateApiKey } from '@/lib/api-keys';
+
+// Notifications
+import { notificationManager } from '@/lib/notifications';
+```
+
+## Database - Repository Pattern (MANDATORY)
+
+```typescript
+// ALWAYS use repositories
+import { courseRepository } from '@/lib/db/courses';
+
+const course = await courseRepository.findById(id);
+const courses = await courseRepository.findAll({ is_published: true });
+const created = await courseRepository.create(data);
+
+// NEVER direct Supabase
+const { data } = await supabase.from('courses').select('*');
+```
+
+**Repos return objects, not `{data, error}`**
+
+## Code Rules
+
+- TypeScript strict (no `any`)
+- Use `const` over `let`
+- Async/await (not `.then()`)
+- Use `@/` imports
+- Add JSDoc to exports
+- Prefix unused params with `_`
+
+## Testing
+
+- Vitest (not Jest)
+- `vi.mock()` for mocks
+- Files: `*.test.ts`
+- Expect syntax: `expect(value, "message").toBe(expected)`
+
+## User Roles
+registered | student | instructor | business | admin
+
+## Docs
+
+- **[Consolidation Plan](docs/architecture/consolidation-plan.md)** - 10-phase roadmap
+- **[Patterns](docs/architecture/patterns/)** - Repository, Routes, Errors, Validation, Caching
+- `DEVELOPMENT_GUIDE.md` - Full patterns
+- `.templates/routes/` - Templates
+
+## Before Commit
+
+```bash
+npm run lint       # 0 errors required
+npm run typecheck  # 0 errors required
+```
+
+See `DEVELOPMENT_GUIDE.md` for full patterns.

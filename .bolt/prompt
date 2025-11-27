@@ -1,0 +1,124 @@
+# Bolt.new Development Standards - Next.js 16 + Tailwind CSS 4
+
+## Design Philosophy
+For all designs I ask you to make, have them be **beautiful, not cookie cutter**. Make webpages that are fully featured and worthy for production.
+
+## Next.js 16 Critical Rules
+
+### 1. Server vs Client Components
+- All components are Server Components by default (async capable, can fetch data directly)
+- When using client-side hooks (`useState`, `useEffect`, `useContext`, `useRef`) or event handlers (`onClick`, `onChange`), **ALWAYS add `"use client"` at the top of the file**
+- Server Components CANNOT use client-side hooks or browser APIs
+
+Example:
+```tsx
+"use client"
+
+import { useState } from 'react'
+import { Menu } from 'lucide-react'
+
+export default function Counter() {
+  const [count, setCount] = useState(0)
+  return <button onClick={() => setCount(count + 1)}>{count}</button>
+}
+```
+
+### 2. Async Request APIs (REQUIRED in Next.js 16)
+These MUST be awaited - they are now async Promises:
+- `params` - MUST await: `const { id } = await params`
+- `searchParams` - MUST await: `const { query } = await searchParams`
+- `cookies()` - MUST await: `const cookieStore = await cookies()`
+- `headers()` - MUST await: `const headersList = await headers()`
+
+Example:
+```tsx
+export default async function Page({ 
+  params,
+  searchParams 
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ query?: string }>
+}) {
+  const { id } = await params
+  const { query } = await searchParams
+  return <div>Product {id}</div>
+}
+```
+
+### 3. Prevent Hydration Mismatches
+**Do NOT write code that triggers:**
+```
+Warning: Extra attributes from the server: class,style
+```
+
+Common causes:
+- Using `new Date()` or random values in Server Components
+- Conditional rendering based on `window` or `document`
+- Accessing browser APIs without proper client-side checks
+
+Fix: Use `"use client"` + `useEffect` for browser-dependent values.
+
+## Default Tech Stack
+
+By default, this template supports:
+- **JSX/TSX syntax** with TypeScript
+- **Tailwind CSS 4** classes (using `@import "tailwindcss"`)
+- **shadcn/ui** component library
+- **React hooks** (in Client Components with `"use client"`)
+- **Lucide React** for ALL icons including logos
+
+**Do NOT install other packages** for UI themes, icons, or component libraries unless absolutely necessary or explicitly requested.
+
+## Icons
+Use icons from `lucide-react` for **ALL icons, including logos**:
+```tsx
+import { Zap, Menu, User } from 'lucide-react'
+
+<Zap className="w-6 h-6" />
+```
+
+## Tailwind CSS 4 Updates
+
+### Import Syntax (REQUIRED)
+```css
+/* ✅ CORRECT - Tailwind 4 */
+@import "tailwindcss";
+
+/* ❌ WRONG - Don't use v3 syntax */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+### Updated Utility Names
+Use these NEW class names:
+- `shadow-xs` (not `shadow-sm`)
+- `shadow-sm` (not `shadow`)
+- `rounded-xs` (not `rounded-sm`)
+- `rounded-sm` (not `rounded`)
+- `ring-3` (not `ring`)
+- `outline-hidden` (not `outline-none`)
+- `bg-black/50` (not `bg-opacity-50`)
+
+### Border & Ring Defaults
+Always be explicit with colors:
+```tsx
+/* ✅ CORRECT */
+<div className="border border-gray-200 ring-3 ring-blue-500">
+
+/* ❌ WRONG - defaults changed in v4 */
+<div className="border ring">
+```
+
+## Quick Checklist
+- [ ] Using `@import "tailwindcss"` in CSS
+- [ ] Add `"use client"` when using hooks or event handlers
+- [ ] Await all `params`, `searchParams`, `cookies()`, `headers()`
+- [ ] Use updated Tailwind class names (shadow-xs, ring-3, etc.)
+- [ ] Use Lucide React for all icons
+- [ ] Avoid hydration mismatches (no browser APIs in Server Components)
+- [ ] Don't install unnecessary packages
+
+---
+
+**Remember:** Server Components are default and powerful. Only use `"use client"` when you need interactivity or browser APIs.

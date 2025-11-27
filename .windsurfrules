@@ -1,0 +1,220 @@
+# NeuroElemental - Windsurf IDE Rules
+
+You are working on NeuroElemental, a Next.js 16 multi-tenant SaaS platform for neurodivergent personality framework education with B2B features.
+
+## Tech Stack
+- **Framework:** Next.js 16 (App Router)
+- **Runtime:** React 19
+- **Language:** TypeScript (strict mode)
+- **Database:** Supabase (PostgreSQL + Auth)
+- **Styling:** Tailwind CSS 4 + Radix UI
+- **Status:** 100% production ready
+
+## Build Status
+- TypeScript: 0 errors
+- ESLint: 0 errors (warnings in tests only)
+- All routes use factory pattern (100%)
+- All barrel exports centralized
+- All database tables have RLS with proper policies
+- All foreign keys indexed for performance
+- All RLS policies optimized
+
+## Critical Patterns (MUST FOLLOW)
+
+### API Routes - Factory Pattern Only
+
+```typescript
+// ALWAYS USE THIS
+import { createAuthenticatedRoute, successResponse } from '@/lib/api';
+
+export const GET = createAuthenticatedRoute(async (request, context, user) => {
+  const data = await fetchData(user.id);
+  return successResponse({ data });
+});
+
+// Available factories:
+// - createAuthenticatedRoute() - For authenticated users
+// - createAdminRoute() - For admins only
+// - createPublicRoute() - For public/webhooks/cron
+// - createCronRoute() - For scheduled jobs
+// - createOptionalAuthRoute() - For optional auth
+```
+
+**NEVER:**
+- Use `export async function GET/POST/etc`
+- Call `getCurrentUser()` manually
+- Use `NextResponse.json()` directly
+- Write try-catch in route handlers
+
+### Error Handling
+
+```typescript
+// Use error helpers
+import { notFoundError, badRequestError, forbiddenError } from '@/lib/api';
+
+if (!found) throw notFoundError('Resource');
+if (invalid) throw badRequestError('Bad input');
+if (!authorized) throw forbiddenError();
+```
+
+### Supabase Clients
+
+```typescript
+// API Routes (service role)
+import { getSupabaseServer } from '@/lib/db';
+const supabase = getSupabaseServer();
+
+// Server Components (with session)
+import { createClient } from '@/lib/auth/supabase-server';
+const supabase = await createClient();
+
+// Client Components
+import { createClient } from '@/lib/supabase/client';
+const supabase = createClient();
+```
+
+### Timestamps
+
+```typescript
+// Use utilities
+import { getUpdateTimestamp, getCurrentTimestamp } from '@/lib/utils';
+
+.update({
+  ...data,
+  ...getUpdateTimestamp()
+})
+
+// Never use: updated_at: new Date().toISOString()
+```
+
+### Logging
+
+```typescript
+// Use barrel export
+import { logger } from '@/lib/logging';
+logger.info('Message', { context });
+logger.error('Error', error);
+
+// Never use console.log/error/warn
+```
+
+## Barrel Exports (USE THESE)
+
+```typescript
+// API utilities
+import { createAuthenticatedRoute, successResponse, notFoundError } from '@/lib/api';
+
+// Database & repositories
+import { getSupabaseServer, courseRepository, userRepository } from '@/lib/db';
+
+// Logging
+import { logger, serverLogger } from '@/lib/logging';
+
+// Email
+import { emailService, sendLowCreditsWarning } from '@/lib/email';
+
+// Billing
+import { stripe, getOrganizationSubscription } from '@/lib/billing';
+
+// Analytics
+import { trackApiUsage, getOrganizationStats } from '@/lib/analytics';
+
+// Storage
+import { uploadFile, deleteFile } from '@/lib/storage';
+
+// API Keys
+import { createApiKey, validateApiKey } from '@/lib/api-keys';
+
+// Notifications
+import { notificationManager } from '@/lib/notifications';
+
+// Utils
+import { formatDate, getCurrentTimestamp } from '@/lib/utils';
+```
+
+## Database - Repository Pattern (MANDATORY)
+
+```typescript
+// ALWAYS USE - Repository pattern
+import { courseRepository } from '@/lib/db/courses';
+
+const course = await courseRepository.findById(id);
+const courses = await courseRepository.findAll({ is_published: true });
+const created = await courseRepository.create(data);
+
+// NEVER - Direct Supabase queries
+const { data } = await supabase.from('courses').select('*');
+```
+
+**Repositories return objects directly (not `{data, error}`)**
+
+See: [Repository Pattern Guide](docs/architecture/patterns/repository-pattern.md)
+
+## Organization Permissions
+
+```typescript
+import { isUserOrgAdmin, isUserOrgMember } from '@/lib/db';
+
+const isAdmin = await isUserOrgAdmin(user.id, orgId);
+if (!isAdmin) throw forbiddenError('Admin only');
+```
+
+## Code Style
+
+- Use TypeScript strict mode (no `any` without reason)
+- Prefer `const` over `let`
+- Use async/await (not .then())
+- Use barrel imports: `import { ... } from '@/lib/utils'`
+- Add JSDoc for exported functions
+- Prefix unused parameters with `_`
+
+## Testing
+
+- Use Vitest (not Jest)
+- Mock with `vi.mock()` not `jest.mock()`
+- Test files: `*.test.ts`
+- Expect syntax: `expect(value, "message").toBe(expected)`
+
+## Project Context
+
+**User Roles:** registered, student, instructor, business, admin
+
+**Key Features:**
+- Multi-organization B2B
+- Credits system
+- Billing (Stripe)
+- API keys & webhooks
+- SSO (SAML)
+- Audit logging
+
+**Database:** PostgreSQL with RLS enabled (service role bypasses RLS!)
+
+## Quick Imports
+
+```typescript
+// Common imports
+import { createAuthenticatedRoute, successResponse, notFoundError } from '@/lib/api';
+import { getSupabaseServer, courseRepository } from '@/lib/db';
+import { logger } from '@/lib/logging';
+import { formatDate, getCurrentTimestamp } from '@/lib/utils';
+import { isUserOrgAdmin } from '@/lib/db';
+```
+
+## Documentation
+
+- **[10-Phase Consolidation Plan](docs/architecture/consolidation-plan.md)**
+- **[Pattern Guides](docs/architecture/patterns/)**
+  - Repository, API Routes, Errors, Validation, Caching
+- **[Docs Index](docs/README.md)** - Complete navigation
+- Architecture: `ARCHITECTURE.md`
+- Development: `DEVELOPMENT_GUIDE.md`
+- Setup: `SETUP.md`
+
+## Before Commit
+
+```bash
+npm run lint       # Must pass (0 errors)
+npm run typecheck  # Must have 0 errors
+```
+
+For detailed patterns, see `DEVELOPMENT_GUIDE.md` and `.templates/routes/README.md`

@@ -1,0 +1,29 @@
+# Aider Configuration for NeuroElemental
+
+# Model settings
+model: gpt-4
+edit-format: whole
+
+# Repository settings
+auto-commits: false
+dirty-commits: false
+
+# File handling
+read:
+  - DEVELOPMENT_GUIDE.md
+  - ARCHITECTURE.md
+  - lib/db/SUPABASE_CLIENT_GUIDE.md
+  - .templates/routes/README.md
+
+# Git settings
+git: true
+gitignore: true
+
+# Formatting
+pretty: true
+
+# Chat settings
+show-diffs: true
+
+# Context
+chat-mode: code

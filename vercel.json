@@ -1,0 +1,24 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/check-low-credits",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/retry-webhooks",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/aggregate-metrics",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/process-audit-exports",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/process-data-exports",
+      "schedule": "*/30 * * * *"
+    }
+  ]
+}

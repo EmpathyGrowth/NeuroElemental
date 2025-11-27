@@ -1,0 +1,381 @@
+# NeuroElemental - Cursor IDE Rules
+
+## Project Context
+
+NeuroElemental is a Next.js 16 multi-tenant SaaS platform for neurodivergent personality framework courses, events, and organizational diagnostics with B2B features.
+
+**Tech Stack:**
+- Next.js 16 (App Router)
+- React 19
+- TypeScript (strict mode)
+- Supabase (Auth + PostgreSQL)
+- Tailwind CSS 4
+- Radix UI components
+
+**Current Status:** 85% production ready, 10-phase consolidation nearing completion
+
+**Build Status:**
+- TypeScript: 0 errors
+- ESLint: 0 errors (warnings in tests only)
+- All routes use factory pattern (100%)
+- All barrel exports centralized
+
+**Documentation:** See [Platform Consolidation Plan](docs/architecture/consolidation-plan.md)
+
+## Core Development Principles
+
+### 1. API Route Pattern (MANDATORY)
+
+**ALWAYS use factory functions for API routes:**
+
+```typescript
+// CORRECT - Use factory pattern
+import { createAuthenticatedRoute, successResponse } from '@/lib/api';
+
+export const GET = createAuthenticatedRoute(async (request, context, user) => {
+  // Your logic here
+  return successResponse({ data });
+});
+```
+
+```typescript
+// WRONG - Never use this pattern
+export async function GET(request: NextRequest) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json(...);
+  // ...
+}
+```
+
+**Factory Functions:**
+- `createAuthenticatedRoute()` - For user-authenticated endpoints
+- `createAdminRoute()` - For admin-only endpoints
+- `createPublicRoute()` - For public/webhook/cron endpoints
+- `createCronRoute()` - For scheduled job endpoints
+- `createOptionalAuthRoute()` - For optional auth endpoints
+
+**Never:**
+- Use `export async function` in route files
+- Call `getCurrentUser()` manually in routes
+- Use `NextResponse.json()` directly
+- Write try-catch blocks in route handlers (factory handles errors)
+
+### 2. Error Handling
+
+**Use error helpers, never return responses directly:**
+
+```typescript
+// CORRECT
+import { notFoundError, badRequestError, forbiddenError } from '@/lib/api';
+
+if (!data) throw notFoundError('Resource');
+if (!isValid) throw badRequestError('Invalid input');
+if (!hasPermission) throw forbiddenError();
+```
+
+```typescript
+// WRONG
+return NextResponse.json({ error: 'Not found' }, { status: 404 });
+```
+
+**Available error helpers:**
+- `notFoundError(resource)` - 404
+- `badRequestError(message, details?)` - 400
+- `forbiddenError(message?)` - 403
+- `unauthorizedError(message?)` - 401
+- `conflictError(message)` - 409
+- `validationError(message, details?)` - 422
+
+### 3. Response Helpers
+
+**Use response helpers:**
+
+```typescript
+// CORRECT
+import { successResponse, paginatedResponse } from '@/lib/api';
+
+return successResponse({ data });
+return successResponse({ data }, 201); // Custom status
+return paginatedResponse(items, total, page, limit);
+```
+
+### 4. Supabase Client Usage
+
+**Know which client to use:**
+
+```typescript
+// API Routes (service role - bypasses RLS)
+import { getSupabaseServer } from '@/lib/db';
+const supabase = getSupabaseServer();
+
+// Server Components (with user session)
+import { createClient } from '@/lib/auth/supabase-server';
+const supabase = await createClient();
+
+// Client Components
+import { createClient } from '@/lib/supabase/client';
+const supabase = createClient();
+```
+
+**Never:**
+- Use service role client for user-facing queries (bypasses RLS)
+- Mix browser and server clients
+
+### 5. Timestamps
+
+**Use timestamp utilities, never `new Date().toISOString()`:**
+
+```typescript
+// CORRECT
+import { getUpdateTimestamp, getCurrentTimestamp } from '@/lib/utils';
+
+.update({
+  ...data,
+  ...getUpdateTimestamp()
+})
+
+// For specific fields
+completed_at: getCurrentTimestamp()
+```
+
+```typescript
+// WRONG
+updated_at: new Date().toISOString()
+```
+
+### 6. Logging
+
+**Use logger via barrel export, never console:**
+
+```typescript
+// CORRECT
+import { logger } from '@/lib/logging';
+
+logger.info('Operation completed', { userId, action });
+logger.error('Operation failed', error);
+logger.warn('Potential issue detected');
+```
+
+```typescript
+// WRONG
+console.log('...');
+console.error('...');
+```
+
+### 7. Organization Permissions
+
+**Always check permissions for organization routes:**
+
+```typescript
+import { isUserOrgAdmin, isUserOrgMember } from '@/lib/db';
+
+// Check admin access
+const isAdmin = await isUserOrgAdmin(user.id, orgId);
+if (!isAdmin) throw forbiddenError('Admin access required');
+
+// Check membership
+const isMember = await isUserOrgMember(user.id, orgId);
+if (!isMember) throw forbiddenError('Organization access required');
+```
+
+### 8. Type Safety
+
+**Avoid `any` types - use proper TypeScript:**
+
+```typescript
+// CORRECT
+interface UserData {
+  id: string;
+  email: string;
+  role: string;
+}
+
+function processUser(user: UserData): void {
+  // ...
+}
+```
+
+```typescript
+// WRONG
+function processUser(user: any): void {
+  // ...
+}
+```
+
+### 9. Barrel Exports
+
+**Use barrel exports from @/lib:**
+
+```typescript
+// CORRECT - Use barrel exports
+import { formatDate, getCurrentTimestamp, formatCurrency } from '@/lib/utils';
+import { logger, serverLogger } from '@/lib/logging';
+import { emailService, sendLowCreditsWarning } from '@/lib/email';
+import { stripe, getOrganizationSubscription } from '@/lib/billing';
+import { trackApiUsage, getOrganizationStats } from '@/lib/analytics';
+import { uploadFile, deleteFile } from '@/lib/storage';
+import { createApiKey, validateApiKey } from '@/lib/api-keys';
+import { notificationManager } from '@/lib/notifications';
+```
+
+### 10. Database Queries
+
+**ALWAYS use repositories (MANDATORY):**
+
+```typescript
+// CORRECT - Repository pattern
+import { courseRepository } from '@/lib/db/courses';
+
+const courses = await courseRepository.findAll({ is_published: true });
+const course = await courseRepository.findById(id);
+const created = await courseRepository.create(data);
+```
+
+```typescript
+// WRONG - Direct Supabase queries
+const { data } = await supabase.from('courses').select('*');
+```
+
+**Repository methods return objects directly (not `{data, error}`):**
+- `findById(id)` - Single record or throws NotFoundError
+- `findByIdOrNull(id)` - Single record or null
+- `findAll(filters?)` - Array of records
+- `findOne(filters)` - Single record by filters
+- `create(data)` - Created record
+- `update(id, data)` - Updated record
+- `delete(id)` - void
+- `paginate(options)` - PaginatedResult
+- `count(filters)` - number
+
+**See:** [Repository Pattern Guide](docs/architecture/patterns/repository-pattern.md)
+
+## Code Style
+
+### General
+- Use TypeScript strict mode
+- Always use `async`/`await` (not `.then()`)
+- Prefer `const` over `let`
+- Use destructuring for objects and arrays
+- Add JSDoc comments for exported functions
+- Prefix unused parameters with `_`
+
+### Naming Conventions
+- Functions: `camelCase`
+- Components: `PascalCase`
+- Constants: `UPPER_SNAKE_CASE`
+- Files: `kebab-case.ts` or `PascalCase.tsx` (components)
+- Types/Interfaces: `PascalCase`
+
+### File Organization
+```
+component-name/
+├── ComponentName.tsx       # Main component
+├── types.ts               # Types and interfaces
+├── utils.ts               # Helper functions
+└── index.ts               # Barrel export
+```
+
+## Testing
+
+**When writing tests:**
+- Use Vitest (not Jest)
+- Import from `vitest`: `import { describe, it, expect, vi } from 'vitest'`
+- Mock with `vi.mock()` not `jest.mock()`
+- All test files: `*.test.ts` or `*.test.tsx`
+- Expect syntax: `expect(value, "message").toBe(expected)` (message as second arg)
+
+## Don't Do
+
+- Never commit sensitive data (API keys, passwords)
+- Never bypass RLS without explicit permission checks
+- Never use `console.log` (use `logger`)
+- Never use `any` type without good reason
+- Never write manual auth checks in routes (use factories)
+- Never use `NextResponse.json()` in routes (use helpers)
+- Never create backward-incompatible API changes
+- Never skip error handling
+- Never hardcode configuration values
+- Never use relative paths like `../../../` (use `@/` aliases)
+
+## Quick Reference
+
+**Route Template Locations:**
+- `.templates/routes/authenticated-route.template.ts`
+- `.templates/routes/organization-route.template.ts`
+- `.templates/routes/admin-route.template.ts`
+- `.templates/routes/public-webhook.template.ts`
+- `.templates/routes/cron-job.template.ts`
+
+**Documentation:**
+- **[Consolidation Plan](docs/architecture/consolidation-plan.md)** - 10-phase standardization roadmap
+- **[Pattern Guides](docs/architecture/patterns/)** - Implementation patterns
+  - [Repository Pattern](docs/architecture/patterns/repository-pattern.md)
+  - [API Route Factory](docs/architecture/patterns/api-route-factory.md)
+  - [Error Handling](docs/architecture/patterns/error-handling.md)
+  - [Validation](docs/architecture/patterns/validation.md)
+  - [Caching](docs/architecture/patterns/caching.md)
+- **[Documentation Index](docs/README.md)** - Complete docs navigation
+- Architecture: `ARCHITECTURE.md`
+- Setup: `SETUP.md`
+- Development: `DEVELOPMENT_GUIDE.md`
+
+**Helper Imports:**
+```typescript
+// API
+import { createAuthenticatedRoute, successResponse, notFoundError } from '@/lib/api';
+
+// Database
+import { getSupabaseServer, courseRepository, userRepository } from '@/lib/db';
+
+// Utilities
+import { formatDate, getCurrentTimestamp, logger } from '@/lib/utils';
+
+// Logging
+import { logger, serverLogger } from '@/lib/logging';
+
+// Email
+import { emailService, sendLowCreditsWarning } from '@/lib/email';
+
+// Billing
+import { stripe, getOrganizationSubscription } from '@/lib/billing';
+
+// Organizations
+import { isUserOrgAdmin, isUserOrgMember } from '@/lib/db';
+```
+
+## When Adding New Features
+
+1. Check if route template exists in `.templates/routes/`
+2. Use factory pattern for all API routes
+3. Add proper TypeScript types
+4. Use logger for all logging (via `@/lib/logging`)
+5. Add error handling with proper helpers
+6. Update documentation if needed
+7. Write tests (if applicable)
+8. Check ESLint passes: `npm run lint`
+9. Verify TypeScript: `npm run typecheck`
+
+## Project-Specific Context
+
+**User Roles:**
+- `registered` - Basic user (free assessment)
+- `student` - Course access (paid)
+- `instructor` - Teaching resources
+- `business` - Organization admin
+- `admin` - Platform admin
+
+**Key Features:**
+- Multi-organization support (B2B)
+- Credits system for API usage
+- Billing & subscriptions (Stripe)
+- API keys for programmatic access
+- Webhooks for event notifications
+- SSO (SAML) for enterprise
+- Comprehensive audit logging
+
+**Database:**
+- PostgreSQL via Supabase
+- Row Level Security (RLS) enabled on all tables
+- Service role bypasses RLS (use with caution!)
+
+For more details, see `ARCHITECTURE.md` and `DEVELOPMENT_GUIDE.md`.

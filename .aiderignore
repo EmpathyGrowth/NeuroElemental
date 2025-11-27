@@ -1,0 +1,56 @@
+# Aider Ignore File
+# Files and directories that Aider should not modify
+
+# Dependencies
+node_modules/
+.next/
+.vercel/
+.turbo/
+
+# Build outputs
+dist/
+build/
+out/
+*.js.map
+
+# Environment and secrets
+.env
+.env.local
+.env.production
+.env.development
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Generated types (auto-generated)
+types/database.types.ts
+
+# Documentation archives (historical only)
+docs/archive/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
