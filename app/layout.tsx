@@ -4,6 +4,7 @@ import { Inter, Space_Grotesk } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { Navigation } from '@/components/navigation';
+import { SkipToContent } from '@/components/skip-to-content';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const spaceGrotesk = Space_Grotesk({
@@ -65,8 +66,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
+            <SkipToContent />
             <Navigation />
-            {children}
+            <main id="main-content">
+              {children}
+            </main>
           </AuthProvider>
         </ThemeProvider>
       </body>

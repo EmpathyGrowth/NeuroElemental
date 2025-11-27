@@ -23,6 +23,38 @@ const nextConfig = {
   },
   // Security headers for production
   async headers() {
+    // Build CSP directives
+    // In development, allow 'unsafe-eval' for hot reloading
+    const isDev = process.env.NODE_ENV === 'development'
+
+    const cspDirectives = [
+      "default-src 'self'",
+      // Scripts: self, inline (for Next.js), and trusted domains
+      `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ''} https://*.sentry.io https://*.stripe.com https://js.stripe.com`.trim(),
+      // Styles: self and inline (for Tailwind/styled components)
+      "style-src 'self' 'unsafe-inline'",
+      // Images: self, data URIs, and common CDNs
+      "img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com",
+      // Fonts: self and common font providers
+      "font-src 'self' data:",
+      // Connect: API endpoints and services
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://api.stripe.com",
+      // Frames: only allow Stripe checkout
+      "frame-src 'self' https://*.stripe.com https://js.stripe.com",
+      // Frame ancestors: prevent clickjacking
+      "frame-ancestors 'self'",
+      // Form actions: only to self
+      "form-action 'self'",
+      // Base URI: only self
+      "base-uri 'self'",
+      // Object src: none (block plugins)
+      "object-src 'none'",
+      // Upgrade insecure requests in production
+      ...(isDev ? [] : ['upgrade-insecure-requests']),
+    ]
+
+    const contentSecurityPolicy = cspDirectives.join('; ')
+
     return [
       {
         source: '/:path*',
@@ -54,6 +86,10 @@ const nextConfig = {
           {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: contentSecurityPolicy,
           },
         ],
       },
