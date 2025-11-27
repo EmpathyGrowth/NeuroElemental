@@ -71,9 +71,13 @@ class Logger {
         message: entry.message,
         timestamp: entry.timestamp,
         user_id: entry.user_id ?? null,
-        metadata: entry.context ?? null,
-        category: null,
+        context: entry.context ?? null,
         error: entry.error ? { name: entry.error.name, message: entry.error.message, stack: entry.stack } : null,
+        stack: entry.stack ?? null,
+        session_id: entry.session_id ?? null,
+        browser: entry.browser ?? null,
+        url: entry.url ?? null,
+        environment: entry.environment ?? 'development',
       }));
       await this.supabase
         .from('logs')

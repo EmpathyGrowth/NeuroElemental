@@ -57,8 +57,8 @@ const nextConfig = {
       "img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com",
       // Fonts: self and common font providers
       "font-src 'self' data:",
-      // Connect: API endpoints and services
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://api.stripe.com",
+      // Connect: API endpoints and services (includes Iconify for icon loading)
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://api.stripe.com https://api.iconify.design https://api.unisvg.com https://api.simplesvg.com",
       // Frames: only allow Stripe checkout
       "frame-src 'self' https://*.stripe.com https://js.stripe.com",
       // Frame ancestors: prevent clickjacking
