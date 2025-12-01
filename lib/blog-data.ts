@@ -20,21 +20,24 @@ export interface BlogPost {
   };
 }
 
+// Default author for all blog posts
+const defaultAuthor = {
+  name: "Jannik Laursen",
+  avatar: "/images/avatars/jannik-laursen.jpg",
+  bio: "Founder of NeuroElemental, dedicated to helping neurodivergent minds understand and optimize their unique energy patterns."
+};
+
 export const blogPosts: BlogPost[] = [
   {
     slug: "adhd-burnout-energy-perspective",
     title: "ADHD Burnout: An Energy Perspective",
     excerpt: "Why traditional advice about burnout doesn't work for ADHD brains—and what actually helps. Understanding the 0-to-300 pattern and sustainable energy management.",
     category: "Neurodivergence",
-    author: {
-      name: "Dr. Sarah Chen",
-      avatar: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=200",
-      bio: "Neuroscience researcher and energy management specialist focusing on neurodivergent populations."
-    },
+    author: defaultAuthor,
     date: "2024-11-15",
     readTime: "8 min read",
     featured: true,
-    image: "https://images.unsplash.com/photo-1559305616-3f99cd43e353?auto=format&fit=crop&w=1200&q=80",
+    image: "/images/blog/adhd-burnout.svg",
     content: {
       sections: [
         {
@@ -73,105 +76,77 @@ export const blogPosts: BlogPost[] = [
     title: "The 3 Types of Regeneration Every Person Needs",
     excerpt: "Physical rest isn't enough. Learn about the three essential types of regeneration and why you need all of them to avoid burnout.",
     category: "Energy Management",
-    author: {
-      name: "Dr. Sarah Chen",
-      avatar: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=200",
-      bio: "Neuroscience researcher and energy management specialist focusing on neurodivergent populations."
-    },
+    author: defaultAuthor,
     date: "2024-11-10",
     readTime: "6 min read",
     featured: false,
-    image: "https://images.pexels.com/photos/3822843/pexels-photo-3822843.jpeg?auto=compress&cs=tinysrgb&w=800"
+    image: "/images/blog/three-types-regeneration.svg"
   },
   {
     slug: "personality-tests-fall-short",
     title: "Why Traditional Personality Tests Fall Short",
     excerpt: "MBTI, Enneagram, Big 5—they all miss something crucial. Here's what standard personality frameworks don't account for.",
     category: "Framework Guide",
-    author: {
-      name: "Marcus Rivera",
-      avatar: "https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&w=200",
-      bio: "Psychology researcher specializing in individual differences and assessment methodology."
-    },
+    author: defaultAuthor,
     date: "2024-11-05",
     readTime: "7 min read",
     featured: false,
-    image: "https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=800"
+    image: "/images/blog/personality-tests.svg"
   },
   {
     slug: "understanding-sensory-processing",
     title: "Understanding Your Sensory Processing Needs",
     excerpt: "Why some people need silence to focus while others need background noise. A deep dive into sensory processing differences.",
     category: "Neurodivergence",
-    author: {
-      name: "Dr. Sarah Chen",
-      avatar: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=200",
-      bio: "Neuroscience researcher and energy management specialist focusing on neurodivergent populations."
-    },
+    author: defaultAuthor,
     date: "2024-10-28",
     readTime: "9 min read",
     featured: false,
-    image: "https://images.pexels.com/photos/3771115/pexels-photo-3771115.jpeg?auto=compress&cs=tinysrgb&w=800"
+    image: "/images/blog/sensory-processing.svg"
   },
   {
     slug: "supporting-elements-in-conflict",
     title: "How to Support Each Element in Conflict",
     excerpt: "Different elements need different things when stressed. Learn how to recognize and respond to conflict across the spectrum.",
     category: "Relationships",
-    author: {
-      name: "Jamie Torres",
-      avatar: "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=200",
-      bio: "Relationship therapist and conflict resolution specialist working with neurodivergent couples."
-    },
+    author: defaultAuthor,
     date: "2024-10-20",
     readTime: "10 min read",
     featured: false,
-    image: "https://images.pexels.com/photos/5699456/pexels-photo-5699456.jpeg?auto=compress&cs=tinysrgb&w=800"
+    image: "/images/blog/elements-conflict.svg"
   },
   {
     slug: "science-behind-elements",
     title: "The Science Behind the Elements",
     excerpt: "Neurotransmitters, genetics, and sensory processing—the research foundations of the NeuroElemental framework.",
     category: "Science",
-    author: {
-      name: "Dr. Sarah Chen",
-      avatar: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=200",
-      bio: "Neuroscience researcher and energy management specialist focusing on neurodivergent populations."
-    },
+    author: defaultAuthor,
     date: "2024-10-15",
     readTime: "12 min read",
     featured: false,
-    image: "https://images.pexels.com/photos/3825517/pexels-photo-3825517.jpeg?auto=compress&cs=tinysrgb&w=800"
+    image: "/images/blog/science-elements.svg"
   },
   {
     slug: "neurodivergence-energy-management",
     title: "Neurodivergence and Energy Management",
     excerpt: "How ADHD, autism, and other neurodivergent traits affect your energy patterns—and what to do about it.",
     category: "Neurodivergence",
-    author: {
-      name: "Dr. Sarah Chen",
-      avatar: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=200",
-      bio: "Neuroscience researcher and energy management specialist focusing on neurodivergent populations."
-    },
+    author: defaultAuthor,
     date: "2024-10-08",
     readTime: "11 min read",
     featured: false,
-    image: "https://images.pexels.com/photos/3760607/pexels-photo-3760607.jpeg?auto=compress&cs=tinysrgb&w=800"
+    image: "/images/blog/neurodivergence-energy.svg"
   },
   {
     slug: "relationships-across-elements",
     title: "Building Relationships Across Different Elements",
     excerpt: "What happens when an Electric person partners with a Grounded one? Understanding and honoring elemental differences in relationships.",
     category: "Relationships",
-    author: {
-      name: "Jamie Torres",
-      avatar: "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=200",
-      bio: "Relationship therapist and conflict resolution specialist working with neurodivergent couples."
-    },
+    author: defaultAuthor,
     date: "2024-10-01",
     readTime: "8 min read",
     featured: false,
-    image: "https://images.pexels.com/photos/4629631/pexels-photo-4629631.jpeg?auto=compress&cs=tinysrgb&w=800"
+    image: "/images/blog/relationships-elements.svg"
   }
 ];
 

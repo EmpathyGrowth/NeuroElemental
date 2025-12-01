@@ -10,7 +10,7 @@ import {
   notFoundError,
   validateRequest,
 } from '@/lib/api';
-import { quizRepository } from '@/lib/db';
+import { quizRepository, type QuizQuestion } from '@/lib/db';
 import { z } from 'zod';
 
 type QuizParams = { id: string };
@@ -48,7 +48,7 @@ export const POST = createAuthenticatedRoute<QuizParams>(
     );
 
     // Get correct answers for feedback (only after submission)
-    const feedback = quiz.questions.map((q) => ({
+    const feedback = quiz.questions.map((q: QuizQuestion) => ({
       question_id: q.id,
       question: q.question,
       user_answer: answers[q.id],

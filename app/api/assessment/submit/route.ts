@@ -1,97 +1,132 @@
-import { badRequestError, createOptionalAuthRoute, successResponse, validateRequest } from '@/lib/api';
-import { getSupabaseServer } from '@/lib/db';
-import { logger } from '@/lib/logging';
-import { rateLimit } from '@/lib/rate-limit';
-import { getCompletionTimestamp } from '@/lib/utils';
-import { assessmentAnswersSchema } from '@/lib/validation/schemas';
+import {
+  badRequestError,
+  createOptionalAuthRoute,
+  successResponse,
+  validateRequest,
+} from "@/lib/api";
+import {
+  calculateAssessmentResult,
+  validateAnswers,
+} from "@/lib/content/assessment-questions";
+import { getSupabaseServer } from "@/lib/db";
+import { checkAssessmentAchievement } from "@/lib/gamification/achievement-service";
+import { logger } from "@/lib/logging";
+import { rateLimit } from "@/lib/rate-limit";
+import { getCurrentTimestamp } from "@/lib/utils";
+import { z } from "zod";
 
-/** Assessment result insert data */
-interface AssessmentInsert {
-  user_id: string;
-  element_scores: Record<string, number>;
-  top_element: string;
-  personality_traits: Record<string, number>;
-  completed_at: string;
-}
-
-// Element mapping (must match the frontend)
-const questionsMap: Record<number, string> = {
-  1: "electric", 7: "electric", 13: "electric", 19: "electric", 25: "electric",
-  2: "fiery", 8: "fiery", 14: "fiery", 20: "fiery", 26: "fiery",
-  3: "aquatic", 9: "aquatic", 15: "aquatic", 21: "aquatic", 27: "aquatic",
-  4: "earthly", 10: "earthly", 16: "earthly", 22: "earthly", 28: "earthly",
-  5: "airy", 11: "airy", 17: "airy", 23: "airy", 29: "airy",
-  6: "metallic", 12: "metallic", 18: "metallic", 24: "metallic", 30: "metallic",
-};
+/**
+ * Validation schema for assessment submission
+ * Supports both old 30-question format and new 36-question format
+ */
+const assessmentSubmitSchema = z.object({
+  answers: z
+    .record(z.string().regex(/^\d+$/), z.number().int().min(1).max(5))
+    .refine(
+      (answers) => {
+        const keys = Object.keys(answers).map(Number);
+        // Must have at least 30 questions answered (backwards compatibility)
+        return keys.length >= 30;
+      },
+      { message: `At least 30 questions must be answered` }
+    ),
+});
 
 export const POST = createOptionalAuthRoute(async (request, _context, user) => {
-  const ip = request.headers.get('x-forwarded-for') || 'unknown';
-  const { success } = rateLimit(ip, { limit: 5, windowMs: 60 * 1000 }); // 5 requests per minute
+  const ip = request.headers.get("x-forwarded-for") || "unknown";
+  const { success } = rateLimit(ip, { limit: 5, windowMs: 60 * 1000 });
 
   if (!success) {
-    throw badRequestError('Too many requests. Please try again later.');
+    throw badRequestError("Too many requests. Please try again later.");
   }
 
   // Validate input
-  const validation = await validateRequest(request, assessmentAnswersSchema);
+  const validation = await validateRequest(request, assessmentSubmitSchema);
   if (!validation.success) {
     throw validation.error;
   }
 
-  const { answers } = validation.data;
+  const { answers: rawAnswers } = validation.data;
 
-  // Calculate scores
-  const scores: Record<string, number> = {
-    electric: 0,
-    fiery: 0,
-    aquatic: 0,
-    earthly: 0,
-    airy: 0,
-    metallic: 0,
-  };
-
-  Object.entries(answers).forEach(([questionId, rating]) => {
-    const element = questionsMap[parseInt(questionId)];
-    if (element) {
-      scores[element] += rating;
-    }
+  // Convert string keys to numbers
+  const answers: Record<number, number> = {};
+  Object.entries(rawAnswers).forEach(([key, value]) => {
+    answers[parseInt(key)] = value;
   });
 
-  // Convert to percentages
-  const percentages: Record<string, number> = {};
-  Object.entries(scores).forEach(([element, score]) => {
-    // Max score per element is 5 questions * 5 points = 25
-    percentages[element] = Math.round((score / 25) * 100);
+  // Validate answers
+  const answerValidation = validateAnswers(answers);
+
+  // For backwards compatibility, allow 30-question submissions
+  // but use the new system for 36-question submissions
+  const isNewFormat = Object.keys(answers).some((k) => parseInt(k) > 30);
+
+  if (isNewFormat && !answerValidation.valid) {
+    logger.warn("Invalid assessment submission", {
+      missingQuestions: answerValidation.missingQuestions,
+      invalidAnswers: answerValidation.invalidAnswers,
+    });
+  }
+
+  // Calculate comprehensive result
+  const result = calculateAssessmentResult(answers);
+
+  // Extract percentage scores for backwards compatibility
+  const percentageScores: Record<string, number> = {};
+  Object.entries(result.scores).forEach(([element, score]) => {
+    percentageScores[element] = score.percentage;
   });
 
   // Save to database if user is authenticated
   if (user) {
     const supabase = getSupabaseServer();
-    // Determine the top element
-    const topElement = Object.entries(percentages).reduce(
-      (a, b) => (percentages[a[0]] > percentages[b[0]] ? a : b)
-    )[0];
 
-    const assessmentData: AssessmentInsert = {
+    const assessmentData = {
       user_id: user.id,
-      element_scores: percentages,
-      top_element: topElement,
-      personality_traits: answers,
-      ...getCompletionTimestamp(),
+      scores: percentageScores,
+      answers: answers,
+      version: isNewFormat ? "2.0" : "1.0",
+      completed_at: getCurrentTimestamp(),
+      // Extended data for v2
+      ...(isNewFormat && {
+        top_elements: result.topElements,
+        energy_type: result.energyType,
+        blend_type: result.patterns.blendType,
+        validity_score: result.validity.responseConsistency,
+        patterns: result.patterns,
+        shadow_indicators: result.shadowIndicators,
+      }),
     };
 
-    const { error } = await supabase
-      .from('assessment_results')
-      .insert(assessmentData) as { error: { message: string } | null };
+    const { error } = await supabase.from("assessments").insert(assessmentData);
 
     if (error) {
-      logger.error('Error saving assessment', new Error(error.message));
+      logger.error("Error saving assessment", new Error(error.message));
+    } else {
+      // Check assessment achievement (async, don't block response)
+      checkAssessmentAchievement(user.id).catch((err) => {
+        logger.error("Error checking assessment achievement:", err as Error);
+      });
     }
   }
 
+  // Return comprehensive response
   return successResponse({
     success: true,
-    scores: percentages,
+    // Legacy format (percentage numbers)
+    scores: percentageScores,
+    // New comprehensive format
+    result: {
+      scores: result.scores,
+      topElements: result.topElements,
+      energyType: result.energyType,
+      patterns: result.patterns,
+      validity: result.validity,
+      shadowIndicators: result.shadowIndicators,
+    },
+    // Shortcuts for easy access
+    patterns: result.patterns,
+    validity: result.validity,
+    topElements: result.topElements,
   });
 });
-

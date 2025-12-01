@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <defs>
+    <linearGradient id="bg4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f857a6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff5858;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg4)"/>
+  <circle cx="600" cy="350" r="150" fill="none" stroke="#fff" stroke-width="4" opacity="0.3"/>
+  <circle cx="600" cy="350" r="100" fill="none" stroke="#fff" stroke-width="3" opacity="0.4"/>
+  <circle cx="600" cy="350" r="50" fill="#fff" opacity="0.2"/>
+  <path d="M600 200 L600 100" stroke="#fff" stroke-width="3" opacity="0.5"/>
+  <path d="M750 350 L850 350" stroke="#fff" stroke-width="3" opacity="0.5"/>
+  <path d="M600 500 L600 600" stroke="#fff" stroke-width="3" opacity="0.5"/>
+  <path d="M450 350 L350 350" stroke="#fff" stroke-width="3" opacity="0.5"/>
+  <text x="600" y="680" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="#fff" opacity="0.9">Sensory Processing</text>
+</svg>

@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/components/auth/auth-provider';
-import { Loader2 } from 'lucide-react';
+import { useAuth } from "@/components/auth/auth-provider";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 export default function DashboardLayout({
   children,
@@ -12,20 +12,21 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [hasChecked, setHasChecked] = useState(false);
+  const redirectAttempted = useRef(false);
 
   useEffect(() => {
-    // Only check once auth loading is complete
-    if (!loading) {
-      if (!user && !hasChecked) {
-        setHasChecked(true);
-        // Use router.push for cleaner navigation
-        router.push('/auth/login');
-      }
+    // Only redirect once per mount when not authenticated
+    if (!loading && !user && !redirectAttempted.current) {
+      redirectAttempted.current = true;
+      router.replace("/auth/login");
     }
-  }, [user, loading, hasChecked, router]);
+    // Reset when user becomes authenticated (allows future logouts to redirect)
+    if (user) {
+      redirectAttempted.current = false;
+    }
+  }, [user, loading, router]);
 
-  // Show loading only during initial auth check
+  // Show loading during initial auth check
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -37,7 +38,7 @@ export default function DashboardLayout({
     );
   }
 
-  // If no user after loading completes, show redirecting message
+  // If no user after loading complete, show redirect message
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -49,9 +50,5 @@ export default function DashboardLayout({
     );
   }
 
-  return (
-    <div className="pt-20 md:pt-24">
-      {children}
-    </div>
-  );
+  return <div>{children}</div>;
 }

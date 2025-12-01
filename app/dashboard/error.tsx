@@ -1,0 +1,21 @@
+"use client";
+
+import { DashboardError } from "@/components/dashboard/dashboard-error";
+
+export default function DashboardRootError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <DashboardError
+      error={error}
+      reset={reset}
+      title="Dashboard Error"
+      backHref="/"
+      backLabel="Go to Home"
+    />
+  );
+}

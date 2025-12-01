@@ -1,26 +1,37 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Skeleton } from '@/components/ui/skeleton';
+import { AdminPageHeader } from "@/components/dashboard/admin-page-header";
+import { AdminPageShell } from "@/components/dashboard/admin-page-shell";
+import { LazyWYSIWYG } from "@/components/editor/lazy-wysiwyg";
+import { ImageUpload } from "@/components/forms/image-upload";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Loader2, Save, ArrowLeft, Trash2 } from 'lucide-react';
-import Link from 'next/link';
-import { useAsync } from '@/hooks/use-async';
-import { toast } from 'sonner';
-import { logger } from '@/lib/logging';
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { useAsync } from "@/hooks/use-async";
+import { logger } from "@/lib/logging";
+import { ArrowLeft, Loader2, Save, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface EventData {
   id: string;
@@ -42,46 +53,50 @@ interface EventData {
 }
 
 const eventTypes = [
-  { value: 'online_workshop', label: 'Online Workshop' },
-  { value: 'in_person_workshop', label: 'In-Person Workshop' },
-  { value: 'webinar', label: 'Webinar' },
-  { value: 'conference', label: 'Conference' },
+  { value: "online_workshop", label: "Online Workshop" },
+  { value: "in_person_workshop", label: "In-Person Workshop" },
+  { value: "webinar", label: "Webinar" },
+  { value: "conference", label: "Conference" },
 ];
 
-const timezones = ['PST', 'MST', 'CST', 'EST', 'GMT', 'CET', 'JST', 'AEST'];
+const timezones = ["PST", "MST", "CST", "EST", "GMT", "CET", "JST", "AEST"];
 
 export default function EditEventPage() {
   const router = useRouter();
   const params = useParams();
   const eventId = params.id as string;
 
-  const { data: event, loading: loadingEvent, execute: fetchEvent } = useAsync<EventData>();
+  const {
+    data: event,
+    loading: loadingEvent,
+    execute: fetchEvent,
+  } = useAsync<EventData>();
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   // Form state
-  const [title, setTitle] = useState('');
-  const [slug, setSlug] = useState('');
-  const [description, setDescription] = useState('');
-  const [eventType, setEventType] = useState('online_workshop');
-  const [startDate, setStartDate] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [timezone, setTimezone] = useState('PST');
-  const [priceUsd, setPriceUsd] = useState('');
-  const [capacity, setCapacity] = useState('');
-  const [locationName, setLocationName] = useState('');
-  const [locationAddress, setLocationAddress] = useState('');
-  const [onlineMeetingUrl, setOnlineMeetingUrl] = useState('');
-  const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+  const [description, setDescription] = useState("");
+  const [eventType, setEventType] = useState("online_workshop");
+  const [startDate, setStartDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [timezone, setTimezone] = useState("PST");
+  const [priceUsd, setPriceUsd] = useState("");
+  const [capacity, setCapacity] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [locationAddress, setLocationAddress] = useState("");
+  const [onlineMeetingUrl, setOnlineMeetingUrl] = useState("");
+  const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [isPublished, setIsPublished] = useState(false);
 
   useEffect(() => {
     if (eventId) {
       fetchEvent(async () => {
         const res = await fetch(`/api/events/${eventId}`);
-        if (!res.ok) throw new Error('Failed to fetch event');
+        if (!res.ok) throw new Error("Failed to fetch event");
         return res.json();
       });
     }
@@ -90,28 +105,32 @@ export default function EditEventPage() {
   // Populate form when event data loads
   useEffect(() => {
     if (event) {
-      setTitle(event.title || '');
-      setSlug(event.slug || '');
-      setDescription(event.description || '');
-      setEventType(event.event_type || 'online_workshop');
-      setTimezone(event.timezone || 'PST');
+      setTitle(event.title || "");
+      setSlug(event.slug || "");
+      setDescription(event.description || "");
+      setEventType(event.event_type || "online_workshop");
+      setTimezone(event.timezone || "PST");
       setPriceUsd(String(event.price_usd || 0));
-      setCapacity(event.capacity ? String(event.capacity) : '');
-      setLocationName(event.location_name || '');
-      setLocationAddress(event.location_address ? JSON.stringify(event.location_address, null, 2) : '');
-      setOnlineMeetingUrl(event.online_meeting_url || '');
-      setThumbnailUrl(event.thumbnail_url || '');
+      setCapacity(event.capacity ? String(event.capacity) : "");
+      setLocationName(event.location_name || "");
+      setLocationAddress(
+        event.location_address
+          ? JSON.stringify(event.location_address, null, 2)
+          : ""
+      );
+      setOnlineMeetingUrl(event.online_meeting_url || "");
+      setThumbnailUrl(event.thumbnail_url || "");
       setIsPublished(event.is_published || false);
 
       // Parse datetime
       if (event.start_datetime) {
         const startDt = new Date(event.start_datetime);
-        setStartDate(startDt.toISOString().split('T')[0]);
+        setStartDate(startDt.toISOString().split("T")[0]);
         setStartTime(startDt.toTimeString().slice(0, 5));
       }
       if (event.end_datetime) {
         const endDt = new Date(event.end_datetime);
-        setEndDate(endDt.toISOString().split('T')[0]);
+        setEndDate(endDt.toISOString().split("T")[0]);
         setEndTime(endDt.toTimeString().slice(0, 5));
       }
     }
@@ -125,8 +144,8 @@ export default function EditEventPage() {
       const endDatetime = `${endDate}T${endTime}:00`;
 
       const response = await fetch(`/api/events/${eventId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
           slug,
@@ -138,7 +157,9 @@ export default function EditEventPage() {
           price_usd: parseFloat(priceUsd) || 0,
           capacity: capacity ? parseInt(capacity) : null,
           location_name: locationName || null,
-          location_address: locationAddress ? JSON.parse(locationAddress) : null,
+          location_address: locationAddress
+            ? JSON.parse(locationAddress)
+            : null,
           online_meeting_url: onlineMeetingUrl || null,
           thumbnail_url: thumbnailUrl || null,
           is_published: isPublished,
@@ -146,53 +167,57 @@ export default function EditEventPage() {
       });
 
       if (response.ok) {
-        toast.success('Event updated successfully');
-        router.push('/dashboard/admin/events');
+        toast.success("Event updated successfully");
+        router.push("/dashboard/admin/events");
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to update event');
+        toast.error(error.error || "Failed to update event");
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      logger.error('Error updating event:', err);
-      toast.error('Failed to update event');
+      logger.error("Error updating event:", err);
+      toast.error("Failed to update event");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this event? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
     setDeleting(true);
     try {
       const response = await fetch(`/api/events/${eventId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (response.ok) {
-        toast.success('Event deleted successfully');
-        router.push('/dashboard/admin/events');
+        toast.success("Event deleted successfully");
+        router.push("/dashboard/admin/events");
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to delete event');
+        toast.error(error.error || "Failed to delete event");
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      logger.error('Error deleting event:', err);
-      toast.error('Failed to delete event');
+      logger.error("Error deleting event:", err);
+      toast.error("Failed to delete event");
     } finally {
       setDeleting(false);
     }
   };
 
-  const isOnline = eventType === 'online_workshop' || eventType === 'webinar';
+  const isOnline = eventType === "online_workshop" || eventType === "webinar";
 
   if (loadingEvent) {
     return (
-      <div className="container mx-auto p-6 max-w-5xl">
+      <AdminPageShell>
         <div className="mb-8">
           <Skeleton className="h-10 w-32 mb-4" />
           <Skeleton className="h-10 w-64 mb-2" />
@@ -210,26 +235,34 @@ export default function EditEventPage() {
             </Card>
           ))}
         </div>
-      </div>
+      </AdminPageShell>
     );
   }
 
   if (!event) {
     return (
-      <div className="container mx-auto p-6 max-w-5xl">
+      <AdminPageShell>
         <div className="text-center py-12">
           <p className="text-muted-foreground mb-4">Event not found</p>
           <Button asChild>
             <Link href="/dashboard/admin/events">Back to Events</Link>
           </Button>
         </div>
-      </div>
+      </AdminPageShell>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-5xl">
-      <div className="mb-8">
+    <AdminPageShell>
+      <div className="mb-6">
+        <Breadcrumbs
+          items={[
+            { label: "Admin", href: "/dashboard/admin" },
+            { label: "Events", href: "/dashboard/admin/events" },
+            { label: event.title || "Edit Event" },
+          ]}
+          className="mb-4"
+        />
         <Link href="/dashboard/admin/events">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -238,29 +271,28 @@ export default function EditEventPage() {
         </Link>
       </div>
 
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Edit Event</h1>
-          <p className="text-muted-foreground">
-            Update event details and settings
-          </p>
-        </div>
-        <Button
-          variant="destructive"
-          onClick={handleDelete}
-          disabled={deleting || (event.spots_taken > 0)}
-        >
-          {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          <Trash2 className="w-4 h-4 mr-2" />
-          Delete Event
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="Edit Event"
+        description="Update event details and settings"
+        actions={
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={deleting || event.spots_taken > 0}
+          >
+            {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete Event
+          </Button>
+        }
+      />
 
       {event.spots_taken > 0 && (
         <Card className="mb-6 border-amber-500/50 bg-amber-500/10">
           <CardContent className="pt-6">
             <p className="text-amber-600 dark:text-amber-400">
-              This event has {event.spots_taken} registration(s). Deleting is disabled to protect attendee data.
+              This event has {event.spots_taken} registration(s). Deleting is
+              disabled to protect attendee data.
             </p>
           </CardContent>
         </Card>
@@ -271,7 +303,9 @@ export default function EditEventPage() {
         <Card className="glass-card">
           <CardHeader>
             <CardTitle>Event Details</CardTitle>
-            <CardDescription>Basic information about your event</CardDescription>
+            <CardDescription>
+              Basic information about your event
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -287,8 +321,8 @@ export default function EditEventPage() {
 
             <div className="space-y-2">
               <Label htmlFor="slug">URL Slug *</Label>
-              <div className="flex gap-2">
-                <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md text-sm text-muted-foreground bg-muted">
+              <div className="flex">
+                <span className="inline-flex items-center px-3 h-10 border border-r-0 border-input rounded-l-md text-sm text-muted-foreground bg-muted dark:bg-muted/50 dark:border-input/50">
                   /events/
                 </span>
                 <Input
@@ -296,7 +330,7 @@ export default function EditEventPage() {
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
                   placeholder="energy-reset-workshop"
-                  className="rounded-l-none"
+                  className="rounded-l-none flex-1"
                   required
                 />
               </div>
@@ -304,12 +338,10 @@ export default function EditEventPage() {
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+              <LazyWYSIWYG
+                content={description}
+                onChange={setDescription}
                 placeholder="A brief overview of the event..."
-                rows={4}
               />
             </div>
 
@@ -320,7 +352,7 @@ export default function EditEventPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {eventTypes.map(type => (
+                  {eventTypes.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
                     </SelectItem>
@@ -393,8 +425,10 @@ export default function EditEventPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {timezones.map(tz => (
-                    <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                  {timezones.map((tz) => (
+                    <SelectItem key={tz} value={tz}>
+                      {tz}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -407,7 +441,9 @@ export default function EditEventPage() {
           <CardHeader>
             <CardTitle>Location</CardTitle>
             <CardDescription>
-              {isOnline ? 'Online meeting details' : 'Physical location details'}
+              {isOnline
+                ? "Online meeting details"
+                : "Physical location details"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -458,14 +494,16 @@ export default function EditEventPage() {
         <Card className="glass-card">
           <CardHeader>
             <CardTitle>Pricing & Capacity</CardTitle>
-            <CardDescription>Set ticket price and attendee limits</CardDescription>
+            <CardDescription>
+              Set ticket price and attendee limits
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="priceUsd">Ticket Price (USD) *</Label>
-                <div className="flex gap-2">
-                  <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md text-sm text-muted-foreground bg-muted">
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 h-10 border border-r-0 border-input rounded-l-md text-sm text-muted-foreground bg-muted dark:bg-muted/50 dark:border-input/50">
                     $
                   </span>
                   <Input
@@ -476,7 +514,7 @@ export default function EditEventPage() {
                     placeholder="47"
                     min="0"
                     step="1"
-                    className="rounded-l-none"
+                    className="rounded-l-none flex-1"
                     required
                   />
                 </div>
@@ -496,7 +534,8 @@ export default function EditEventPage() {
                   min="1"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Leave blank for unlimited. Current registrations: {event.spots_taken}
+                  Leave blank for unlimited. Current registrations:{" "}
+                  {event.spots_taken}
                 </p>
               </div>
             </div>
@@ -511,27 +550,18 @@ export default function EditEventPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="thumbnailUrl">Thumbnail Image URL</Label>
-              <Input
-                id="thumbnailUrl"
+              <Label>Thumbnail Image</Label>
+              <ImageUpload
                 value={thumbnailUrl}
-                onChange={(e) => setThumbnailUrl(e.target.value)}
-                placeholder="https://example.com/event-image.jpg"
+                onChange={(url) => setThumbnailUrl(url || "")}
+                category="events"
+                aspectRatio="video"
+                placeholder="Upload event thumbnail"
               />
+              <p className="text-xs text-muted-foreground">
+                Recommended size: 1280x720 (16:9 aspect ratio)
+              </p>
             </div>
-            {thumbnailUrl && (
-              <div className="mt-4">
-                <p className="text-sm text-muted-foreground mb-2">Preview:</p>
-                <img
-                  src={thumbnailUrl}
-                  alt="Thumbnail preview"
-                  className="max-w-xs rounded-lg border"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -567,7 +597,15 @@ export default function EditEventPage() {
           </Link>
           <Button
             onClick={handleSubmit}
-            disabled={saving || !title || !slug || !startDate || !startTime || !endDate || !endTime}
+            disabled={
+              saving ||
+              !title ||
+              !slug ||
+              !startDate ||
+              !startTime ||
+              !endDate ||
+              !endTime
+            }
             className="bg-gradient-to-r from-primary to-[#764BA2]"
           >
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -576,6 +614,6 @@ export default function EditEventPage() {
           </Button>
         </div>
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

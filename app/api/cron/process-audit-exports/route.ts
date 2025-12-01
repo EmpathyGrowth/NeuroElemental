@@ -5,10 +5,7 @@
 
 import { createCronRoute, successResponse, internalError } from '@/lib/api'
 import { getSupabaseServer } from '@/lib/db/supabase-server'
-import { logger } from '@/lib/logging'
-import { getAppUrl } from '@/lib/utils'
-
-export const dynamic = 'force-dynamic'
+import { logger } from '@/lib/logging/logger'
 
 /**
  * GET /api/cron/process-audit-exports
@@ -16,8 +13,7 @@ export const dynamic = 'force-dynamic'
  */
 export const GET = createCronRoute(async (request) => {
   const supabase = getSupabaseServer()
-  // Safe to use non-null assertion here - createCronRoute validates x-cron-secret before calling handler
-  const cronSecret = request.headers.get('x-cron-secret') ?? ''
+  const cronSecret = request.headers.get('x-cron-secret')!
 
   // Find all pending jobs
   const { data: pendingJobs, error: fetchError } = await supabase
@@ -39,15 +35,12 @@ export const GET = createCronRoute(async (request) => {
     })
   }
 
-  // Get required environment variables
-  const appUrl = getAppUrl()
-
   // Process each job
   const results = []
   for (const job of pendingJobs) {
     try {
       // Call the process endpoint for this job
-      const processUrl = `${appUrl}/api/organizations/${job.organization_id}/audit/export/${job.id}/process`
+      const processUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/organizations/${job.organization_id}/audit/export/${job.id}/process`
 
       const response = await fetch(processUrl, {
         method: 'POST',

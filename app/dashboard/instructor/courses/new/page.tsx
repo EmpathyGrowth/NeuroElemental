@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logging';
 import { useAuth } from '@/components/auth/auth-provider';
+import { LazyWYSIWYG } from '@/components/editor/lazy-wysiwyg';
 
 const categories = [
   'Energy Management',
@@ -141,8 +142,8 @@ export default function InstructorNewCoursePage() {
 
             <div className="space-y-2">
               <Label htmlFor="slug">URL Slug *</Label>
-              <div className="flex gap-2">
-                <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md text-sm text-muted-foreground bg-muted">
+              <div className="flex">
+                <span className="inline-flex items-center px-3 h-10 border border-r-0 border-input rounded-l-md text-sm text-muted-foreground bg-muted dark:bg-muted/50 dark:border-input/50">
                   /courses/
                 </span>
                 <Input
@@ -150,7 +151,7 @@ export default function InstructorNewCoursePage() {
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
                   placeholder="energy-management-fundamentals"
-                  className="rounded-l-none"
+                  className="rounded-l-none flex-1"
                   required
                 />
               </div>
@@ -179,12 +180,10 @@ export default function InstructorNewCoursePage() {
 
             <div className="space-y-2">
               <Label htmlFor="longDescription">Full Description</Label>
-              <Textarea
-                id="longDescription"
-                value={longDescription}
-                onChange={(e) => setLongDescription(e.target.value)}
-                placeholder="Detailed description for the course page..."
-                rows={6}
+              <LazyWYSIWYG
+                content={longDescription}
+                onChange={setLongDescription}
+                placeholder="Write a detailed description for the course page..."
               />
             </div>
           </CardContent>

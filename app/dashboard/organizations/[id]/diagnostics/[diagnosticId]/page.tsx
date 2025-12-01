@@ -49,7 +49,7 @@ import Link from 'next/link';
 import { useAsync } from '@/hooks/use-async';
 import { formatDate } from '@/lib/utils';
 import { logger } from '@/lib/logging';
-import type { DiagnosticWithTemplate, DiagnosticResponse, DiagnosticType } from '@/lib/db';
+import type { DiagnosticWithTemplate, DiagnosticResponse, DiagnosticType, DiagnosticStatus } from '@/lib/db';
 
 interface DiagnosticData {
   diagnostic: DiagnosticWithTemplate;
@@ -77,7 +77,7 @@ const diagnosticColors: Record<DiagnosticType, string> = {
   custom: 'text-gray-500',
 };
 
-const statusConfig = {
+const statusConfig: Record<DiagnosticStatus, { label: string; color: string; icon: typeof Clock }> = {
   draft: { label: 'Draft', color: 'bg-gray-500/10 text-gray-500', icon: Clock },
   active: { label: 'Active', color: 'bg-blue-500/10 text-blue-500', icon: Play },
   in_progress: { label: 'In Progress', color: 'bg-amber-500/10 text-amber-500', icon: Clock },
@@ -508,7 +508,7 @@ export default function DiagnosticViewPage() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-4">
-              {diagnostic.insights.map((insight, index) => (
+              {diagnostic.insights.map((insight: unknown, index: number) => (
                 <li key={index} className="flex items-start gap-3">
                   <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-medium">
                     {index + 1}

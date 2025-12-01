@@ -210,7 +210,6 @@ export default function InvoicesHistoryPage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9"
-                    aria-label="Search invoices"
                   />
                 </div>
               </div>

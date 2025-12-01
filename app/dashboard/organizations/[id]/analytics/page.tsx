@@ -1,108 +1,126 @@
-'use client'
+"use client";
 
 /**
  * Analytics Dashboard Page
  * Display organization usage statistics and charts
  */
 
-import { logger } from '@/lib/logging'
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Progress } from '@/components/ui/progress'
-import { toast } from 'sonner'
+} from "@/components/ui/select";
+import { StatsCard, StatsCardGrid } from "@/components/ui/stats-card";
+import { useToast } from "@/components/ui/use-toast";
+import { logger } from "@/lib/logging/logger";
+import { formatDistanceToNow } from "date-fns";
 import {
   Activity,
-  TrendingUp,
-  Users,
-  Zap,
   AlertCircle,
   BarChart3,
   ChevronLeft,
-} from 'lucide-react'
+  TrendingUp,
+  Users,
+  Zap,
+} from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
-  LineChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts'
-import { formatDistanceToNow } from 'date-fns'
+} from "recharts";
 
 interface AnalyticsData {
   metrics: {
-    total_activities: number
-    api_calls: number
-    webhooks_sent: number
-    credits_used: number
-  }
+    total_activities: number;
+    api_calls: number;
+    webhooks_sent: number;
+    credits_used: number;
+  };
   activity_trend: Array<{
-    date: string
-    activities: number
-    api_calls: number
-  }>
+    date: string;
+    activities: number;
+    api_calls: number;
+  }>;
   most_active_users: Array<{
-    user_id: string
-    full_name: string
-    email: string
-    activity_count: number
-    last_active: string
-  }>
+    user_id: string;
+    full_name: string;
+    email: string;
+    activity_count: number;
+    last_active: string;
+  }>;
   system_health: {
-    error_rate: number
-    avg_response_time: number
-    uptime_percentage: number
-  }
+    error_rate: number;
+    avg_response_time: number;
+    uptime_percentage: number;
+  };
 }
 
 export default function AnalyticsPage() {
-  const params = useParams()
-  const router = useRouter()
-  const organizationId = params.id as string
+  const params = useParams();
+  const router = useRouter();
+  const { toast } = useToast();
+  const organizationId = params.id as string;
 
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [period, setPeriod] = useState<string>('7')
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(
+    null
+  );
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<string>("7");
 
   useEffect(() => {
-    fetchAnalytics()
-  }, [organizationId, period])
+    fetchAnalytics();
+  }, [organizationId, period]);
 
   const fetchAnalytics = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
       const res = await fetch(
         `/api/organizations/${organizationId}/analytics?days=${period}&view=overview`
-      )
+      );
 
       if (!res.ok) {
-        throw new Error('Failed to fetch analytics')
+        throw new Error("Failed to fetch analytics");
       }
 
-      const data = await res.json()
-      setAnalyticsData(data)
+      const data = await res.json();
+      setAnalyticsData(data);
     } catch (error) {
-      logger.error('Error fetching analytics', error instanceof Error ? error : undefined, { errorMsg: String(error) })
-      toast.error('Failed to load analytics data')
+      logger.error(
+        "Error fetching analytics",
+        error instanceof Error ? error : undefined,
+        { errorMsg: String(error) }
+      );
+      toast({
+        title: "Error",
+        description: "Failed to load analytics data",
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const formatNumber = (num: number) => {
-    return new Intl.NumberFormat().format(num)
-  }
+    return new Intl.NumberFormat().format(num);
+  };
 
   return (
     <div className="container mx-auto py-8 space-y-6">
@@ -111,7 +129,9 @@ export default function AnalyticsPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push(`/dashboard/organizations/${organizationId}`)}
+            onClick={() =>
+              router.push(`/dashboard/organizations/${organizationId}`)
+            }
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
             Back
@@ -142,7 +162,9 @@ export default function AnalyticsPage() {
       {loading ? (
         <Card>
           <CardContent className="py-8">
-            <p className="text-center text-muted-foreground">Loading analytics...</p>
+            <p className="text-center text-muted-foreground">
+              Loading analytics...
+            </p>
           </CardContent>
         </Card>
       ) : !analyticsData ? (
@@ -160,67 +182,36 @@ export default function AnalyticsPage() {
       ) : (
         <>
           {/* Key Metrics Cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Activities</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatNumber(analyticsData.metrics.total_activities)}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  User actions in the last {period} days
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">API Calls</CardTitle>
-                <Zap className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatNumber(analyticsData.metrics.api_calls)}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  API requests processed
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Webhooks Sent</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatNumber(analyticsData.metrics.webhooks_sent)}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Event notifications delivered
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Credits Used</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatNumber(analyticsData.metrics.credits_used)}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Credits consumed
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          <StatsCardGrid columns={4}>
+            <StatsCard
+              title="Total Activities"
+              value={formatNumber(analyticsData.metrics.total_activities)}
+              description={`User actions in the last ${period} days`}
+              icon={<Activity className="h-5 w-5" />}
+              accent="blue"
+            />
+            <StatsCard
+              title="API Calls"
+              value={formatNumber(analyticsData.metrics.api_calls)}
+              description="API requests processed"
+              icon={<Zap className="h-5 w-5" />}
+              accent="purple"
+            />
+            <StatsCard
+              title="Webhooks Sent"
+              value={formatNumber(analyticsData.metrics.webhooks_sent)}
+              description="Event notifications delivered"
+              icon={<TrendingUp className="h-5 w-5" />}
+              accent="green"
+            />
+            <StatsCard
+              title="Credits Used"
+              value={formatNumber(analyticsData.metrics.credits_used)}
+              description="Credits consumed"
+              icon={<Activity className="h-5 w-5" />}
+              accent="amber"
+            />
+          </StatsCardGrid>
 
           {/* Activity Trend Chart */}
           <Card>
@@ -238,14 +229,14 @@ export default function AnalyticsPage() {
                     dataKey="date"
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => {
-                      const date = new Date(value)
-                      return `${date.getMonth() + 1}/${date.getDate()}`
+                      const date = new Date(value);
+                      return `${date.getMonth() + 1}/${date.getDate()}`;
                     }}
                   />
                   <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip
                     labelFormatter={(value) => {
-                      return new Date(value).toLocaleDateString()
+                      return new Date(value).toLocaleDateString();
                     }}
                   />
                   <Legend />
@@ -296,12 +287,16 @@ export default function AnalyticsPage() {
                           {index + 1}
                         </div>
                         <div>
-                          <p className="font-medium">{user.full_name || user.email}</p>
+                          <p className="font-medium">
+                            {user.full_name || user.email}
+                          </p>
                           {user.full_name && (
-                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {user.email}
+                            </p>
                           )}
                           <p className="text-xs text-muted-foreground mt-1">
-                            Last active{' '}
+                            Last active{" "}
                             {formatDistanceToNow(new Date(user.last_active), {
                               addSuffix: true,
                             })}
@@ -309,8 +304,12 @@ export default function AnalyticsPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold">{formatNumber(user.activity_count)}</p>
-                        <p className="text-xs text-muted-foreground">activities</p>
+                        <p className="text-2xl font-bold">
+                          {formatNumber(user.activity_count)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          activities
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -344,33 +343,36 @@ export default function AnalyticsPage() {
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   {analyticsData.system_health.error_rate < 1
-                    ? 'Excellent'
+                    ? "Excellent"
                     : analyticsData.system_health.error_rate < 5
-                    ? 'Good'
-                    : 'Needs attention'}
+                      ? "Good"
+                      : "Needs attention"}
                 </p>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Average Response Time</span>
+                  <span className="text-sm font-medium">
+                    Average Response Time
+                  </span>
                   <span className="text-sm text-muted-foreground">
                     {analyticsData.system_health.avg_response_time.toFixed(0)}ms
                   </span>
                 </div>
                 <Progress
                   value={Math.min(
-                    (analyticsData.system_health.avg_response_time / 1000) * 100,
+                    (analyticsData.system_health.avg_response_time / 1000) *
+                      100,
                     100
                   )}
                   className="h-2"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   {analyticsData.system_health.avg_response_time < 200
-                    ? 'Excellent'
+                    ? "Excellent"
                     : analyticsData.system_health.avg_response_time < 500
-                    ? 'Good'
-                    : 'Needs improvement'}
+                      ? "Good"
+                      : "Needs improvement"}
                 </p>
               </div>
 
@@ -387,10 +389,10 @@ export default function AnalyticsPage() {
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   {analyticsData.system_health.uptime_percentage > 99.9
-                    ? 'Excellent'
+                    ? "Excellent"
                     : analyticsData.system_health.uptime_percentage > 99
-                    ? 'Good'
-                    : 'Needs attention'}
+                      ? "Good"
+                      : "Needs attention"}
                 </p>
               </div>
             </CardContent>
@@ -398,5 +400,5 @@ export default function AnalyticsPage() {
         </>
       )}
     </div>
-  )
+  );
 }

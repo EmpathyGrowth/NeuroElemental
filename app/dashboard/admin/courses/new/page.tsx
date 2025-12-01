@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { FormLabel } from '@/components/ui/form-label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import {
   Select,
   SelectContent,
@@ -19,6 +21,8 @@ import { Loader2, Save, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logging';
+import { LazyWYSIWYG } from '@/components/editor/lazy-wysiwyg';
+import { ImageUpload } from '@/components/forms/image-upload';
 
 const categories = [
   'Energy Management',
@@ -103,7 +107,15 @@ export default function NewCoursePage() {
 
   return (
     <div className="container mx-auto p-6 max-w-5xl">
-      <div className="mb-8">
+      <div className="mb-6">
+        <Breadcrumbs
+          items={[
+            { label: 'Admin', href: '/dashboard/admin' },
+            { label: 'Courses', href: '/dashboard/admin/courses' },
+            { label: 'New Course' },
+          ]}
+          className="mb-4"
+        />
         <Link href="/dashboard/admin/courses">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -128,7 +140,7 @@ export default function NewCoursePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
+              <FormLabel htmlFor="title" required>Title</FormLabel>
               <Input
                 id="title"
                 value={title}
@@ -139,9 +151,9 @@ export default function NewCoursePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="slug">URL Slug *</Label>
-              <div className="flex gap-2">
-                <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md text-sm text-muted-foreground bg-muted">
+              <FormLabel htmlFor="slug" required>URL Slug</FormLabel>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 h-10 border border-r-0 border-input rounded-l-md text-sm text-muted-foreground bg-muted dark:bg-muted/50 dark:border-input/50">
                   /courses/
                 </span>
                 <Input
@@ -149,7 +161,7 @@ export default function NewCoursePage() {
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
                   placeholder="energy-management-fundamentals"
-                  className="rounded-l-none"
+                  className="rounded-l-none flex-1"
                   required
                 />
               </div>
@@ -178,12 +190,10 @@ export default function NewCoursePage() {
 
             <div className="space-y-2">
               <Label htmlFor="longDescription">Full Description</Label>
-              <Textarea
-                id="longDescription"
-                value={longDescription}
-                onChange={(e) => setLongDescription(e.target.value)}
-                placeholder="Detailed description for the course page..."
-                rows={6}
+              <LazyWYSIWYG
+                content={longDescription}
+                onChange={setLongDescription}
+                placeholder="Write a detailed description for the course page..."
               />
             </div>
           </CardContent>
@@ -198,9 +208,9 @@ export default function NewCoursePage() {
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="priceUsd">Price (USD) *</Label>
-                <div className="flex gap-2">
-                  <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md text-sm text-muted-foreground bg-muted">
+                <FormLabel htmlFor="priceUsd" required>Price (USD)</FormLabel>
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 h-10 border border-r-0 border-input rounded-l-md text-sm text-muted-foreground bg-muted dark:bg-muted/50 dark:border-input/50">
                     $
                   </span>
                   <Input
@@ -211,7 +221,7 @@ export default function NewCoursePage() {
                     placeholder="97"
                     min="0"
                     step="0.01"
-                    className="rounded-l-none"
+                    className="rounded-l-none flex-1"
                     required
                   />
                 </div>
@@ -291,15 +301,19 @@ export default function NewCoursePage() {
             <CardTitle>Media</CardTitle>
             <CardDescription>Course images and preview video</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="thumbnailUrl">Thumbnail Image URL</Label>
-              <Input
-                id="thumbnailUrl"
+              <Label>Thumbnail Image</Label>
+              <ImageUpload
                 value={thumbnailUrl}
-                onChange={(e) => setThumbnailUrl(e.target.value)}
-                placeholder="https://example.com/course-thumbnail.jpg"
+                onChange={(url) => setThumbnailUrl(url || '')}
+                category="courses"
+                aspectRatio="video"
+                placeholder="Upload course thumbnail"
               />
+              <p className="text-xs text-muted-foreground">
+                Recommended size: 1280x720 (16:9 aspect ratio)
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -311,7 +325,7 @@ export default function NewCoursePage() {
                 placeholder="https://example.com/preview-video.mp4"
               />
               <p className="text-xs text-muted-foreground">
-                Optional preview video shown on course page
+                Optional preview video shown on course page (YouTube, Vimeo, or direct URL)
               </p>
             </div>
           </CardContent>

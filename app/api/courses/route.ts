@@ -3,59 +3,32 @@
  * Public course listing and admin course creation
  */
 
-import { createPublicRoute, createAdminRoute, formatPaginationMeta, getPaginationParams, getQueryParam, successResponse, validateRequest, internalError } from '@/lib/api';
-import { getSupabaseServer } from '@/lib/db';
-import { courseCreateSchema } from '@/lib/validation/schemas';
+import { createAdminRoute, createPublicRoute, formatPaginationMeta, getPaginationParams, getQueryParam, internalError, successResponse, validateRequest } from '@/lib/api';
+import { courseRepository, getSupabaseServer } from '@/lib/db';
 import { logger } from '@/lib/logging';
 import { getTimestampFields } from '@/lib/utils';
+import { courseCreateSchema } from '@/lib/validation/schemas';
 
 export const GET = createPublicRoute(async (request, _context) => {
-  const supabase = getSupabaseServer();
-
   const { limit, offset } = getPaginationParams(request, { limit: 12 });
+  const page = Math.floor(offset / limit) + 1;
+
   const category = getQueryParam(request, 'category');
   const search = getQueryParam(request, 'search');
   const level = getQueryParam(request, 'level');
 
-  let query = supabase
-    .from('courses')
-    .select(`
-      *,
-      instructor:profiles!courses_instructor_id_fkey(
-        id,
-        full_name,
-        avatar_url
-      ),
-      enrollments(count)
-    `, { count: 'exact' })
-    .eq('status', 'published');
-
-  // Apply filters
-  if (category) {
-    query = query.eq('category', category);
-  }
-
-  if (level) {
-    query = query.eq('level', level);
-  }
-
-  if (search) {
-    query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
-  }
-
-  query = query
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
-
-  const { data: courses, error, count } = await query;
-
-  if (error) {
-    throw error;
-  }
+  const result = await courseRepository.getCourses({
+    page,
+    limit,
+    category: category || undefined,
+    search: search || undefined,
+    level: level || undefined,
+    is_published: true
+  });
 
   return successResponse({
-    courses: courses || [],
-    pagination: formatPaginationMeta(count || 0, limit, offset)
+    courses: result.data,
+    pagination: formatPaginationMeta(result.total, limit, offset)
   });
 });
 
@@ -89,8 +62,8 @@ export const POST = createAdminRoute(async (request, _context, { userId }) => {
     .from('courses')
     .insert({
       ...courseData,
-      instructor_id: userId,
-      status: courseData.is_published ? 'published' : 'draft',
+      created_by: userId,
+      is_published: courseData.is_published ?? false,
       ...getTimestampFields(),
     })
     .select()

@@ -2,10 +2,12 @@ import { Footer } from '@/components/footer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { getElementData, getAllElementSlugs } from '@/lib/elements-data';
-import { BatteryFull, BatteryLow, Zap, MessageCircle } from 'lucide-react';
+import { BatteryFull, BatteryLow, Zap, MessageCircle, Moon, Brain, Sparkles, TrendingUp, Home } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ElementIcon } from '@/components/icons/element-icon';
+import { StateTracker } from '@/components/framework/state-tracker';
+import { RegenerationGuide } from '@/components/framework/regeneration-guide';
 
 export async function generateStaticParams() {
   return getAllElementSlugs().map((slug) => ({
@@ -157,6 +159,33 @@ export default async function ElementPage({ params }: { params: Promise<{ slug: 
                 </ul>
               </Card>
             </div>
+
+            {/* Shadow Side */}
+            {element.shadowTraits && element.shadowDescription && (
+              <Card className="mt-8 p-8 glass-card border-border/50 bg-slate-900/50">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center">
+                    <Moon className="w-6 h-6 text-slate-300" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground">
+                    The Shadow Side
+                  </h3>
+                </div>
+                <p className="text-muted-foreground mb-6 leading-relaxed">
+                  {element.shadowDescription}
+                </p>
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {element.shadowTraits.map((trait, index) => (
+                    <div
+                      key={index}
+                      className="px-4 py-2 rounded-lg bg-slate-800/50 border border-slate-700/50 text-sm text-slate-300"
+                    >
+                      {trait}
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
           </div>
         </section>
 
@@ -265,6 +294,134 @@ export default async function ElementPage({ params }: { params: Promise<{ slug: 
             </Card>
           </div>
         </section>
+
+        {/* Research Connections */}
+        {element.researchConnections && element.researchConnections.length > 0 && (
+          <section className="py-20 relative overflow-hidden">
+            <div className="absolute inset-0 bg-accent/10" />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                  Research <span className="gradient-text">Connections</span>
+                </h2>
+                <p className="text-lg text-muted-foreground">
+                  Scientific foundations for {element.name} energy patterns
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-6">
+                {element.researchConnections.map((research, index) => (
+                  <Card
+                    key={index}
+                    className="p-6 glass-card border-border/50 hover:shadow-xl transition-all duration-300"
+                  >
+                    <div className="flex items-start space-x-3 mb-4">
+                      <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${element.gradient} flex items-center justify-center flex-shrink-0`}>
+                        <Brain className="w-5 h-5 text-white" />
+                      </div>
+                      <h4 className="font-bold text-foreground">{research.concept}</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {research.explanation}
+                    </p>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* State Tracker */}
+        <section className="py-20 relative">
+          <div className="absolute inset-0 bg-muted/30 backdrop-blur-sm" />
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <Card className="p-8 md:p-10 glass-card border-border/50">
+              <div className="flex items-center justify-center space-x-3 mb-8">
+                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${element.gradient} flex items-center justify-center`}>
+                  <Sparkles className="w-7 h-7 text-white" />
+                </div>
+                <h2 className="text-3xl font-bold text-foreground">
+                  State Tracker
+                </h2>
+              </div>
+              <StateTracker elementSlug={element.slug} />
+            </Card>
+          </div>
+        </section>
+
+        {/* Regeneration Guide */}
+        <section className="py-20 relative overflow-hidden">
+          <div className="absolute inset-0 bg-accent/10" />
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <Card className="p-8 md:p-10 glass-card border-border/50">
+              <RegenerationGuide elementSlug={element.slug} />
+            </Card>
+          </div>
+        </section>
+
+        {/* Growth & Environment */}
+        {(element.growthEdges || element.idealEnvironment) && (
+          <section className="py-20 relative">
+            <div className="absolute inset-0 bg-muted/30 backdrop-blur-sm" />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+              <div className="grid md:grid-cols-2 gap-8">
+                {element.growthEdges && (
+                  <Card className="p-8 glass-card border-border/50">
+                    <div className="flex items-center space-x-3 mb-6">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${element.gradient} flex items-center justify-center`}>
+                        <TrendingUp className="w-6 h-6 text-white" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-foreground">
+                        Growth Edges
+                      </h3>
+                    </div>
+                    <p className="text-muted-foreground mb-4">
+                      Areas where {element.name} types can develop and expand:
+                    </p>
+                    <ul className="space-y-3">
+                      {element.growthEdges.map((edge, index) => (
+                        <li
+                          key={index}
+                          className="flex items-start text-foreground/80"
+                        >
+                          <span className={`inline-block w-2 h-2 rounded-full bg-gradient-to-r ${element.gradient} mt-2 mr-3 flex-shrink-0`} />
+                          {edge}
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                )}
+
+                {element.idealEnvironment && (
+                  <Card className="p-8 glass-card border-border/50">
+                    <div className="flex items-center space-x-3 mb-6">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${element.gradient} flex items-center justify-center`}>
+                        <Home className="w-6 h-6 text-white" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-foreground">
+                        Ideal Environment
+                      </h3>
+                    </div>
+                    <p className="text-muted-foreground mb-4">
+                      Settings where {element.name} types thrive:
+                    </p>
+                    <ul className="space-y-3">
+                      {element.idealEnvironment.map((env, index) => (
+                        <li
+                          key={index}
+                          className="flex items-start text-foreground/80"
+                        >
+                          <span className={`inline-block w-2 h-2 rounded-full bg-gradient-to-r ${element.gradient} mt-2 mr-3 flex-shrink-0`} />
+                          {env}
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="py-20 md:py-32 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary via-[#764BA2] to-[#667EEA] animated-gradient" />

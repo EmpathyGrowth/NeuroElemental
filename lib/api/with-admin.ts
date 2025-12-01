@@ -5,8 +5,27 @@
  * For route handlers, prefer using createAdminRoute instead.
  */
 
-import { checkPermission, getCurrentUser } from '@/lib/auth/supabase';
+import { getCurrentUser } from '@/lib/auth/get-current-user';
+import { createClient } from '@/lib/supabase/server';
 import { forbiddenError, unauthorizedError } from './error-handler';
+
+/**
+ * Server-side permission check using server client
+ */
+async function checkPermissionServer(userId: string, allowedRoles: string[]): Promise<boolean> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error || !data?.role) {
+    return false;
+  }
+
+  return allowedRoles.includes(data.role);
+}
 
 /**
  * Check if current user has admin permissions
@@ -33,7 +52,7 @@ export async function requireAdmin() {
     return { error: unauthorizedError('Please login') };
   }
 
-  const isAdmin = await checkPermission(user.id, ['admin']);
+  const isAdmin = await checkPermissionServer(user.id, ['admin']);
 
   if (!isAdmin) {
     return { error: forbiddenError('Admin access required') };

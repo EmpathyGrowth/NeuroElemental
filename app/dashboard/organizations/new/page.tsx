@@ -5,30 +5,18 @@
  * Create a new organization
  */
 
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ArrowLeft, Building2, CheckCircle2 } from 'lucide-react'
-import { toast } from 'sonner'
-
-/** Delay in ms before redirecting after successful creation */
-const REDIRECT_DELAY = 1000
+import { useToast } from '@/components/ui/use-toast'
 
 export default function CreateOrganizationPage() {
   const router = useRouter()
-  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (redirectTimeoutRef.current) {
-        clearTimeout(redirectTimeoutRef.current)
-      }
-    }
-  }, [])
+  const { toast } = useToast()
 
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
@@ -52,7 +40,11 @@ export default function CreateOrganizationPage() {
     e.preventDefault()
 
     if (!name || !slug) {
-      toast.error('Please fill in all fields')
+      toast({
+        title: 'Error',
+        description: 'Please fill in all fields',
+        variant: 'destructive',
+      })
       return
     }
 
@@ -72,14 +64,21 @@ export default function CreateOrganizationPage() {
 
       const data = await res.json()
 
-      toast.success(`${name} has been created`)
+      toast({
+        title: 'Success',
+        description: `${name} has been created`,
+      })
 
       // Redirect to organization dashboard
-      redirectTimeoutRef.current = setTimeout(() => {
+      setTimeout(() => {
         router.push(`/dashboard/organizations/${data.organization.id}`)
-      }, REDIRECT_DELAY)
+      }, 1000)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create organization')
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to create organization',
+        variant: 'destructive',
+      })
       setCreating(false)
     }
   }

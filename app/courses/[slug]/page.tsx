@@ -1,4 +1,5 @@
 import { Footer } from '@/components/footer';
+import { CourseReviews } from '@/components/feedback/course-reviews';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -363,6 +364,11 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                   </ul>
                 </CardContent>
               </Card>
+
+              {/* Student Reviews */}
+              {fullCourse.id && (
+                <CourseReviews courseId={fullCourse.id} />
+              )}
             </div>
           </div>
         </div>

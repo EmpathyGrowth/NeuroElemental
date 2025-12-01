@@ -1,3 +1,4 @@
+import { UserOverview } from '@/components/dashboard/user-overview';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
@@ -22,6 +23,7 @@ export default async function DashboardPage() {
     redirect('/onboarding');
   }
 
+  // Redirect to role-specific dashboards
   switch (profile.role) {
     case 'admin':
       redirect('/dashboard/admin');
@@ -33,15 +35,10 @@ export default async function DashboardPage() {
     case 'school':
       redirect('/dashboard/business');
     case 'registered':
-      redirect('/onboarding');
+      // Registered users without a specific role stay on the default dashboard
+      break;
     default:
-      // Fallback if role is unknown or just 'user'
-      // We stay here or redirect to a default view
-      // But since this page is just a router, we should probably show something or redirect to a generic dashboard
-      // For now, let's redirect to student as a safe default or show a basic view
-      // But the original code redirected to '/dashboard' for default, which would loop.
-      // If we are AT /dashboard, we can't redirect to /dashboard.
-      // So we should render the "Welcome" content here if no specific role dashboard exists.
+      // Unknown role, show default dashboard
       break;
   }
 
@@ -51,20 +48,11 @@ export default async function DashboardPage() {
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Welcome to NeuroElemental</h1>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div className="glass-card p-6 border border-border/50 rounded-xl">
-            <h2 className="text-xl font-semibold mb-2">Your Element Mix</h2>
-            <p className="text-muted-foreground mb-4">
-              View your assessment results and element profile
-            </p>
-            <a
-              href="/results"
-              className="text-primary hover:underline"
-            >
-              View Results →
-            </a>
-          </div>
+        <div className="grid gap-6 mb-6">
+          <UserOverview userId={user.id} />
+        </div>
 
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div className="glass-card p-6 border border-border/50 rounded-xl">
             <h2 className="text-xl font-semibold mb-2">Explore Courses</h2>
             <p className="text-muted-foreground mb-4">
@@ -90,9 +78,21 @@ export default async function DashboardPage() {
               View Events →
             </a>
           </div>
+
+          <div className="glass-card p-6 border border-border/50 rounded-xl">
+            <h2 className="text-xl font-semibold mb-2">Tools & Resources</h2>
+            <p className="text-muted-foreground mb-4">
+              Practical tools for managing your energy
+            </p>
+            <a
+              href="/tools"
+              className="text-primary hover:underline"
+            >
+              Explore Tools →
+            </a>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-

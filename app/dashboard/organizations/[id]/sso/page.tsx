@@ -1,44 +1,10 @@
-'use client'
+"use client";
 
 /**
  * SSO Configuration Dashboard
  * Manage Single Sign-On settings for organization
  */
 
-import { logger } from '@/lib/logging'
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { formatDateTime } from '@/lib/utils'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,153 +14,198 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { Skeleton } from '@/components/ui/skeleton'
-import { toast } from 'sonner'
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
-  Shield,
-  Settings,
-  Trash2,
-  TestTube,
-  Plus,
-  X,
-  Download,
-  CheckCircle2,
-  XCircle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { logger } from "@/lib/logging/logger";
+import { formatDateTime } from "@/lib/utils";
+import {
   AlertCircle,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
-} from 'lucide-react'
+  Download,
+  Plus,
+  Settings,
+  Shield,
+  TestTube,
+  Trash2,
+  X,
+  XCircle,
+} from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface SSOProvider {
-  id: string
-  organization_id: string
-  provider_type: 'saml' | 'oauth' | 'oidc'
-  provider_name: string
-  domains: string[]
-  enforce_sso: boolean
-  auto_provision_users: boolean
-  default_role: string
-  is_active: boolean
-  created_at: string
-  updated_at: string
+  id: string;
+  organization_id: string;
+  provider_type: "saml" | "oauth" | "oidc";
+  provider_name: string;
+  domains: string[];
+  enforce_sso: boolean;
+  auto_provision_users: boolean;
+  default_role: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 
   // SAML fields
-  saml_entity_id?: string
-  saml_sso_url?: string
-  saml_certificate?: string
-  saml_sign_requests?: boolean
+  saml_entity_id?: string;
+  saml_sso_url?: string;
+  saml_certificate?: string;
+  saml_sign_requests?: boolean;
 
   // OAuth fields
-  oauth_client_id?: string
-  oauth_client_secret?: string
-  oauth_authorize_url?: string
-  oauth_token_url?: string
-  oauth_userinfo_url?: string
-  oauth_scopes?: string[]
+  oauth_client_id?: string;
+  oauth_client_secret?: string;
+  oauth_authorize_url?: string;
+  oauth_token_url?: string;
+  oauth_userinfo_url?: string;
+  oauth_scopes?: string[];
 
   // Attribute mapping
-  attribute_mapping: Record<string, string>
+  attribute_mapping: Record<string, string>;
 }
 
 interface SSOAuthAttempt {
-  id: string
-  email: string
-  status: 'success' | 'failed' | 'error'
-  error_message?: string
-  duration_ms?: number
-  created_at: string
+  id: string;
+  email: string;
+  status: "success" | "failed" | "error";
+  error_message?: string;
+  duration_ms?: number;
+  created_at: string;
 }
 
 export default function SSOPage() {
-  const params = useParams()
-  const router = useRouter()
-  const orgId = params.id as string
+  const params = useParams();
+  const router = useRouter();
+  const orgId = params.id as string;
 
-  const [provider, setProvider] = useState<SSOProvider | null>(null)
-  const [attempts, setAttempts] = useState<SSOAuthAttempt[]>([])
-  const [totalAttempts, setTotalAttempts] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [configDialogOpen, setConfigDialogOpen] = useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [testing, setTesting] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const [provider, setProvider] = useState<SSOProvider | null>(null);
+  const [attempts, setAttempts] = useState<SSOAuthAttempt[]>([]);
+  const [totalAttempts, setTotalAttempts] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [configDialogOpen, setConfigDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Pagination state
-  const [page, setPage] = useState(0)
-  const [statusFilter, setStatusFilter] = useState<string>('all')
-  const pageSize = 10
+  const [page, setPage] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const pageSize = 10;
 
   // Form state
   const [formData, setFormData] = useState({
-    provider_type: 'saml' as 'saml' | 'oauth' | 'oidc',
-    provider_name: '',
+    provider_type: "saml" as "saml" | "oauth" | "oidc",
+    provider_name: "",
     domains: [] as string[],
     enforce_sso: false,
     auto_provision_users: true,
-    default_role: 'member',
+    default_role: "member",
 
     // SAML
-    saml_entity_id: '',
-    saml_sso_url: '',
-    saml_certificate: '',
+    saml_entity_id: "",
+    saml_sso_url: "",
+    saml_certificate: "",
     saml_sign_requests: false,
 
     // OAuth
-    oauth_client_id: '',
-    oauth_client_secret: '',
-    oauth_authorize_url: '',
-    oauth_token_url: '',
-    oauth_userinfo_url: '',
+    oauth_client_id: "",
+    oauth_client_secret: "",
+    oauth_authorize_url: "",
+    oauth_token_url: "",
+    oauth_userinfo_url: "",
     oauth_scopes: [] as string[],
 
     // Attribute mapping
     attribute_mapping: {
-      email: 'email',
-      first_name: 'firstName',
-      last_name: 'lastName',
-      user_id: 'nameID',
+      email: "email",
+      first_name: "firstName",
+      last_name: "lastName",
+      user_id: "nameID",
     } as Record<string, string>,
-  })
+  });
 
-  const [domainInput, setDomainInput] = useState('')
-  const [scopeInput, setScopeInput] = useState('')
+  const [domainInput, setDomainInput] = useState("");
+  const [scopeInput, setScopeInput] = useState("");
 
   useEffect(() => {
-    fetchData()
-  }, [orgId, page, statusFilter])
+    fetchData();
+  }, [orgId, page, statusFilter]);
 
   const fetchData = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
 
       // Fetch provider
-      const providerRes = await fetch(`/api/organizations/${orgId}/sso`)
+      const providerRes = await fetch(`/api/organizations/${orgId}/sso`);
       if (providerRes.ok) {
-        const data = await providerRes.json()
-        setProvider(data.provider)
+        const data = await providerRes.json();
+        setProvider(data.provider);
       }
 
       // Fetch attempts
-      const offset = page * pageSize
-      const statusParam = statusFilter !== 'all' ? `&status=${statusFilter}` : ''
+      const offset = page * pageSize;
+      const statusParam =
+        statusFilter !== "all" ? `&status=${statusFilter}` : "";
       const attemptsRes = await fetch(
         `/api/organizations/${orgId}/sso/attempts?limit=${pageSize}&offset=${offset}${statusParam}`
-      )
+      );
       if (attemptsRes.ok) {
-        const data = await attemptsRes.json()
-        setAttempts(data.attempts || [])
-        setTotalAttempts(data.total || 0)
+        const data = await attemptsRes.json();
+        setAttempts(data.attempts || []);
+        setTotalAttempts(data.total || 0);
       }
     } catch (error) {
-      logger.error('Error fetching SSO data', error instanceof Error ? error : undefined, { errorMsg: String(error) })
-      toast.error('Error', {
-        description: 'Failed to load SSO configuration',
-      })
+      logger.error(
+        "Error fetching SSO data",
+        error instanceof Error ? error : undefined,
+        { errorMsg: String(error) }
+      );
+      toast.error("Error", {
+        description: "Failed to load SSO configuration",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const openConfigDialog = (isEdit: boolean) => {
     if (isEdit && provider) {
@@ -205,188 +216,221 @@ export default function SSOPage() {
         enforce_sso: provider.enforce_sso,
         auto_provision_users: provider.auto_provision_users,
         default_role: provider.default_role,
-        saml_entity_id: provider.saml_entity_id || '',
-        saml_sso_url: provider.saml_sso_url || '',
-        saml_certificate: provider.saml_certificate === '***' ? '' : (provider.saml_certificate || ''),
+        saml_entity_id: provider.saml_entity_id || "",
+        saml_sso_url: provider.saml_sso_url || "",
+        saml_certificate:
+          provider.saml_certificate === "***"
+            ? ""
+            : provider.saml_certificate || "",
         saml_sign_requests: provider.saml_sign_requests || false,
-        oauth_client_id: provider.oauth_client_id || '',
-        oauth_client_secret: provider.oauth_client_secret === '***' ? '' : (provider.oauth_client_secret || ''),
-        oauth_authorize_url: provider.oauth_authorize_url || '',
-        oauth_token_url: provider.oauth_token_url || '',
-        oauth_userinfo_url: provider.oauth_userinfo_url || '',
+        oauth_client_id: provider.oauth_client_id || "",
+        oauth_client_secret:
+          provider.oauth_client_secret === "***"
+            ? ""
+            : provider.oauth_client_secret || "",
+        oauth_authorize_url: provider.oauth_authorize_url || "",
+        oauth_token_url: provider.oauth_token_url || "",
+        oauth_userinfo_url: provider.oauth_userinfo_url || "",
         oauth_scopes: provider.oauth_scopes || [],
         attribute_mapping: provider.attribute_mapping || {
-          email: 'email',
-          first_name: 'firstName',
-          last_name: 'lastName',
-          user_id: 'nameID',
+          email: "email",
+          first_name: "firstName",
+          last_name: "lastName",
+          user_id: "nameID",
         },
-      })
+      });
     } else {
       // Reset for new config
       setFormData({
-        provider_type: 'saml',
-        provider_name: '',
+        provider_type: "saml",
+        provider_name: "",
         domains: [],
         enforce_sso: false,
         auto_provision_users: true,
-        default_role: 'member',
-        saml_entity_id: '',
-        saml_sso_url: '',
-        saml_certificate: '',
+        default_role: "member",
+        saml_entity_id: "",
+        saml_sso_url: "",
+        saml_certificate: "",
         saml_sign_requests: false,
-        oauth_client_id: '',
-        oauth_client_secret: '',
-        oauth_authorize_url: '',
-        oauth_token_url: '',
-        oauth_userinfo_url: '',
-        oauth_scopes: ['openid', 'profile', 'email'],
+        oauth_client_id: "",
+        oauth_client_secret: "",
+        oauth_authorize_url: "",
+        oauth_token_url: "",
+        oauth_userinfo_url: "",
+        oauth_scopes: ["openid", "profile", "email"],
         attribute_mapping: {
-          email: 'email',
-          first_name: 'firstName',
-          last_name: 'lastName',
-          user_id: 'nameID',
+          email: "email",
+          first_name: "firstName",
+          last_name: "lastName",
+          user_id: "nameID",
         },
-      })
+      });
     }
-    setConfigDialogOpen(true)
-  }
+    setConfigDialogOpen(true);
+  };
 
   const handleSaveConfig = async () => {
     try {
-      setSaving(true)
+      setSaving(true);
 
-      const method = provider ? 'PATCH' : 'POST'
+      const method = provider ? "PATCH" : "POST";
       const res = await fetch(`/api/organizations/${orgId}/sso`, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
-      })
+      });
 
-      const data = await res.json()
+      const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to save configuration')
+        throw new Error(data.error || "Failed to save configuration");
       }
 
-      toast.success('Success', {
-        description: provider ? 'SSO configuration updated' : 'SSO configuration created',
-      })
+      toast.success("Success", {
+        description: provider
+          ? "SSO configuration updated"
+          : "SSO configuration created",
+      });
 
-      setConfigDialogOpen(false)
-      fetchData()
+      setConfigDialogOpen(false);
+      fetchData();
     } catch (error) {
-      toast.error('Error', {
-        description: error instanceof Error ? error.message : 'Failed to save configuration',
-      })
+      toast.error("Error", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to save configuration",
+      });
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleTestConfig = async () => {
     try {
-      setTesting(true)
+      setTesting(true);
 
       const res = await fetch(`/api/organizations/${orgId}/sso/test`, {
-        method: 'POST',
-      })
+        method: "POST",
+      });
 
-      const data = await res.json()
+      const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Configuration test failed')
+        throw new Error(data.error || "Configuration test failed");
       }
 
-      toast.success('Success', {
-        description: data.message || 'SSO configuration is valid',
-      })
+      toast.success("Success", {
+        description: data.message || "SSO configuration is valid",
+      });
     } catch (error) {
-      toast.error('Test Failed', {
-        description: error instanceof Error ? error.message : 'Configuration test failed',
-      })
+      toast.error("Test Failed", {
+        description:
+          error instanceof Error ? error.message : "Configuration test failed",
+      });
     } finally {
-      setTesting(false)
+      setTesting(false);
     }
-  }
+  };
 
   const handleDelete = async () => {
     try {
       const res = await fetch(`/api/organizations/${orgId}/sso`, {
-        method: 'DELETE',
-      })
+        method: "DELETE",
+      });
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to delete configuration')
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete configuration");
       }
 
-      toast.success('Success', {
-        description: 'SSO configuration deleted',
-      })
+      toast.success("Success", {
+        description: "SSO configuration deleted",
+      });
 
-      setDeleteDialogOpen(false)
-      fetchData()
+      setDeleteDialogOpen(false);
+      fetchData();
     } catch (error) {
-      toast.error('Error', {
-        description: error instanceof Error ? error.message : 'Failed to delete configuration',
-      })
+      toast.error("Error", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to delete configuration",
+      });
     }
-  }
+  };
 
   const handleDownloadMetadata = () => {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.neuroelemental.com'
-    const metadataUrl = `${baseUrl}/api/sso/saml/metadata/${orgId}`
-    window.open(metadataUrl, '_blank')
-  }
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || "https://app.neuroelemental.com";
+    const metadataUrl = `${baseUrl}/api/sso/saml/metadata/${orgId}`;
+    window.open(metadataUrl, "_blank");
+  };
 
   const addDomain = () => {
     if (domainInput.trim() && !formData.domains.includes(domainInput.trim())) {
       setFormData({
         ...formData,
         domains: [...formData.domains, domainInput.trim()],
-      })
-      setDomainInput('')
+      });
+      setDomainInput("");
     }
-  }
+  };
 
   const removeDomain = (domain: string) => {
     setFormData({
       ...formData,
-      domains: formData.domains.filter(d => d !== domain),
-    })
-  }
+      domains: formData.domains.filter((d) => d !== domain),
+    });
+  };
 
   const addScope = () => {
-    if (scopeInput.trim() && !formData.oauth_scopes.includes(scopeInput.trim())) {
+    if (
+      scopeInput.trim() &&
+      !formData.oauth_scopes.includes(scopeInput.trim())
+    ) {
       setFormData({
         ...formData,
         oauth_scopes: [...formData.oauth_scopes, scopeInput.trim()],
-      })
-      setScopeInput('')
+      });
+      setScopeInput("");
     }
-  }
+  };
 
   const removeScope = (scope: string) => {
     setFormData({
       ...formData,
-      oauth_scopes: formData.oauth_scopes.filter(s => s !== scope),
-    })
-  }
+      oauth_scopes: formData.oauth_scopes.filter((s) => s !== scope),
+    });
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'success':
-        return <Badge className="bg-green-500"><CheckCircle2 className="h-3 w-3 mr-1" />Success</Badge>
-      case 'failed':
-        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>
-      case 'error':
-        return <Badge variant="secondary"><AlertCircle className="h-3 w-3 mr-1" />Error</Badge>
+      case "success":
+        return (
+          <Badge className="bg-green-500">
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            Success
+          </Badge>
+        );
+      case "failed":
+        return (
+          <Badge variant="destructive">
+            <XCircle className="h-3 w-3 mr-1" />
+            Failed
+          </Badge>
+        );
+      case "error":
+        return (
+          <Badge variant="secondary">
+            <AlertCircle className="h-3 w-3 mr-1" />
+            Error
+          </Badge>
+        );
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return <Badge variant="outline">{status}</Badge>;
     }
-  }
-
+  };
 
   if (loading && !provider) {
     return (
@@ -394,10 +438,10 @@ export default function SSOPage() {
         <Skeleton className="h-12 w-64 mb-6" />
         <Skeleton className="h-64" />
       </div>
-    )
+    );
   }
 
-  const totalPages = Math.ceil(totalAttempts / pageSize)
+  const totalPages = Math.ceil(totalAttempts / pageSize);
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -413,7 +457,9 @@ export default function SSOPage() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <h1 className="text-3xl font-bold tracking-tight">Single Sign-On (SSO)</h1>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Single Sign-On (SSO)
+              </h1>
             </div>
             <p className="text-muted-foreground">
               Configure enterprise SSO for your organization
@@ -431,7 +477,9 @@ export default function SSOPage() {
                   SSO Provider Configuration
                 </CardTitle>
                 <CardDescription>
-                  {provider ? 'Manage your SSO provider settings' : 'Configure SSO for your organization'}
+                  {provider
+                    ? "Manage your SSO provider settings"
+                    : "Configure SSO for your organization"}
                 </CardDescription>
               </div>
               {provider && (
@@ -443,7 +491,7 @@ export default function SSOPage() {
                     disabled={testing}
                   >
                     <TestTube className="h-4 w-4 mr-2" />
-                    {testing ? 'Testing...' : 'Test Connection'}
+                    {testing ? "Testing..." : "Test Connection"}
                   </Button>
                   <Button
                     variant="outline"
@@ -470,47 +518,79 @@ export default function SSOPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <div className="text-sm font-medium text-muted-foreground">Provider Type</div>
-                    <Badge className="mt-1">{provider.provider_type.toUpperCase()}</Badge>
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Provider Type
+                    </div>
+                    <Badge className="mt-1">
+                      {provider.provider_type.toUpperCase()}
+                    </Badge>
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-muted-foreground">Provider Name</div>
-                    <div className="text-sm font-semibold mt-1">{provider.provider_name}</div>
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Provider Name
+                    </div>
+                    <div className="text-sm font-semibold mt-1">
+                      {provider.provider_name}
+                    </div>
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-muted-foreground">Domains</div>
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Domains
+                    </div>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {provider.domains.map(domain => (
-                        <Badge key={domain} variant="outline">{domain}</Badge>
+                      {provider.domains.map((domain) => (
+                        <Badge key={domain} variant="outline">
+                          {domain}
+                        </Badge>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-muted-foreground">Status</div>
-                    <Badge variant={provider.is_active ? 'default' : 'secondary'} className="mt-1">
-                      {provider.is_active ? 'Active' : 'Inactive'}
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Status
+                    </div>
+                    <Badge
+                      variant={provider.is_active ? "default" : "secondary"}
+                      className="mt-1"
+                    >
+                      {provider.is_active ? "Active" : "Inactive"}
                     </Badge>
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-muted-foreground">Enforce SSO</div>
-                    <div className="text-sm mt-1">{provider.enforce_sso ? 'Yes' : 'No'}</div>
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Enforce SSO
+                    </div>
+                    <div className="text-sm mt-1">
+                      {provider.enforce_sso ? "Yes" : "No"}
+                    </div>
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-muted-foreground">Auto-provision Users</div>
-                    <div className="text-sm mt-1">{provider.auto_provision_users ? 'Yes' : 'No'}</div>
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Auto-provision Users
+                    </div>
+                    <div className="text-sm mt-1">
+                      {provider.auto_provision_users ? "Yes" : "No"}
+                    </div>
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-muted-foreground">Default Role</div>
-                    <Badge variant="outline" className="mt-1">{provider.default_role}</Badge>
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Default Role
+                    </div>
+                    <Badge variant="outline" className="mt-1">
+                      {provider.default_role}
+                    </Badge>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="text-center py-12">
                 <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No SSO Configuration</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  No SSO Configuration
+                </h3>
                 <p className="text-muted-foreground mb-4">
-                  Configure Single Sign-On to allow users to authenticate with your corporate identity provider
+                  Configure Single Sign-On to allow users to authenticate with
+                  your corporate identity provider
                 </p>
                 <Button onClick={() => openConfigDialog(false)}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -522,12 +602,13 @@ export default function SSOPage() {
         </Card>
 
         {/* SAML Service Provider Details */}
-        {provider && provider.provider_type === 'saml' && (
+        {provider && provider.provider_type === "saml" && (
           <Card>
             <CardHeader>
               <CardTitle>Service Provider Details</CardTitle>
               <CardDescription>
-                Provide these details to your SAML Identity Provider administrator
+                Provide these details to your SAML Identity Provider
+                administrator
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -535,7 +616,7 @@ export default function SSOPage() {
                 <Label>Entity ID (SP)</Label>
                 <Input
                   readOnly
-                  value={`${process.env.NEXT_PUBLIC_APP_URL || 'https://app.neuroelemental.com'}/api/sso/saml/sp/${orgId}`}
+                  value={`${process.env.NEXT_PUBLIC_APP_URL || "https://app.neuroelemental.com"}/api/sso/saml/sp/${orgId}`}
                   className="font-mono text-xs"
                 />
               </div>
@@ -543,7 +624,7 @@ export default function SSOPage() {
                 <Label>Assertion Consumer Service (ACS) URL</Label>
                 <Input
                   readOnly
-                  value={`${process.env.NEXT_PUBLIC_APP_URL || 'https://app.neuroelemental.com'}/api/sso/saml/acs`}
+                  value={`${process.env.NEXT_PUBLIC_APP_URL || "https://app.neuroelemental.com"}/api/sso/saml/acs`}
                   className="font-mono text-xs"
                 />
               </div>
@@ -603,12 +684,16 @@ export default function SSOPage() {
                           <TableCell className="font-mono text-sm">
                             {attempt.email}
                           </TableCell>
-                          <TableCell>{getStatusBadge(attempt.status)}</TableCell>
+                          <TableCell>
+                            {getStatusBadge(attempt.status)}
+                          </TableCell>
                           <TableCell className="text-right text-sm">
-                            {attempt.duration_ms ? `${attempt.duration_ms}ms` : '-'}
+                            {attempt.duration_ms
+                              ? `${attempt.duration_ms}ms`
+                              : "-"}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
-                            {attempt.error_message || '-'}
+                            {attempt.error_message || "-"}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -620,13 +705,15 @@ export default function SSOPage() {
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
-                      Showing {page * pageSize + 1} to {Math.min((page + 1) * pageSize, totalAttempts)} of {totalAttempts}
+                      Showing {page * pageSize + 1} to{" "}
+                      {Math.min((page + 1) * pageSize, totalAttempts)} of{" "}
+                      {totalAttempts}
                     </div>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setPage(p => Math.max(0, p - 1))}
+                        onClick={() => setPage((p) => Math.max(0, p - 1))}
                         disabled={page === 0}
                       >
                         <ChevronLeft className="h-4 w-4" />
@@ -634,7 +721,9 @@ export default function SSOPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                        onClick={() =>
+                          setPage((p) => Math.min(totalPages - 1, p + 1))
+                        }
                         disabled={page === totalPages - 1}
                       >
                         <ChevronRight className="h-4 w-4" />
@@ -652,7 +741,9 @@ export default function SSOPage() {
       <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{provider ? 'Edit' : 'Configure'} SSO Provider</DialogTitle>
+            <DialogTitle>
+              {provider ? "Edit" : "Configure"} SSO Provider
+            </DialogTitle>
             <DialogDescription>
               Set up Single Sign-On authentication for your organization
             </DialogDescription>
@@ -664,7 +755,9 @@ export default function SSOPage() {
               <Label>Provider Type</Label>
               <Select
                 value={formData.provider_type}
-                onValueChange={(value) => setFormData({ ...formData, provider_type: value as 'saml' | 'oauth' | 'oidc' })}
+                onValueChange={(value: "saml" | "oauth" | "oidc") =>
+                  setFormData({ ...formData, provider_type: value })
+                }
                 disabled={!!provider}
               >
                 <SelectTrigger>
@@ -684,7 +777,9 @@ export default function SSOPage() {
               <Input
                 placeholder="e.g., Okta, Azure AD, Google Workspace"
                 value={formData.provider_name}
-                onChange={(e) => setFormData({ ...formData, provider_name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, provider_name: e.target.value })
+                }
               />
             </div>
 
@@ -696,12 +791,16 @@ export default function SSOPage() {
                   placeholder="e.g., company.com"
                   value={domainInput}
                   onChange={(e) => setDomainInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addDomain())}
+                  onKeyPress={(e) =>
+                    e.key === "Enter" && (e.preventDefault(), addDomain())
+                  }
                 />
-                <Button type="button" onClick={addDomain}>Add</Button>
+                <Button type="button" onClick={addDomain}>
+                  Add
+                </Button>
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
-                {formData.domains.map(domain => (
+                {formData.domains.map((domain) => (
                   <Badge key={domain} variant="secondary">
                     {domain}
                     <X
@@ -714,14 +813,19 @@ export default function SSOPage() {
             </div>
 
             {/* SAML Fields */}
-            {formData.provider_type === 'saml' && (
+            {formData.provider_type === "saml" && (
               <>
                 <div className="space-y-2">
                   <Label>IdP Entity ID</Label>
                   <Input
                     placeholder="https://idp.example.com/entityid"
                     value={formData.saml_entity_id}
-                    onChange={(e) => setFormData({ ...formData, saml_entity_id: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        saml_entity_id: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -729,7 +833,9 @@ export default function SSOPage() {
                   <Input
                     placeholder="https://idp.example.com/sso"
                     value={formData.saml_sso_url}
-                    onChange={(e) => setFormData({ ...formData, saml_sso_url: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, saml_sso_url: e.target.value })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -737,7 +843,12 @@ export default function SSOPage() {
                   <Textarea
                     placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
                     value={formData.saml_certificate}
-                    onChange={(e) => setFormData({ ...formData, saml_certificate: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        saml_certificate: e.target.value,
+                      })
+                    }
                     rows={6}
                     className="font-mono text-xs"
                   />
@@ -746,22 +857,35 @@ export default function SSOPage() {
                   <Checkbox
                     id="sign_requests"
                     checked={formData.saml_sign_requests}
-                    onCheckedChange={(checked) => setFormData({ ...formData, saml_sign_requests: !!checked })}
+                    onCheckedChange={(checked) =>
+                      setFormData({
+                        ...formData,
+                        saml_sign_requests: !!checked,
+                      })
+                    }
                   />
-                  <Label htmlFor="sign_requests" className="cursor-pointer">Sign SAML requests</Label>
+                  <Label htmlFor="sign_requests" className="cursor-pointer">
+                    Sign SAML requests
+                  </Label>
                 </div>
               </>
             )}
 
             {/* OAuth/OIDC Fields */}
-            {(formData.provider_type === 'oauth' || formData.provider_type === 'oidc') && (
+            {(formData.provider_type === "oauth" ||
+              formData.provider_type === "oidc") && (
               <>
                 <div className="space-y-2">
                   <Label>Client ID</Label>
                   <Input
                     placeholder="your-client-id"
                     value={formData.oauth_client_id}
-                    onChange={(e) => setFormData({ ...formData, oauth_client_id: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        oauth_client_id: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -770,7 +894,12 @@ export default function SSOPage() {
                     type="password"
                     placeholder="your-client-secret"
                     value={formData.oauth_client_secret}
-                    onChange={(e) => setFormData({ ...formData, oauth_client_secret: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        oauth_client_secret: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -778,7 +907,12 @@ export default function SSOPage() {
                   <Input
                     placeholder="https://idp.example.com/oauth/authorize"
                     value={formData.oauth_authorize_url}
-                    onChange={(e) => setFormData({ ...formData, oauth_authorize_url: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        oauth_authorize_url: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -786,7 +920,12 @@ export default function SSOPage() {
                   <Input
                     placeholder="https://idp.example.com/oauth/token"
                     value={formData.oauth_token_url}
-                    onChange={(e) => setFormData({ ...formData, oauth_token_url: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        oauth_token_url: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -794,7 +933,12 @@ export default function SSOPage() {
                   <Input
                     placeholder="https://idp.example.com/oauth/userinfo"
                     value={formData.oauth_userinfo_url}
-                    onChange={(e) => setFormData({ ...formData, oauth_userinfo_url: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        oauth_userinfo_url: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -804,12 +948,16 @@ export default function SSOPage() {
                       placeholder="e.g., openid, profile, email"
                       value={scopeInput}
                       onChange={(e) => setScopeInput(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addScope())}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && (e.preventDefault(), addScope())
+                      }
                     />
-                    <Button type="button" onClick={addScope}>Add</Button>
+                    <Button type="button" onClick={addScope}>
+                      Add
+                    </Button>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {formData.oauth_scopes.map(scope => (
+                    {formData.oauth_scopes.map((scope) => (
                       <Badge key={scope} variant="secondary">
                         {scope}
                         <X
@@ -832,10 +980,15 @@ export default function SSOPage() {
                   <Input
                     placeholder="email"
                     value={formData.attribute_mapping.email}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      attribute_mapping: { ...formData.attribute_mapping, email: e.target.value }
-                    })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        attribute_mapping: {
+                          ...formData.attribute_mapping,
+                          email: e.target.value,
+                        },
+                      })
+                    }
                   />
                 </div>
                 <div>
@@ -843,10 +996,15 @@ export default function SSOPage() {
                   <Input
                     placeholder="firstName"
                     value={formData.attribute_mapping.first_name}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      attribute_mapping: { ...formData.attribute_mapping, first_name: e.target.value }
-                    })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        attribute_mapping: {
+                          ...formData.attribute_mapping,
+                          first_name: e.target.value,
+                        },
+                      })
+                    }
                   />
                 </div>
                 <div>
@@ -854,10 +1012,15 @@ export default function SSOPage() {
                   <Input
                     placeholder="lastName"
                     value={formData.attribute_mapping.last_name}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      attribute_mapping: { ...formData.attribute_mapping, last_name: e.target.value }
-                    })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        attribute_mapping: {
+                          ...formData.attribute_mapping,
+                          last_name: e.target.value,
+                        },
+                      })
+                    }
                   />
                 </div>
                 <div>
@@ -865,10 +1028,15 @@ export default function SSOPage() {
                   <Input
                     placeholder="nameID"
                     value={formData.attribute_mapping.user_id}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      attribute_mapping: { ...formData.attribute_mapping, user_id: e.target.value }
-                    })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        attribute_mapping: {
+                          ...formData.attribute_mapping,
+                          user_id: e.target.value,
+                        },
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -880,7 +1048,9 @@ export default function SSOPage() {
                 <Checkbox
                   id="enforce_sso"
                   checked={formData.enforce_sso}
-                  onCheckedChange={(checked) => setFormData({ ...formData, enforce_sso: !!checked })}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, enforce_sso: !!checked })
+                  }
                 />
                 <Label htmlFor="enforce_sso" className="cursor-pointer">
                   Enforce SSO (require SSO for all users in configured domains)
@@ -890,17 +1060,25 @@ export default function SSOPage() {
                 <Checkbox
                   id="auto_provision"
                   checked={formData.auto_provision_users}
-                  onCheckedChange={(checked) => setFormData({ ...formData, auto_provision_users: !!checked })}
+                  onCheckedChange={(checked) =>
+                    setFormData({
+                      ...formData,
+                      auto_provision_users: !!checked,
+                    })
+                  }
                 />
                 <Label htmlFor="auto_provision" className="cursor-pointer">
-                  Auto-provision users (automatically create accounts for new users)
+                  Auto-provision users (automatically create accounts for new
+                  users)
                 </Label>
               </div>
               <div className="space-y-2">
                 <Label>Default Role for New Users</Label>
                 <Select
                   value={formData.default_role}
-                  onValueChange={(value) => setFormData({ ...formData, default_role: value })}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, default_role: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -916,11 +1094,14 @@ export default function SSOPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfigDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setConfigDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button onClick={handleSaveConfig} disabled={saving}>
-              {saving ? 'Saving...' : 'Save Configuration'}
+              {saving ? "Saving..." : "Save Configuration"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -932,18 +1113,21 @@ export default function SSOPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will delete your SSO configuration. Users will no longer be able to sign in with SSO.
-              This action cannot be undone.
+              This will delete your SSO configuration. Users will no longer be
+              able to sign in with SSO. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
+  );
 }

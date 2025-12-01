@@ -362,6 +362,52 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Consolidated EnergyOrb Animations */
+@utility animate-clip-fill-right {
+  animation: clip-fill-right 3s ease-in-out infinite;
+}
+
+@utility animate-clip-fill-up {
+  animation: clip-fill-up 3s ease-in-out infinite;
+}
+
+@utility animate-sun-pulse {
+  animation: sun-pulse 3s ease-in-out infinite;
+}
+
+@utility animate-pulse-expand {
+  animation: pulse-expand 5s ease-out infinite;
+}
+
+@keyframes clip-fill-right {
+  0% { clip-path: inset(0 100% 0 0); }
+  50% { clip-path: inset(0 0% 0 0); }
+  100% { clip-path: inset(0 100% 0 0); }
+}
+
+@keyframes clip-fill-up {
+  0% { clip-path: inset(100% 0 0 0); }
+  50% { clip-path: inset(0% 0 0 0); }
+  100% { clip-path: inset(100% 0 0 0); }
+}
+
+@keyframes sun-pulse {
+  0% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.3; transform: scale(0.8); }
+}
+
+@keyframes pulse-expand {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(3.5);
+    opacity: 0;
+  }
+}
+
 /* Tiptap Editor Styles (Preserved) */
 .ProseMirror { outline: none; }
 .ProseMirror > * + * { margin-top: 0.75em; }
@@ -940,4 +986,427 @@ h1, h2, h3, h4, h5, h6 {
   button svg {
     color: currentColor;
   }
+}
+
+/* Blog Content Typography - Custom prose styles for HTML content */
+.blog-content {
+  color: var(--color-muted-foreground);
+  line-height: 1.75;
+  font-size: 1.125rem;
+}
+
+.blog-content h1,
+.blog-content h2,
+.blog-content h3,
+.blog-content h4,
+.blog-content h5,
+.blog-content h6 {
+  color: var(--color-foreground);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.blog-content h2 {
+  font-size: 1.875rem;
+  margin-top: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+.blog-content h3 {
+  font-size: 1.5rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.blog-content h4 {
+  font-size: 1.25rem;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.blog-content p {
+  margin-bottom: 1.5rem;
+  line-height: 1.75;
+}
+
+.blog-content ul,
+.blog-content ol {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+.blog-content ul {
+  list-style-type: disc;
+}
+
+.blog-content ol {
+  list-style-type: decimal;
+}
+
+.blog-content li {
+  margin-bottom: 0.5rem;
+  line-height: 1.75;
+}
+
+.blog-content li::marker {
+  color: var(--color-primary);
+}
+
+.blog-content strong {
+  color: var(--color-foreground);
+  font-weight: 600;
+}
+
+.blog-content em {
+  font-style: italic;
+}
+
+.blog-content a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.blog-content a:hover {
+  opacity: 0.8;
+}
+
+.blog-content blockquote {
+  border-left: 4px solid var(--color-primary);
+  padding-left: 1.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  font-style: italic;
+  background: var(--color-muted);
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.blog-content blockquote p {
+  margin-bottom: 0;
+}
+
+.blog-content code {
+  background: var(--color-muted);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.blog-content pre {
+  background: var(--color-muted);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.blog-content pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.blog-content hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.blog-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  .blog-content h2 {
+    font-size: 2.25rem;
+  }
+
+  .blog-content h3 {
+    font-size: 1.75rem;
+  }
+
+  .blog-content h4 {
+    font-size: 1.375rem;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY: REDUCED MOTION
+   ============================================ */
+
+/* System preference: prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable specific animations */
+  .animate-float,
+  .animate-battery-fill,
+  .animate-heart-fill,
+  .animate-orb-rotate,
+  .animate-orb-pulse,
+  .animate-orb-ring-slow,
+  .animate-orb-ring-fast,
+  .animate-clip-fill-right,
+  .animate-clip-fill-up,
+  .animate-sun-pulse,
+  .animate-pulse-expand,
+  .animated-gradient,
+  [class*="animate-"] {
+    animation: none !important;
+  }
+
+  /* Disable transforms on hover */
+  .glow-hover:hover {
+    transform: none !important;
+  }
+
+  button:hover,
+  a:hover {
+    transform: none !important;
+  }
+}
+
+/* User preference class: reduce-motion */
+.reduce-motion,
+.reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+.reduce-motion .animate-float,
+.reduce-motion .animate-battery-fill,
+.reduce-motion .animate-heart-fill,
+.reduce-motion .animate-orb-rotate,
+.reduce-motion .animate-orb-pulse,
+.reduce-motion .animate-orb-ring-slow,
+.reduce-motion .animate-orb-ring-fast,
+.reduce-motion .animate-clip-fill-right,
+.reduce-motion .animate-clip-fill-up,
+.reduce-motion .animate-sun-pulse,
+.reduce-motion .animate-pulse-expand,
+.reduce-motion .animated-gradient,
+.reduce-motion [class*="animate-"] {
+  animation: none !important;
+}
+
+.reduce-motion .glow-hover:hover,
+.reduce-motion button:hover,
+.reduce-motion a:hover {
+  transform: none !important;
+}
+
+/* ============================================
+   ACCESSIBILITY: HIGH CONTRAST MODE
+   ============================================ */
+
+/* System preference: prefers-contrast */
+@media (prefers-contrast: more) {
+  :root {
+    --color-foreground: hsl(0 0% 100%);
+    --color-muted-foreground: hsl(0 0% 85%);
+    --color-border: hsl(0 0% 50%);
+  }
+}
+
+/* User preference class: high-contrast */
+.high-contrast {
+  --color-foreground: hsl(0 0% 100%) !important;
+  --color-muted-foreground: hsl(0 0% 85%) !important;
+  --color-border: hsl(0 0% 60%) !important;
+  --color-ring: hsl(50 100% 50%) !important;
+}
+
+.high-contrast .text-muted-foreground {
+  color: hsl(0 0% 85%) !important;
+}
+
+.high-contrast a,
+.high-contrast button {
+  text-decoration-thickness: 2px !important;
+}
+
+.high-contrast *:focus-visible {
+  outline: 3px solid hsl(50 100% 50%) !important;
+  outline-offset: 3px !important;
+}
+
+.high-contrast .glass-card,
+.high-contrast .glass-premium,
+.high-contrast .glass {
+  border-width: 2px !important;
+  border-color: hsl(0 0% 60%) !important;
+}
+
+.high-contrast .bg-muted,
+.high-contrast [class*="bg-muted"] {
+  background: hsl(240 20% 20%) !important;
+}
+
+.high-contrast .text-primary {
+  color: hsl(265 100% 75%) !important;
+}
+
+.high-contrast .bg-primary {
+  background: hsl(265 100% 60%) !important;
+}
+
+/* Enhanced focus indicators for high contrast */
+.high-contrast input:focus,
+.high-contrast select:focus,
+.high-contrast textarea:focus,
+.high-contrast button:focus {
+  outline: 3px solid hsl(50 100% 50%) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(255, 255, 0, 0.3) !important;
+}
+
+/* Light mode high contrast */
+.light.high-contrast {
+  --color-foreground: hsl(0 0% 0%) !important;
+  --color-muted-foreground: hsl(0 0% 30%) !important;
+  --color-border: hsl(0 0% 40%) !important;
+  --color-background: hsl(0 0% 100%) !important;
+}
+
+.light.high-contrast .text-muted-foreground {
+  color: hsl(0 0% 30%) !important;
+}
+
+.light.high-contrast .bg-muted,
+.light.high-contrast [class*="bg-muted"] {
+  background: hsl(0 0% 95%) !important;
+}
+
+.light.high-contrast .text-primary {
+  color: hsl(265 100% 35%) !important;
+}
+
+/* ============================================
+   ACCESSIBILITY: COMPACT MODE
+   ============================================ */
+
+.compact-mode {
+  --spacing-scale: 0.75;
+}
+
+.compact-mode .p-4 {
+  padding: 0.75rem !important;
+}
+
+.compact-mode .p-6 {
+  padding: 1rem !important;
+}
+
+.compact-mode .p-8 {
+  padding: 1.25rem !important;
+}
+
+.compact-mode .gap-4 {
+  gap: 0.75rem !important;
+}
+
+.compact-mode .gap-6 {
+  gap: 1rem !important;
+}
+
+.compact-mode .gap-8 {
+  gap: 1.25rem !important;
+}
+
+.compact-mode .space-y-4 > * + * {
+  margin-top: 0.75rem !important;
+}
+
+.compact-mode .space-y-6 > * + * {
+  margin-top: 1rem !important;
+}
+
+.compact-mode .mb-4 {
+  margin-bottom: 0.75rem !important;
+}
+
+.compact-mode .mb-6 {
+  margin-bottom: 1rem !important;
+}
+
+.compact-mode .mt-4 {
+  margin-top: 0.75rem !important;
+}
+
+.compact-mode .mt-6 {
+  margin-top: 1rem !important;
+}
+
+/* Compact card styles */
+.compact-mode .glass-card,
+.compact-mode .glass-premium {
+  padding: 1rem !important;
+}
+
+/* ============================================
+   ACCESSIBILITY: DYSLEXIA-FRIENDLY FONT
+   ============================================ */
+
+.dyslexia-font {
+  font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif !important;
+  letter-spacing: 0.05em !important;
+  word-spacing: 0.1em !important;
+  line-height: 1.8 !important;
+}
+
+.dyslexia-font h1,
+.dyslexia-font h2,
+.dyslexia-font h3,
+.dyslexia-font h4,
+.dyslexia-font h5,
+.dyslexia-font h6 {
+  font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* ============================================
+   ACCESSIBILITY: ENHANCED FOCUS STATES
+   ============================================ */
+
+/* Ensure all interactive elements have visible focus */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+/* Skip to content link enhancement */
+.skip-to-content:focus {
+  position: fixed !important;
+  top: 1rem !important;
+  left: 1rem !important;
+  z-index: 9999 !important;
+  padding: 1rem 1.5rem !important;
+  background: var(--color-primary) !important;
+  color: var(--color-primary-foreground) !important;
+  border-radius: 0.5rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
 }

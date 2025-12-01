@@ -5,17 +5,14 @@
  * Accept invitations to join organizations
  */
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Building2, CheckCircle2, XCircle, Mail } from 'lucide-react'
-import { toast } from 'sonner'
+import { useToast } from '@/components/ui/use-toast'
 import { formatDate } from '@/lib/utils'
-
-/** Delay in ms before redirecting after accept/decline */
-const REDIRECT_DELAY = 1500
 
 interface InvitationDetails {
   id: string
@@ -35,17 +32,8 @@ interface InvitationDetails {
 export default function InvitationPage() {
   const params = useParams()
   const router = useRouter()
+  const { toast } = useToast()
   const inviteId = params.id as string
-  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (redirectTimeoutRef.current) {
-        clearTimeout(redirectTimeoutRef.current)
-      }
-    }
-  }, [])
 
   const [invitation, setInvitation] = useState<InvitationDetails | null>(null)
   const [loading, setLoading] = useState(true)
@@ -88,14 +76,21 @@ export default function InvitationPage() {
 
       const data = await res.json()
 
-      toast.success(`You've joined ${invitation?.organization.name}`)
+      toast({
+        title: 'Success',
+        description: `You've joined ${invitation?.organization.name}`,
+      })
 
       // Redirect to organization dashboard
-      redirectTimeoutRef.current = setTimeout(() => {
+      setTimeout(() => {
         router.push(`/dashboard/organizations/${data.organizationId}`)
-      }, REDIRECT_DELAY)
+      }, 1500)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to accept invitation')
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to accept invitation',
+        variant: 'destructive',
+      })
       setAccepting(false)
     }
   }
@@ -113,13 +108,20 @@ export default function InvitationPage() {
         throw new Error(data.error || 'Failed to decline invitation')
       }
 
-      toast.info('You have declined the invitation')
+      toast({
+        title: 'Invitation Declined',
+        description: 'You have declined the invitation',
+      })
 
-      redirectTimeoutRef.current = setTimeout(() => {
+      setTimeout(() => {
         router.push('/dashboard')
-      }, REDIRECT_DELAY)
+      }, 1500)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to decline invitation')
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to decline invitation',
+        variant: 'destructive',
+      })
       setDeclining(false)
     }
   }

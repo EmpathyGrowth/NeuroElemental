@@ -1,23 +1,24 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useAsync } from '@/hooks/use-async';
-import { logger } from '@/lib/logging';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { StatsCard, StatsCardGrid } from "@/components/ui/stats-card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAsync } from "@/hooks/use-async";
+import { logger } from "@/lib/logging";
+import { formatDate } from "@/lib/utils";
 import {
-  BookOpen,
-  PlayCircle,
-  CheckCircle,
-  TrendingUp,
   Award,
-} from 'lucide-react';
-import { formatDate } from '@/lib/utils';
+  BookOpen,
+  CheckCircle,
+  PlayCircle,
+  TrendingUp,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface EnrolledCourse {
   id: string;
@@ -66,7 +67,7 @@ const defaultData: CoursesData = {
 };
 
 export default function StudentCoursesPage() {
-  const [activeTab, setActiveTab] = useState('in-progress');
+  const [activeTab, setActiveTab] = useState("in-progress");
   const { data: coursesData, loading, execute } = useAsync<CoursesData>();
 
   const data = coursesData || defaultData;
@@ -80,14 +81,17 @@ export default function StudentCoursesPage() {
 
   const fetchCourses = () => {
     execute(async () => {
-      const res = await fetch('/api/dashboard/student/courses');
+      const res = await fetch("/api/dashboard/student/courses");
       if (!res.ok) {
-        logger.error('Failed to fetch courses:', new Error(`Status: ${res.status}`));
+        logger.error(
+          "Failed to fetch courses:",
+          new Error(`Status: ${res.status}`)
+        );
         return defaultData;
       }
       const result = await res.json();
       if (result.error) {
-        logger.error('Error fetching courses:', new Error(result.error));
+        logger.error("Error fetching courses:", new Error(result.error));
         return defaultData;
       }
       return result;
@@ -145,64 +149,54 @@ export default function StudentCoursesPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Enrolled Courses</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.enrolled_count}</div>
-            <p className="text-xs text-muted-foreground">Currently learning</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completed_count}</div>
-            <p className="text-xs text-muted-foreground">Courses finished</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Progress</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.average_progress}%
-            </div>
-            <p className="text-xs text-muted-foreground">Across all courses</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Certificates</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.certificates_count}</div>
-            <p className="text-xs text-muted-foreground">Earned</p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatsCardGrid columns={4} className="mb-8">
+        <StatsCard
+          title="Enrolled Courses"
+          value={stats.enrolled_count}
+          description="Currently learning"
+          icon={<BookOpen className="h-5 w-5" />}
+          accent="blue"
+        />
+        <StatsCard
+          title="Completed"
+          value={stats.completed_count}
+          description="Courses finished"
+          icon={<CheckCircle className="h-5 w-5" />}
+          accent="green"
+        />
+        <StatsCard
+          title="Avg. Progress"
+          value={`${stats.average_progress}%`}
+          description="Across all courses"
+          icon={<TrendingUp className="h-5 w-5" />}
+          accent="purple"
+        />
+        <StatsCard
+          title="Certificates"
+          value={stats.certificates_count}
+          description="Earned"
+          icon={<Award className="h-5 w-5" />}
+          accent="amber"
+        />
+      </StatsCardGrid>
 
       {/* Courses Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="in-progress">In Progress ({enrolledCourses.length})</TabsTrigger>
-          <TabsTrigger value="completed">Completed ({completedCourses.length})</TabsTrigger>
+          <TabsTrigger value="in-progress">
+            In Progress ({enrolledCourses.length})
+          </TabsTrigger>
+          <TabsTrigger value="completed">
+            Completed ({completedCourses.length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="in-progress" className="space-y-4 mt-6">
           {enrolledCourses.map((course) => (
-            <Card key={course.id} className="glass-card hover:shadow-lg transition-shadow">
+            <Card
+              key={course.id}
+              className="glass-card hover:shadow-lg transition-shadow"
+            >
               <CardContent className="p-6">
                 <div className="flex gap-6">
                   <div className="w-32 h-32 bg-gradient-to-br from-primary/20 to-purple-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -212,7 +206,9 @@ export default function StudentCoursesPage() {
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h3 className="text-xl font-bold mb-2">{course.course_title}</h3>
+                        <h3 className="text-xl font-bold mb-2">
+                          {course.course_title}
+                        </h3>
                         {course.last_accessed && (
                           <p className="text-sm text-muted-foreground mb-2">
                             Last accessed: {formatDate(course.last_accessed)}
@@ -225,7 +221,9 @@ export default function StudentCoursesPage() {
                         )}
                       </div>
                       <Button asChild>
-                        <Link href={`/dashboard/student/courses/${course.course_id}`}>
+                        <Link
+                          href={`/dashboard/student/courses/${course.course_id}`}
+                        >
                           <PlayCircle className="w-4 h-4 mr-2" />
                           Continue
                         </Link>
@@ -235,7 +233,10 @@ export default function StudentCoursesPage() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Progress</span>
-                        <span className="font-medium">{course.completed_lessons} / {course.total_lessons} lessons</span>
+                        <span className="font-medium">
+                          {course.completed_lessons} / {course.total_lessons}{" "}
+                          lessons
+                        </span>
                       </div>
                       <Progress value={course.progress} className="h-2" />
                       <p className="text-xs text-muted-foreground">
@@ -275,7 +276,9 @@ export default function StudentCoursesPage() {
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h3 className="text-xl font-bold mb-2">{course.course_title}</h3>
+                        <h3 className="text-xl font-bold mb-2">
+                          {course.course_title}
+                        </h3>
                         <p className="text-sm text-muted-foreground mb-2">
                           Completed: {formatDate(course.completed_at)}
                         </p>
@@ -288,13 +291,17 @@ export default function StudentCoursesPage() {
                       </div>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" asChild>
-                          <Link href={`/dashboard/student/courses/${course.course_id}`}>
+                          <Link
+                            href={`/dashboard/student/courses/${course.course_id}`}
+                          >
                             Review Course
                           </Link>
                         </Button>
                         {course.certificate_id && (
                           <Button size="sm" asChild>
-                            <Link href={`/dashboard/student/certificates/${course.certificate_id}`}>
+                            <Link
+                              href={`/dashboard/student/certificates/${course.certificate_id}`}
+                            >
                               <Award className="w-4 h-4 mr-2" />
                               View Certificate
                             </Link>
@@ -331,7 +338,10 @@ export default function StudentCoursesPage() {
           <p className="text-muted-foreground mb-6">
             Explore our full course catalog to continue your journey
           </p>
-          <Button asChild className="bg-gradient-to-r from-primary to-[#764BA2]">
+          <Button
+            asChild
+            className="bg-gradient-to-r from-primary to-[#764BA2]"
+          >
             <Link href="/courses">Browse All Courses</Link>
           </Button>
         </CardContent>

@@ -1,114 +1,131 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Instructor Certification - NeuroElemental™ Professional Training',
-  description: 'Become a certified NeuroElemental™ practitioner. Join our global community of coaches and therapists using this evidence-based framework in their practice.',
-  keywords: ['certification', 'coach training', 'therapist training', 'professional development', 'instructor program'],
+  title: "Instructor Certification - NeuroElemental™ Professional Training",
+  description:
+    "Become a certified NeuroElemental™ practitioner. Join our global community of coaches and therapists using this evidence-based framework in their practice.",
+  keywords: [
+    "certification",
+    "coach training",
+    "therapist training",
+    "professional development",
+    "instructor program",
+  ],
 };
 
-import { Footer } from '@/components/footer';
-import { HeroSection } from '@/components/landing/hero-section';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Footer } from "@/components/footer";
+import { HeroSection } from "@/components/landing/hero-section";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
-    Award,
-    CheckCircle,
-    Globe,
-    GraduationCap,
-    Shield,
-    Sparkles,
-    Target,
-    Users,
-} from 'lucide-react';
-import Link from 'next/link';
+  Award,
+  CheckCircle,
+  Globe,
+  GraduationCap,
+  Shield,
+  Sparkles,
+  Target,
+  Users,
+} from "lucide-react";
+import Link from "next/link";
 
 export default function CertificationPage() {
   const objectives = [
     {
       icon: Award,
-      title: 'Standardize Excellence',
-      description: 'Ensure every practitioner delivers the framework with consistency, depth, and unwavering ethics.',
+      title: "Standardize Excellence",
+      description:
+        "Ensure every practitioner delivers the framework with consistency, depth, and unwavering ethics.",
     },
     {
       icon: Globe,
-      title: 'Global Community',
-      description: 'Join a supportive, interconnected network of professional coaches and therapists.',
+      title: "Global Community",
+      description:
+        "Join a supportive, interconnected network of professional coaches and therapists.",
     },
     {
       icon: Target,
-      title: 'Ethical Scaling',
-      description: 'Build a sustainable practice with a transparent monetization pathway.',
+      title: "Ethical Scaling",
+      description:
+        "Build a sustainable practice with a transparent monetization pathway.",
     },
     {
       icon: Shield,
-      title: 'Brand Integrity',
-      description: 'Operate within a defined ethical code that distinguishes us from dogmatic models.',
+      title: "Brand Integrity",
+      description:
+        "Operate within a defined ethical code that distinguishes us from dogmatic models.",
     },
   ];
 
   const curriculum = [
     {
-      module: '01',
-      title: 'Foundations',
-      description: 'Master the six Elements, the Energy Scale, and the Four States of Personality.',
+      module: "01",
+      title: "Foundations",
+      description:
+        "Master the six Elements (Hardware), the Energy Scale, and the Four Operating Modes (Software).",
     },
     {
-      module: '02',
-      title: 'Energy Science',
-      description: 'Deep dive into Regeneration types, the Window of Tolerance, and energy management.',
+      module: "02",
+      title: "Energy Science",
+      description:
+        "Deep dive into Regeneration protocols, the Window of Tolerance, and nervous system regulation.",
     },
     {
-      module: '03',
-      title: 'Applied Practice',
-      description: 'Strategies for relationships, conflict resolution, and building empathy.',
+      module: "03",
+      title: "Applied Practice",
+      description:
+        "Strategies for relationships, conflict resolution, and building empathy.",
     },
     {
-      module: '04',
-      title: 'Professional Contexts',
-      description: 'Apply the framework to business, leadership, and team dynamics.',
+      module: "04",
+      title: "Professional Contexts",
+      description:
+        "Apply the framework to business, leadership, and team dynamics.",
     },
     {
-      module: '05',
-      title: 'Neurodivergence & Ethics',
-      description: 'Sophisticated application for ADHD/Autism and strict ethical boundaries.',
+      module: "05",
+      title: "Neurodivergence & Ethics",
+      description:
+        "Sophisticated application for ADHD/Autism and strict ethical boundaries.",
     },
   ];
 
   const levels = [
     {
-      title: 'Certified Practitioner',
-      level: 'Level 1',
+      title: "Certified Practitioner",
+      level: "Level 1",
       icon: CheckCircle,
-      description: 'For professionals using the framework with individual clients.',
+      description:
+        "For professionals using the framework with individual clients.",
       features: [
-        'Online training modules',
-        'Live virtual workshops',
-        'Final examination',
-        'Official certification',
+        "Online training modules",
+        "Live virtual workshops",
+        "Final examination",
+        "Official certification",
       ],
     },
     {
-      title: 'Certified Instructor',
-      level: 'Level 2',
+      title: "Certified Instructor",
+      level: "Level 2",
       icon: GraduationCap,
-      description: 'For leaders who want to train others and facilitate workshops.',
+      description:
+        "For leaders who want to train others and facilitate workshops.",
       features: [
         'Advanced "Train-the-Trainer" module',
-        'Co-facilitation supervision',
-        'Professional development plan',
-        'Community leadership role',
+        "Co-facilitation supervision",
+        "Professional development plan",
+        "Community leadership role",
       ],
     },
   ];
 
   return (
     <div className="min-h-screen bg-background">
-
       <HeroSection
         badge="🎓 Professional Development"
         title={
           <>
-            <span className="text-foreground">Become a Certified</span>{' '}
+            <span className="text-foreground">Become a Certified</span>{" "}
             <br className="hidden sm:block" />
             <span className="gradient-text bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
               NeuroElemental™ Practitioner
@@ -123,9 +140,7 @@ export default function CertificationPage() {
             className="bg-gradient-to-r from-primary to-[#764BA2] hover:from-[#5568D3] hover:to-[#6A3F92] text-white text-lg px-10 py-7 shadow-xl hover:shadow-2xl transition-all border-0 min-h-[56px]"
             asChild
           >
-            <Link href="/waitlist">
-              Join Waitlist
-            </Link>
+            <Link href="/waitlist">Join Waitlist</Link>
           </Button>
         </div>
       </HeroSection>
@@ -175,30 +190,40 @@ export default function CertificationPage() {
               </div>
               <div className="space-y-6 text-lg text-foreground/80 leading-relaxed">
                 <p>
-                  This program is not for casual enthusiasts. We are seeking dedicated
-                  professionals who can integrate our framework into an existing practice
-                  with responsibility, skill, and ethical awareness.
+                  This program is not for casual enthusiasts. We are seeking
+                  dedicated professionals who can integrate our framework into
+                  an existing practice with responsibility, skill, and ethical
+                  awareness.
                 </p>
                 <ul className="space-y-4 mt-6">
                   <li className="flex items-start space-x-3">
                     <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
                     <div>
-                      <span className="font-bold block text-foreground">Professional Background</span>
-                      Coaches, licensed therapists, counselors, and HR professionals.
+                      <span className="font-bold block text-foreground">
+                        Professional Background
+                      </span>
+                      Coaches, licensed therapists, counselors, and HR
+                      professionals.
                     </div>
                   </li>
                   <li className="flex items-start space-x-3">
                     <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
                     <div>
-                      <span className="font-bold block text-foreground">Ethical Foundation</span>
-                      Commitment to client well-being, avoiding diagnoses, and respecting autonomy.
+                      <span className="font-bold block text-foreground">
+                        Ethical Foundation
+                      </span>
+                      Commitment to client well-being, avoiding diagnoses, and
+                      respecting autonomy.
                     </div>
                   </li>
                   <li className="flex items-start space-x-3">
                     <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
                     <div>
-                      <span className="font-bold block text-foreground">Growth Mindset</span>
-                      Eager to learn modern, neurodivergent-informed systems beyond static labels.
+                      <span className="font-bold block text-foreground">
+                        Growth Mindset
+                      </span>
+                      Eager to learn modern, neurodivergent-informed systems
+                      beyond static labels.
                     </div>
                   </li>
                 </ul>
@@ -216,7 +241,8 @@ export default function CertificationPage() {
                 Program <span className="gradient-text">Curriculum</span>
               </h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                A comprehensive journey transforming your understanding of personality and energy.
+                A comprehensive journey transforming your understanding of
+                personality and energy.
               </p>
             </div>
 
@@ -241,7 +267,9 @@ export default function CertificationPage() {
                 <div>
                   <Sparkles className="w-10 h-10 mx-auto mb-4" />
                   <h3 className="text-xl font-bold mb-2">View Full Syllabus</h3>
-                  <p className="text-white/80 text-sm">Download the detailed guide</p>
+                  <p className="text-white/80 text-sm">
+                    Download the detailed guide
+                  </p>
                 </div>
               </Card>
             </div>
@@ -282,7 +310,10 @@ export default function CertificationPage() {
                     </p>
                     <ul className="space-y-3 mb-8">
                       {level.features.map((feature, i) => (
-                        <li key={i} className="flex items-center text-foreground/80">
+                        <li
+                          key={i}
+                          className="flex items-center text-foreground/80"
+                        >
                           <div className="w-1.5 h-1.5 rounded-full bg-[#667EEA] mr-3" />
                           {feature}
                         </li>
@@ -315,9 +346,7 @@ export default function CertificationPage() {
                 className="bg-white text-[#667EEA] hover:bg-gray-50 text-lg px-12 py-7 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 font-bold min-h-[56px]"
                 asChild
               >
-                <Link href="/waitlist">
-                  Join Certification Waitlist
-                </Link>
+                <Link href="/waitlist">Join Certification Waitlist</Link>
               </Button>
             </div>
           </div>
@@ -328,4 +357,3 @@ export default function CertificationPage() {
     </div>
   );
 }
-

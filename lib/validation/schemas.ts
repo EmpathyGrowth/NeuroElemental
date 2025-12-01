@@ -1,17 +1,17 @@
 /**
  * Zod validation schemas for API endpoints
  * Provides type-safe request validation and automatic type inference
- * 
+ *
  * @module validation/schemas
  * @description Centralized validation schemas for all API endpoints
- * 
+ *
  * @example
  * ```typescript
  * import { emailSchema, courseCreateSchema } from '@/lib/validation/schemas'
- * 
+ *
  * // Validate a single field
  * const email = emailSchema.parse('user@example.com')
- * 
+ *
  * // Validate a complete object
  * const course = courseCreateSchema.parse({
  *   title: 'Introduction to Neuroscience',
@@ -142,13 +142,113 @@ export const percentageSchema = z
   .max(100, 'Percentage must be at most 100')
 
 // ============================================
+// AUTH SCHEMAS
+// ============================================
+
+/**
+ * Password requirements configuration
+ * Centralized password policy for consistency across signup and reset flows
+ */
+export const PASSWORD_REQUIREMENTS = {
+  minLength: 8,
+  requiresUppercase: true,
+  requiresLowercase: true,
+  requiresNumber: true,
+} as const
+
+/**
+ * Strong password validation schema
+ * Used for both signup and password reset to ensure consistency
+ * Requirements: 8+ chars, uppercase, lowercase, number
+ *
+ * @example 'SecurePass123'
+ */
+export const passwordSchema = z
+  .string()
+  .min(PASSWORD_REQUIREMENTS.minLength, `Password must be at least ${PASSWORD_REQUIREMENTS.minLength} characters`)
+  .refine(
+    (pwd) => !PASSWORD_REQUIREMENTS.requiresUppercase || /[A-Z]/.test(pwd),
+    'Password must contain at least one uppercase letter (A-Z)'
+  )
+  .refine(
+    (pwd) => !PASSWORD_REQUIREMENTS.requiresLowercase || /[a-z]/.test(pwd),
+    'Password must contain at least one lowercase letter (a-z)'
+  )
+  .refine(
+    (pwd) => !PASSWORD_REQUIREMENTS.requiresNumber || /[0-9]/.test(pwd),
+    'Password must contain at least one number (0-9)'
+  )
+
+/**
+ * Login schema
+ * Used for user authentication
+ *
+ * @example
+ * ```typescript
+ * {
+ *   email: 'user@example.com',
+ *   password: 'securePassword123'
+ * }
+ * ```
+ */
+export const loginSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1, 'Password is required'),
+})
+
+/**
+ * Signup schema
+ * Used for new user registration
+ * Uses strong password validation for security
+ *
+ * @example
+ * ```typescript
+ * {
+ *   fullName: 'John Doe',
+ *   email: 'user@example.com',
+ *   password: 'SecurePass123',
+ *   confirmPassword: 'SecurePass123'
+ * }
+ * ```
+ */
+export const signupSchema = z.object({
+  fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100, 'Full name must be 100 characters or less'),
+  email: emailSchema,
+  password: passwordSchema,
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+})
+
+/**
+ * Password reset schema
+ * Uses strong password validation for security
+ *
+ * @example
+ * ```typescript
+ * {
+ *   password: 'SecurePass123',
+ *   confirmPassword: 'SecurePass123'
+ * }
+ * ```
+ */
+export const passwordResetSchema = z.object({
+  password: passwordSchema,
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+})
+
+// ============================================
 // PROFILE & USER SCHEMAS
 // ============================================
 
 /**
  * Profile update schema
  * Used for updating user profile information
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -168,7 +268,7 @@ export const profileUpdateSchema = z.object({
 /**
  * Role update schema
  * Used for updating user roles (admin only)
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -189,7 +289,7 @@ export const roleUpdateSchema = z.object({
 /**
  * Course creation schema
  * Used for creating new courses
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -228,7 +328,7 @@ export const courseUpdateSchema = courseCreateSchema.partial()
 /**
  * Course enrollment schema
  * Used when a user enrolls in a course
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -260,7 +360,7 @@ export const courseEnrollmentRequestSchema = z.object({
 /**
  * Course review schema
  * Used for submitting course reviews
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -345,7 +445,7 @@ export const lessonUpdateSchema = lessonCreateSchema.partial()
 /**
  * Lesson completion schema
  * Used when a user completes a lesson
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -366,7 +466,7 @@ export const lessonCompleteSchema = z.object({
 /**
  * Event creation schema
  * Used for creating new events (workshops, webinars, conferences)
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -407,7 +507,7 @@ export const eventUpdateSchema = eventCreateSchema.partial()
 /**
  * Event registration schema
  * Used when a user registers for an event
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -443,7 +543,7 @@ export const eventRegistrationRequestSchema = z.object({
 /**
  * Assessment submission schema
  * Used for submitting assessment answers
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -463,7 +563,7 @@ export const assessmentSubmitSchema = z.object({
 /**
  * Assessment answers schema (for personality assessment)
  * Used for submitting personality assessment answers with ratings
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -482,7 +582,7 @@ export const assessmentAnswersSchema = z.object({
 /**
  * Checkout session creation schema
  * Used for creating Stripe checkout sessions
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -503,7 +603,7 @@ export const checkoutSessionSchema = z.object({
 /**
  * Webhook event schema
  * Used for processing webhook events from external services
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -524,7 +624,7 @@ export const webhookEventSchema = z.object({
 /**
  * Assignment submission schema
  * Used for submitting assignments
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -544,7 +644,7 @@ export const assignmentSubmitSchema = z.object({
 /**
  * Assignment grading schema
  * Used by instructors to grade assignments
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -563,7 +663,7 @@ export const assignmentGradeSchema = z.object({
 /**
  * Quiz submission schema
  * Used for submitting quiz answers
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -580,7 +680,7 @@ export const quizSubmitSchema = z.object({
 /**
  * Quiz creation schema
  * Used for creating new quizzes
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -622,7 +722,7 @@ export const quizCreateSchema = z.object({
 /**
  * Blog post creation schema
  * Used for creating new blog posts
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -660,7 +760,7 @@ export const blogPostUpdateSchema = blogPostCreateSchema.partial()
 /**
  * Organization creation schema
  * Used for creating new organizations
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -683,7 +783,7 @@ export const organizationCreateSchema = z.object({
 /**
  * Organization update schema
  * All fields are optional for partial updates
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -704,7 +804,7 @@ export const organizationUpdateSchema = organizationCreateSchema
 /**
  * Organization member invitation schema
  * Used for inviting new members to an organization
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -721,7 +821,7 @@ export const organizationMemberInviteSchema = z.object({
 /**
  * Organization member update schema
  * Used for updating member roles
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -738,7 +838,7 @@ export const organizationMemberUpdateSchema = z.object({
 /**
  * Organization bulk invitation schema
  * Used for inviting multiple members at once
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -782,7 +882,7 @@ export const organizationRoleCreateSchema = z.object({
 /**
  * Waitlist entry creation schema
  * Used for adding users to waitlists
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -807,7 +907,7 @@ export const waitlistCreateSchema = z.object({
 /**
  * Coupon creation schema
  * Used for creating discount coupons
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -833,7 +933,7 @@ export const couponCreateSchema = z.object({
 /**
  * Coupon validation schema
  * Used for validating coupon codes before applying them
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -855,7 +955,7 @@ export const couponValidateSchema = z.object({
 /**
  * Credit transaction schema
  * Used for recording credit transactions
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -886,7 +986,7 @@ export const creditTransactionSchema = z.object({
 /**
  * Notification creation schema
  * Used for creating user notifications
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -909,7 +1009,7 @@ export const notificationCreateSchema = z.object({
 /**
  * Notification update schema
  * Used for marking notifications as read
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -928,7 +1028,7 @@ export const notificationUpdateSchema = z.object({
 /**
  * Product creation schema
  * Used for creating new products in the catalog
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1007,7 +1107,7 @@ export const subscriptionUpdateSchema = z.object({
 /**
  * Resource upload schema
  * Used for uploading course resources and files
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1037,7 +1137,7 @@ export const resourceUploadSchema = z.object({
 /**
  * Pagination query parameters schema
  * Used for paginated API endpoints
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1056,7 +1156,7 @@ export const paginationQuerySchema = z.object({
 /**
  * Search query parameters schema
  * Used for search endpoints
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1075,7 +1175,7 @@ export const searchQuerySchema = z.object({
 /**
  * ID parameter schema
  * Used for route parameters that expect a UUID
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1090,7 +1190,7 @@ export const idParamSchema = z.object({
 /**
  * Slug parameter schema
  * Used for route parameters that expect a slug
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1109,7 +1209,7 @@ export const slugParamSchema = z.object({
 /**
  * Data export request schema
  * Used for GDPR data export requests
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1262,7 +1362,7 @@ export const updateDiagnosticSchema = z.object({
 /**
  * Session booking schema
  * Used for booking coaching or therapy sessions
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1308,7 +1408,7 @@ export const sessionCreateRequestSchema = z.object({
 /**
  * Analytics event schema
  * Used for tracking user events
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1331,7 +1431,7 @@ export const analyticsEventSchema = z.object({
 /**
  * SSO login schema
  * Used for initiating SSO login flow
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1348,7 +1448,7 @@ export const ssoLoginSchema = z.object({
 /**
  * SSO provider configuration schema
  * Used for creating/updating SSO providers
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1427,7 +1527,7 @@ export const ssoProviderUpdateSchema = z.object({
 /**
  * Webhook creation schema
  * Used for creating organization webhooks
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1456,7 +1556,7 @@ export const webhookUpdateSchema = webhookCreateSchema.partial()
 /**
  * API key creation schema
  * Used for creating organization API keys
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1479,7 +1579,7 @@ export const apiKeyCreateSchema = z.object({
 /**
  * Search query schema
  * Used for search endpoints
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1498,7 +1598,7 @@ export const searchSchema = z.object({
 /**
  * Autocomplete query schema
  * Used for search autocomplete
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1517,7 +1617,7 @@ export const autocompleteSchema = z.object({
 /**
  * Assignment content submission schema
  * Used for submitting assignment content
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1534,7 +1634,7 @@ export const assignmentContentSchema = z.object({
 /**
  * Course review content schema
  * Used for submitting course reviews
- * 
+ *
  * @example
  * ```typescript
  * {
@@ -1600,3 +1700,4 @@ export type ApiKeyCreate = z.infer<typeof apiKeyCreateSchema>
 export type SearchQuery = z.infer<typeof searchSchema>
 export type AssignmentContent = z.infer<typeof assignmentContentSchema>
 export type ReviewContent = z.infer<typeof reviewContentSchema>
+export type PasswordReset = z.infer<typeof passwordResetSchema>

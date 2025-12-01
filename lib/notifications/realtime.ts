@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/client';
 import { RealtimeChannel, RealtimePostgresChangesPayload, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/types/supabase';
+import { logger } from '@/lib/logging';
 
 export interface Notification {
   id: string;
@@ -203,82 +204,4 @@ class NotificationManager {
 
 // Export singleton instance
 export const notificationManager = new NotificationManager();
-
-// Helper hooks for React components
-export function useNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    const loadNotifications = async () => {
-      const userId = getCurrentUserId(); // Implement this based on your auth
-      if (!userId) return;
-
-      const data = await notificationManager.getNotifications(userId);
-      setNotifications(data);
-      setUnreadCount(data.filter(n => !n.read).length);
-
-      // Subscribe to new notifications
-      const unsubscribe = notificationManager.subscribe('hook', (notification) => {
-        setNotifications(prev => [notification, ...prev]);
-        if (!notification.read) {
-          setUnreadCount(prev => prev + 1);
-        }
-      });
-
-      return unsubscribe;
-    };
-
-    loadNotifications();
-  }, []);
-
-  const markAsRead = async (notificationId: string) => {
-    const success = await notificationManager.markAsRead(notificationId);
-    if (success) {
-      setNotifications(prev =>
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    }
-  };
-
-  const markAllAsRead = async () => {
-    const userId = getCurrentUserId();
-    if (!userId) return;
-
-    const success = await notificationManager.markAllAsRead(userId);
-    if (success) {
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-      setUnreadCount(0);
-    }
-  };
-
-  const deleteNotification = async (notificationId: string) => {
-    const success = await notificationManager.deleteNotification(notificationId);
-    if (success) {
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      const notification = notifications.find(n => n.id === notificationId);
-      if (notification && !notification.read) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
-    }
-  };
-
-  return {
-    notifications,
-    unreadCount,
-    markAsRead,
-    markAllAsRead,
-    deleteNotification,
-  };
-}
-
-import { useEffect, useState } from 'react';
-import { logger } from '@/lib/logging';
-
-function getCurrentUserId(): string | null {
-  // This should be implemented based on your auth system
-  // For now, returning null
-  return null;
-}
 

@@ -4,26 +4,34 @@
  */
 
 import { createAuthenticatedRoute, successResponse } from '@/lib/api';
-import { getSupabaseServer } from '@/lib/db';
+import {
+    certificationRepository,
+    createRepository,
+    enrollmentRepository,
+    userRepository
+} from '@/lib/db';
 
 export const GET = createAuthenticatedRoute(async (_request, _context, user) => {
-  const supabase = getSupabaseServer();
+  // Initialize ad-hoc repositories for tables without dedicated classes
+  const progressRepo = createRepository('course_progress');
+  const reviewRepo = createRepository('course_reviews');
+  const notificationRepo = createRepository('notifications');
 
   // Fetch user's data summary across all tables
   const [
-    { data: profile },
-    { data: enrollments },
-    { data: courseProgress },
-    { data: reviews },
-    { data: certifications },
-    { count: notificationCount }
+    profile,
+    enrollments,
+    courseProgress,
+    reviews,
+    certifications,
+    notificationCount
   ] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user.id).single(),
-    supabase.from('course_enrollments').select('*').eq('user_id', user.id),
-    supabase.from('course_progress').select('*').eq('user_id', user.id),
-    supabase.from('course_reviews').select('*').eq('user_id', user.id),
-    supabase.from('certificates').select('*').eq('user_id', user.id),
-    supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+    userRepository.findById(user.id),
+    enrollmentRepository.getUserEnrollments(user.id),
+    progressRepo.findAll({ user_id: user.id }),
+    reviewRepo.findAll({ user_id: user.id }),
+    certificationRepository.getUserApplications(user.id),
+    notificationRepo.count({ user_id: user.id })
   ]);
 
   return successResponse({

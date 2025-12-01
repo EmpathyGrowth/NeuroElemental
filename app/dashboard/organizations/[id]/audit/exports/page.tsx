@@ -1,15 +1,20 @@
-'use client'
+"use client";
 
 /**
  * Audit Export Dashboard Page
  * Manage audit log exports and schedules
  */
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { formatDate } from '@/lib/utils'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -17,14 +22,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -32,406 +42,526 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Switch } from '@/components/ui/switch'
-import { Separator } from '@/components/ui/separator'
-import { toast } from 'sonner'
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
+import { formatDate } from "@/lib/utils";
 import {
   ArrowLeft,
-  Download,
-  Trash2,
-  Plus,
-  FileText,
   Calendar,
   ChevronDown,
   ChevronRight,
+  Download,
   FileJson,
   FileSpreadsheet,
+  FileText,
   Loader2,
-} from 'lucide-react'
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 interface ExportJob {
-  id: string
-  export_format: 'csv' | 'json' | 'xlsx'
-  date_from: string
-  date_to: string
-  status: 'pending' | 'processing' | 'completed' | 'failed'
-  total_records: number
-  file_size_bytes?: number
-  created_at: string
-  error_message?: string
+  id: string;
+  export_format: "csv" | "json" | "xlsx";
+  date_from: string;
+  date_to: string;
+  status: "pending" | "processing" | "completed" | "failed";
+  total_records: number;
+  file_size_bytes?: number;
+  created_at: string;
+  error_message?: string;
 }
 
 interface ExportSchedule {
-  id: string
-  name: string
-  description?: string
-  frequency: 'daily' | 'weekly' | 'monthly'
-  day_of_week?: number
-  day_of_month?: number
-  time_of_day: string
-  export_format: 'csv' | 'json' | 'xlsx'
-  lookback_days: number
-  is_active: boolean
-  last_run_at?: string
-  next_run_at?: string
-  created_at: string
+  id: string;
+  name: string;
+  description?: string;
+  frequency: "daily" | "weekly" | "monthly";
+  day_of_week?: number;
+  day_of_month?: number;
+  time_of_day: string;
+  export_format: "csv" | "json" | "xlsx";
+  lookback_days: number;
+  is_active: boolean;
+  last_run_at?: string;
+  next_run_at?: string;
+  created_at: string;
 }
 
 const ACTION_TYPES = [
-  'member.invited',
-  'member.joined',
-  'member.removed',
-  'member.role_changed',
-  'credits.purchased',
-  'credits.allocated',
-  'credits.consumed',
-  'organization.created',
-  'organization.updated',
-  'settings.updated',
-]
+  "member.invited",
+  "member.joined",
+  "member.removed",
+  "member.role_changed",
+  "credits.purchased",
+  "credits.allocated",
+  "credits.consumed",
+  "organization.created",
+  "organization.updated",
+  "settings.updated",
+];
 
 const ENTITY_TYPES = [
-  'organization',
-  'member',
-  'credits',
-  'invitation',
-  'settings',
-  'api_key',
-  'webhook',
-]
+  "organization",
+  "member",
+  "credits",
+  "invitation",
+  "settings",
+  "api_key",
+  "webhook",
+];
 
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const DAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
 
 export default function AuditExportsPage() {
-  const params = useParams()
-  const router = useRouter()
-  const orgId = params.id as string
+  const params = useParams();
+  const router = useRouter();
+  const { toast } = useToast();
+  const orgId = params.id as string;
 
-  const [jobs, setJobs] = useState<ExportJob[]>([])
-  const [schedules, setSchedules] = useState<ExportSchedule[]>([])
-  const [loading, setLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [jobs, setJobs] = useState<ExportJob[]>([]);
+  const [schedules, setSchedules] = useState<ExportSchedule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Create export dialog state
-  const [createExportOpen, setCreateExportOpen] = useState(false)
-  const [exportFormat, setExportFormat] = useState<'csv' | 'json' | 'xlsx'>('csv')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
-  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([])
-  const [selectedEntityTypes, setSelectedEntityTypes] = useState<string[]>([])
-  const [creating, setCreating] = useState(false)
+  const [createExportOpen, setCreateExportOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"csv" | "json" | "xlsx">(
+    "csv"
+  );
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([]);
+  const [selectedEntityTypes, setSelectedEntityTypes] = useState<string[]>([]);
+  const [creating, setCreating] = useState(false);
 
   // Create schedule dialog state
-  const [createScheduleOpen, setCreateScheduleOpen] = useState(false)
-  const [scheduleName, setScheduleName] = useState('')
-  const [scheduleDescription, setScheduleDescription] = useState('')
-  const [scheduleFrequency, setScheduleFrequency] = useState<'daily' | 'weekly' | 'monthly'>('daily')
-  const [scheduleDayOfWeek, setScheduleDayOfWeek] = useState(0)
-  const [scheduleDayOfMonth, setScheduleDayOfMonth] = useState(1)
-  const [scheduleTime, setScheduleTime] = useState('09:00')
-  const [scheduleLookback, setScheduleLookback] = useState(30)
-  const [scheduleFormat, setScheduleFormat] = useState<'csv' | 'json' | 'xlsx'>('csv')
-  const [scheduleEmails, setScheduleEmails] = useState('')
-  const [scheduleAdvancedFilters, setScheduleAdvancedFilters] = useState(false)
-  const [scheduleEventTypes, setScheduleEventTypes] = useState<string[]>([])
-  const [scheduleEntityTypes, setScheduleEntityTypes] = useState<string[]>([])
-  const [creatingSchedule, setCreatingSchedule] = useState(false)
+  const [createScheduleOpen, setCreateScheduleOpen] = useState(false);
+  const [scheduleName, setScheduleName] = useState("");
+  const [scheduleDescription, setScheduleDescription] = useState("");
+  const [scheduleFrequency, setScheduleFrequency] = useState<
+    "daily" | "weekly" | "monthly"
+  >("daily");
+  const [scheduleDayOfWeek, setScheduleDayOfWeek] = useState(0);
+  const [scheduleDayOfMonth, setScheduleDayOfMonth] = useState(1);
+  const [scheduleTime, setScheduleTime] = useState("09:00");
+  const [scheduleLookback, setScheduleLookback] = useState(30);
+  const [scheduleFormat, setScheduleFormat] = useState<"csv" | "json" | "xlsx">(
+    "csv"
+  );
+  const [scheduleEmails, setScheduleEmails] = useState("");
+  const [scheduleAdvancedFilters, setScheduleAdvancedFilters] = useState(false);
+  const [scheduleEventTypes, setScheduleEventTypes] = useState<string[]>([]);
+  const [scheduleEntityTypes, setScheduleEntityTypes] = useState<string[]>([]);
+  const [creatingSchedule, setCreatingSchedule] = useState(false);
 
   useEffect(() => {
-    fetchData()
+    fetchData();
     // Set default dates (last 30 days)
-    const to = new Date()
-    const from = new Date()
-    from.setDate(from.getDate() - 30)
-    setDateTo(to.toISOString().split('T')[0])
-    setDateFrom(from.toISOString().split('T')[0])
-  }, [orgId])
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - 30);
+    setDateTo(to.toISOString().split("T")[0]);
+    setDateFrom(from.toISOString().split("T")[0]);
+  }, [orgId]);
 
   const fetchData = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
 
       // Fetch jobs
-      const jobsUrl = new URL(`/api/organizations/${orgId}/audit/export`, window.location.origin)
-      if (statusFilter !== 'all') {
-        jobsUrl.searchParams.set('status', statusFilter)
+      const jobsUrl = new URL(
+        `/api/organizations/${orgId}/audit/export`,
+        window.location.origin
+      );
+      if (statusFilter !== "all") {
+        jobsUrl.searchParams.set("status", statusFilter);
       }
 
-      const jobsRes = await fetch(jobsUrl.toString())
+      const jobsRes = await fetch(jobsUrl.toString());
       if (jobsRes.ok) {
-        const jobsData = await jobsRes.json()
-        setJobs(jobsData.jobs || [])
+        const jobsData = await jobsRes.json();
+        setJobs(jobsData.jobs || []);
       }
 
       // Fetch schedules
-      const schedulesRes = await fetch(`/api/organizations/${orgId}/audit/schedules`)
+      const schedulesRes = await fetch(
+        `/api/organizations/${orgId}/audit/schedules`
+      );
       if (schedulesRes.ok) {
-        const schedulesData = await schedulesRes.json()
-        setSchedules(schedulesData.schedules || [])
+        const schedulesData = await schedulesRes.json();
+        setSchedules(schedulesData.schedules || []);
       }
     } catch (_err) {
-      toast.error('Failed to load export data')
+      toast({
+        title: "Error",
+        description: "Failed to load export data",
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleCreateExport = async () => {
     try {
-      setCreating(true)
+      setCreating(true);
 
       // Validate dates
-      const from = new Date(dateFrom)
-      const to = new Date(dateTo)
+      const from = new Date(dateFrom);
+      const to = new Date(dateTo);
 
       if (to < from) {
-        toast.error('End date must be after start date')
-        return
+        toast({
+          title: "Invalid date range",
+          description: "End date must be after start date",
+          variant: "destructive",
+        });
+        return;
       }
 
-      const daysDiff = (to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)
+      const daysDiff = (to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24);
       if (daysDiff > 365) {
-        toast.error('Date range cannot exceed 1 year')
-        return
+        toast({
+          title: "Invalid date range",
+          description: "Date range cannot exceed 1 year",
+          variant: "destructive",
+        });
+        return;
       }
 
       const res = await fetch(`/api/organizations/${orgId}/audit/export`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           export_format: exportFormat,
           date_from: dateFrom,
           date_to: dateTo,
-          event_types: selectedEventTypes.length > 0 ? selectedEventTypes : undefined,
-          entity_types: selectedEntityTypes.length > 0 ? selectedEntityTypes : undefined,
+          event_types:
+            selectedEventTypes.length > 0 ? selectedEventTypes : undefined,
+          entity_types:
+            selectedEntityTypes.length > 0 ? selectedEntityTypes : undefined,
         }),
-      })
+      });
 
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to create export')
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create export");
       }
 
-      toast.success('Your export job has been queued for processing')
+      toast({
+        title: "Export created",
+        description: "Your export job has been queued for processing",
+      });
 
-      setCreateExportOpen(false)
-      resetExportForm()
-      fetchData()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create export')
+      setCreateExportOpen(false);
+      resetExportForm();
+      fetchData();
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
-      setCreating(false)
+      setCreating(false);
     }
-  }
+  };
 
   const handleCreateSchedule = async () => {
     try {
-      setCreatingSchedule(true)
+      setCreatingSchedule(true);
 
       if (!scheduleName.trim()) {
-        toast.error('Schedule name is required')
-        return
+        toast({
+          title: "Validation error",
+          description: "Schedule name is required",
+          variant: "destructive",
+        });
+        return;
       }
 
       const res = await fetch(`/api/organizations/${orgId}/audit/schedules`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: scheduleName,
           description: scheduleDescription || undefined,
           frequency: scheduleFrequency,
-          day_of_week: scheduleFrequency === 'weekly' ? scheduleDayOfWeek : undefined,
-          day_of_month: scheduleFrequency === 'monthly' ? scheduleDayOfMonth : undefined,
+          day_of_week:
+            scheduleFrequency === "weekly" ? scheduleDayOfWeek : undefined,
+          day_of_month:
+            scheduleFrequency === "monthly" ? scheduleDayOfMonth : undefined,
           time_of_day: scheduleTime,
           export_format: scheduleFormat,
           lookback_days: scheduleLookback,
-          notify_emails: scheduleEmails ? scheduleEmails.split(',').map((e) => e.trim()) : undefined,
-          event_types: scheduleEventTypes.length > 0 ? scheduleEventTypes : undefined,
-          entity_types: scheduleEntityTypes.length > 0 ? scheduleEntityTypes : undefined,
+          notify_emails: scheduleEmails
+            ? scheduleEmails.split(",").map((e) => e.trim())
+            : undefined,
+          event_types:
+            scheduleEventTypes.length > 0 ? scheduleEventTypes : undefined,
+          entity_types:
+            scheduleEntityTypes.length > 0 ? scheduleEntityTypes : undefined,
         }),
-      })
+      });
 
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to create schedule')
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create schedule");
       }
 
-      toast.success('Export schedule has been created successfully')
+      toast({
+        title: "Schedule created",
+        description: "Export schedule has been created successfully",
+      });
 
-      setCreateScheduleOpen(false)
-      resetScheduleForm()
-      fetchData()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create schedule')
+      setCreateScheduleOpen(false);
+      resetScheduleForm();
+      fetchData();
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
-      setCreatingSchedule(false)
+      setCreatingSchedule(false);
     }
-  }
+  };
 
   const handleDownload = async (jobId: string) => {
     try {
-      const res = await fetch(`/api/organizations/${orgId}/audit/export/${jobId}/download`)
+      const res = await fetch(
+        `/api/organizations/${orgId}/audit/export/${jobId}/download`
+      );
 
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to download export')
+        const error = await res.json();
+        throw new Error(error.error || "Failed to download export");
       }
 
       // Get filename from content-disposition header or use default
-      const contentDisposition = res.headers.get('content-disposition')
-      const filenameMatch = contentDisposition?.match(/filename="(.+)"/)
-      const filename = filenameMatch ? filenameMatch[1] : 'audit-export.csv'
+      const contentDisposition = res.headers.get("content-disposition");
+      const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
+      const filename = filenameMatch ? filenameMatch[1] : "audit-export.csv";
 
       // Download file
-      const blob = await res.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = filename
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
 
-      toast.success(`Downloading ${filename}`)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to download export')
+      toast({
+        title: "Download started",
+        description: `Downloading ${filename}`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Download failed",
+        description: err.message,
+        variant: "destructive",
+      });
     }
-  }
+  };
 
   const handleDeleteJob = async (jobId: string) => {
-    if (!confirm('Are you sure you want to delete this export job?')) return
+    if (!confirm("Are you sure you want to delete this export job?")) return;
 
     try {
-      const res = await fetch(`/api/organizations/${orgId}/audit/export/${jobId}`, {
-        method: 'DELETE',
-      })
+      const res = await fetch(
+        `/api/organizations/${orgId}/audit/export/${jobId}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!res.ok) {
-        throw new Error('Failed to delete export job')
+        throw new Error("Failed to delete export job");
       }
 
-      toast.success('Export job has been deleted')
+      toast({
+        title: "Export deleted",
+        description: "Export job has been deleted",
+      });
 
-      fetchData()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete export job')
+      fetchData();
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     }
-  }
+  };
 
-  const handleToggleSchedule = async (scheduleId: string, isActive: boolean) => {
+  const handleToggleSchedule = async (
+    scheduleId: string,
+    isActive: boolean
+  ) => {
     try {
-      const res = await fetch(`/api/organizations/${orgId}/audit/schedules/${scheduleId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_active: !isActive }),
-      })
+      const res = await fetch(
+        `/api/organizations/${orgId}/audit/schedules/${scheduleId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_active: !isActive }),
+        }
+      );
 
       if (!res.ok) {
-        throw new Error('Failed to update schedule')
+        throw new Error("Failed to update schedule");
       }
 
-      toast.success(`Schedule has been ${isActive ? 'paused' : 'activated'}`)
+      toast({
+        title: isActive ? "Schedule paused" : "Schedule activated",
+        description: `Schedule has been ${isActive ? "paused" : "activated"}`,
+      });
 
-      fetchData()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update schedule')
+      fetchData();
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     }
-  }
+  };
 
   const handleDeleteSchedule = async (scheduleId: string) => {
-    if (!confirm('Are you sure you want to delete this schedule?')) return
+    if (!confirm("Are you sure you want to delete this schedule?")) return;
 
     try {
-      const res = await fetch(`/api/organizations/${orgId}/audit/schedules/${scheduleId}`, {
-        method: 'DELETE',
-      })
+      const res = await fetch(
+        `/api/organizations/${orgId}/audit/schedules/${scheduleId}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!res.ok) {
-        throw new Error('Failed to delete schedule')
+        throw new Error("Failed to delete schedule");
       }
 
-      toast.success('Export schedule has been deleted')
+      toast({
+        title: "Schedule deleted",
+        description: "Export schedule has been deleted",
+      });
 
-      fetchData()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete schedule')
+      fetchData();
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     }
-  }
+  };
 
   const resetExportForm = () => {
-    setExportFormat('csv')
-    setShowAdvancedFilters(false)
-    setSelectedEventTypes([])
-    setSelectedEntityTypes([])
-  }
+    setExportFormat("csv");
+    setShowAdvancedFilters(false);
+    setSelectedEventTypes([]);
+    setSelectedEntityTypes([]);
+  };
 
   const resetScheduleForm = () => {
-    setScheduleName('')
-    setScheduleDescription('')
-    setScheduleFrequency('daily')
-    setScheduleDayOfWeek(0)
-    setScheduleDayOfMonth(1)
-    setScheduleTime('09:00')
-    setScheduleLookback(30)
-    setScheduleFormat('csv')
-    setScheduleEmails('')
-    setScheduleAdvancedFilters(false)
-    setScheduleEventTypes([])
-    setScheduleEntityTypes([])
-  }
-
+    setScheduleName("");
+    setScheduleDescription("");
+    setScheduleFrequency("daily");
+    setScheduleDayOfWeek(0);
+    setScheduleDayOfMonth(1);
+    setScheduleTime("09:00");
+    setScheduleLookback(30);
+    setScheduleFormat("csv");
+    setScheduleEmails("");
+    setScheduleAdvancedFilters(false);
+    setScheduleEventTypes([]);
+    setScheduleEntityTypes([]);
+  };
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
+    return new Date(dateString).toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   const formatFileSize = (bytes?: number) => {
-    if (!bytes) return 'N/A'
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  }
+    if (!bytes) return "N/A";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="bg-gray-50">Pending</Badge>
-      case 'processing':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Processing</Badge>
-      case 'completed':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Completed</Badge>
-      case 'failed':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Failed</Badge>
+      case "pending":
+        return (
+          <Badge variant="outline" className="bg-gray-50">
+            Pending
+          </Badge>
+        );
+      case "processing":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-blue-50 text-blue-700 border-blue-200"
+          >
+            Processing
+          </Badge>
+        );
+      case "completed":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-green-50 text-green-700 border-green-200"
+          >
+            Completed
+          </Badge>
+        );
+      case "failed":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-red-50 text-red-700 border-red-200"
+          >
+            Failed
+          </Badge>
+        );
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return <Badge variant="outline">{status}</Badge>;
     }
-  }
+  };
 
   const getFormatIcon = (format: string) => {
     switch (format) {
-      case 'csv':
-        return <FileSpreadsheet className="h-4 w-4" />
-      case 'json':
-        return <FileJson className="h-4 w-4" />
+      case "csv":
+        return <FileSpreadsheet className="h-4 w-4" />;
+      case "json":
+        return <FileJson className="h-4 w-4" />;
       default:
-        return <FileText className="h-4 w-4" />
+        return <FileText className="h-4 w-4" />;
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -441,7 +571,7 @@ export default function AuditExportsPage() {
           <Skeleton className="h-96" />
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -460,7 +590,9 @@ export default function AuditExportsPage() {
           </Button>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Audit Exports</h1>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Audit Exports
+              </h1>
               <p className="text-muted-foreground">
                 Export and schedule audit log exports for compliance
               </p>
@@ -479,7 +611,13 @@ export default function AuditExportsPage() {
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); fetchData(); }}>
+                <Select
+                  value={statusFilter}
+                  onValueChange={(val) => {
+                    setStatusFilter(val);
+                    fetchData();
+                  }}
+                >
                   <SelectTrigger className="w-[150px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -503,7 +641,11 @@ export default function AuditExportsPage() {
               <div className="text-center py-12 text-muted-foreground">
                 <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
                 <p>No export jobs found</p>
-                <Button variant="link" onClick={() => setCreateExportOpen(true)} className="mt-2">
+                <Button
+                  variant="link"
+                  onClick={() => setCreateExportOpen(true)}
+                  className="mt-2"
+                >
                   Create your first export
                 </Button>
               </div>
@@ -530,11 +672,14 @@ export default function AuditExportsPage() {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             {getFormatIcon(job.export_format)}
-                            <span className="uppercase text-xs font-mono">{job.export_format}</span>
+                            <span className="uppercase text-xs font-mono">
+                              {job.export_format}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">
-                          {formatDate(job.date_from)} - {formatDate(job.date_to)}
+                          {formatDate(job.date_from)} -{" "}
+                          {formatDate(job.date_to)}
                         </TableCell>
                         <TableCell className="font-mono text-sm">
                           {job.total_records.toLocaleString()}
@@ -542,12 +687,10 @@ export default function AuditExportsPage() {
                         <TableCell className="text-sm text-muted-foreground">
                           {formatFileSize(job.file_size_bytes)}
                         </TableCell>
-                        <TableCell>
-                          {getStatusBadge(job.status)}
-                        </TableCell>
+                        <TableCell>{getStatusBadge(job.status)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {job.status === 'completed' && (
+                            {job.status === "completed" && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -557,8 +700,11 @@ export default function AuditExportsPage() {
                                 Download
                               </Button>
                             )}
-                            {job.status === 'failed' && job.error_message && (
-                              <span className="text-xs text-red-600" title={job.error_message}>
+                            {job.status === "failed" && job.error_message && (
+                              <span
+                                className="text-xs text-red-600"
+                                title={job.error_message}
+                              >
                                 Error
                               </span>
                             )}
@@ -601,7 +747,11 @@ export default function AuditExportsPage() {
               <div className="text-center py-12 text-muted-foreground">
                 <Calendar className="h-12 w-12 mx-auto mb-4 opacity-20" />
                 <p>No export schedules configured</p>
-                <Button variant="link" onClick={() => setCreateScheduleOpen(true)} className="mt-2">
+                <Button
+                  variant="link"
+                  onClick={() => setCreateScheduleOpen(true)}
+                  className="mt-2"
+                >
                   Create a schedule
                 </Button>
               </div>
@@ -633,28 +783,42 @@ export default function AuditExportsPage() {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            <div className="capitalize">{schedule.frequency}</div>
+                            <div className="capitalize">
+                              {schedule.frequency}
+                            </div>
                             <div className="text-xs text-muted-foreground">
-                              {schedule.frequency === 'weekly' && schedule.day_of_week !== undefined && (
-                                <>on {DAY_NAMES[schedule.day_of_week]}</>
-                              )}
-                              {schedule.frequency === 'monthly' && schedule.day_of_month && (
-                                <>on day {schedule.day_of_month}</>
-                              )}
-                              {' at '}{schedule.time_of_day.slice(0, 5)}
+                              {schedule.frequency === "weekly" &&
+                                schedule.day_of_week !== undefined && (
+                                  <>on {DAY_NAMES[schedule.day_of_week]}</>
+                                )}
+                              {schedule.frequency === "monthly" &&
+                                schedule.day_of_month && (
+                                  <>on day {schedule.day_of_month}</>
+                                )}
+                              {" at "}
+                              {schedule.time_of_day.slice(0, 5)}
                             </div>
                           </div>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {schedule.last_run_at ? formatDateTime(schedule.last_run_at) : 'Never'}
+                          {schedule.last_run_at
+                            ? formatDateTime(schedule.last_run_at)
+                            : "Never"}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {schedule.next_run_at ? formatDateTime(schedule.next_run_at) : 'N/A'}
+                          {schedule.next_run_at
+                            ? formatDateTime(schedule.next_run_at)
+                            : "N/A"}
                         </TableCell>
                         <TableCell>
                           <Switch
                             checked={schedule.is_active}
-                            onCheckedChange={() => handleToggleSchedule(schedule.id, schedule.is_active)}
+                            onCheckedChange={() =>
+                              handleToggleSchedule(
+                                schedule.id,
+                                schedule.is_active
+                              )
+                            }
                           />
                         </TableCell>
                         <TableCell className="text-right">
@@ -689,7 +853,10 @@ export default function AuditExportsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Export Format</Label>
-                  <Select value={exportFormat} onValueChange={(val) => setExportFormat(val as 'csv' | 'json' | 'xlsx')}>
+                  <Select
+                    value={exportFormat}
+                    onValueChange={(val: any) => setExportFormat(val)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -733,7 +900,11 @@ export default function AuditExportsPage() {
                   onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                   className="mb-2"
                 >
-                  {showAdvancedFilters ? <ChevronDown className="h-4 w-4 mr-2" /> : <ChevronRight className="h-4 w-4 mr-2" />}
+                  {showAdvancedFilters ? (
+                    <ChevronDown className="h-4 w-4 mr-2" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 mr-2" />
+                  )}
                   Advanced Filters
                 </Button>
 
@@ -743,15 +914,23 @@ export default function AuditExportsPage() {
                       <Label>Event Types</Label>
                       <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded">
                         {ACTION_TYPES.map((type) => (
-                          <div key={type} className="flex items-center space-x-2">
+                          <div
+                            key={type}
+                            className="flex items-center space-x-2"
+                          >
                             <Checkbox
                               id={`event-${type}`}
                               checked={selectedEventTypes.includes(type)}
                               onCheckedChange={(checked) => {
                                 if (checked) {
-                                  setSelectedEventTypes([...selectedEventTypes, type])
+                                  setSelectedEventTypes([
+                                    ...selectedEventTypes,
+                                    type,
+                                  ]);
                                 } else {
-                                  setSelectedEventTypes(selectedEventTypes.filter((t) => t !== type))
+                                  setSelectedEventTypes(
+                                    selectedEventTypes.filter((t) => t !== type)
+                                  );
                                 }
                               }}
                             />
@@ -770,15 +949,25 @@ export default function AuditExportsPage() {
                       <Label>Entity Types</Label>
                       <div className="grid grid-cols-2 gap-2 p-2 border rounded">
                         {ENTITY_TYPES.map((type) => (
-                          <div key={type} className="flex items-center space-x-2">
+                          <div
+                            key={type}
+                            className="flex items-center space-x-2"
+                          >
                             <Checkbox
                               id={`entity-${type}`}
                               checked={selectedEntityTypes.includes(type)}
                               onCheckedChange={(checked) => {
                                 if (checked) {
-                                  setSelectedEntityTypes([...selectedEntityTypes, type])
+                                  setSelectedEntityTypes([
+                                    ...selectedEntityTypes,
+                                    type,
+                                  ]);
                                 } else {
-                                  setSelectedEntityTypes(selectedEntityTypes.filter((t) => t !== type))
+                                  setSelectedEntityTypes(
+                                    selectedEntityTypes.filter(
+                                      (t) => t !== type
+                                    )
+                                  );
                                 }
                               }}
                             />
@@ -798,7 +987,10 @@ export default function AuditExportsPage() {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateExportOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setCreateExportOpen(false)}
+              >
                 Cancel
               </Button>
               <Button onClick={handleCreateExport} disabled={creating}>
@@ -842,7 +1034,10 @@ export default function AuditExportsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Frequency *</Label>
-                  <Select value={scheduleFrequency} onValueChange={(val) => setScheduleFrequency(val as 'daily' | 'weekly' | 'monthly')}>
+                  <Select
+                    value={scheduleFrequency}
+                    onValueChange={(val: any) => setScheduleFrequency(val)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -864,33 +1059,47 @@ export default function AuditExportsPage() {
                 </div>
               </div>
 
-              {scheduleFrequency === 'weekly' && (
+              {scheduleFrequency === "weekly" && (
                 <div className="space-y-2">
                   <Label>Day of Week *</Label>
-                  <Select value={String(scheduleDayOfWeek)} onValueChange={(val) => setScheduleDayOfWeek(parseInt(val))}>
+                  <Select
+                    value={String(scheduleDayOfWeek)}
+                    onValueChange={(val) => setScheduleDayOfWeek(parseInt(val))}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {DAY_NAMES.map((day, idx) => (
-                        <SelectItem key={idx} value={String(idx)}>{day}</SelectItem>
+                        <SelectItem key={idx} value={String(idx)}>
+                          {day}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               )}
 
-              {scheduleFrequency === 'monthly' && (
+              {scheduleFrequency === "monthly" && (
                 <div className="space-y-2">
                   <Label>Day of Month *</Label>
-                  <Select value={String(scheduleDayOfMonth)} onValueChange={(val) => setScheduleDayOfMonth(parseInt(val))}>
+                  <Select
+                    value={String(scheduleDayOfMonth)}
+                    onValueChange={(val) =>
+                      setScheduleDayOfMonth(parseInt(val))
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                        <SelectItem key={day} value={String(day)}>{day}</SelectItem>
-                      ))}
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map(
+                        (day) => (
+                          <SelectItem key={day} value={String(day)}>
+                            {day}
+                          </SelectItem>
+                        )
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -904,7 +1113,9 @@ export default function AuditExportsPage() {
                     min={1}
                     max={365}
                     value={scheduleLookback}
-                    onChange={(e) => setScheduleLookback(parseInt(e.target.value))}
+                    onChange={(e) =>
+                      setScheduleLookback(parseInt(e.target.value))
+                    }
                   />
                   <div className="text-xs text-muted-foreground">
                     Export logs from the last N days
@@ -913,7 +1124,10 @@ export default function AuditExportsPage() {
 
                 <div className="space-y-2">
                   <Label>Export Format *</Label>
-                  <Select value={scheduleFormat} onValueChange={(val) => setScheduleFormat(val as 'csv' | 'json' | 'xlsx')}>
+                  <Select
+                    value={scheduleFormat}
+                    onValueChange={(val: any) => setScheduleFormat(val)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -943,10 +1157,16 @@ export default function AuditExportsPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setScheduleAdvancedFilters(!scheduleAdvancedFilters)}
+                  onClick={() =>
+                    setScheduleAdvancedFilters(!scheduleAdvancedFilters)
+                  }
                   className="mb-2"
                 >
-                  {scheduleAdvancedFilters ? <ChevronDown className="h-4 w-4 mr-2" /> : <ChevronRight className="h-4 w-4 mr-2" />}
+                  {scheduleAdvancedFilters ? (
+                    <ChevronDown className="h-4 w-4 mr-2" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 mr-2" />
+                  )}
                   Advanced Filters
                 </Button>
 
@@ -956,15 +1176,23 @@ export default function AuditExportsPage() {
                       <Label>Event Types</Label>
                       <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded">
                         {ACTION_TYPES.map((type) => (
-                          <div key={type} className="flex items-center space-x-2">
+                          <div
+                            key={type}
+                            className="flex items-center space-x-2"
+                          >
                             <Checkbox
                               id={`schedule-event-${type}`}
                               checked={scheduleEventTypes.includes(type)}
                               onCheckedChange={(checked) => {
                                 if (checked) {
-                                  setScheduleEventTypes([...scheduleEventTypes, type])
+                                  setScheduleEventTypes([
+                                    ...scheduleEventTypes,
+                                    type,
+                                  ]);
                                 } else {
-                                  setScheduleEventTypes(scheduleEventTypes.filter((t) => t !== type))
+                                  setScheduleEventTypes(
+                                    scheduleEventTypes.filter((t) => t !== type)
+                                  );
                                 }
                               }}
                             />
@@ -983,15 +1211,25 @@ export default function AuditExportsPage() {
                       <Label>Entity Types</Label>
                       <div className="grid grid-cols-2 gap-2 p-2 border rounded">
                         {ENTITY_TYPES.map((type) => (
-                          <div key={type} className="flex items-center space-x-2">
+                          <div
+                            key={type}
+                            className="flex items-center space-x-2"
+                          >
                             <Checkbox
                               id={`schedule-entity-${type}`}
                               checked={scheduleEntityTypes.includes(type)}
                               onCheckedChange={(checked) => {
                                 if (checked) {
-                                  setScheduleEntityTypes([...scheduleEntityTypes, type])
+                                  setScheduleEntityTypes([
+                                    ...scheduleEntityTypes,
+                                    type,
+                                  ]);
                                 } else {
-                                  setScheduleEntityTypes(scheduleEntityTypes.filter((t) => t !== type))
+                                  setScheduleEntityTypes(
+                                    scheduleEntityTypes.filter(
+                                      (t) => t !== type
+                                    )
+                                  );
                                 }
                               }}
                             />
@@ -1011,11 +1249,19 @@ export default function AuditExportsPage() {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateScheduleOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setCreateScheduleOpen(false)}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleCreateSchedule} disabled={creatingSchedule}>
-                {creatingSchedule && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Button
+                onClick={handleCreateSchedule}
+                disabled={creatingSchedule}
+              >
+                {creatingSchedule && (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                )}
                 Create Schedule
               </Button>
             </DialogFooter>
@@ -1023,5 +1269,5 @@ export default function AuditExportsPage() {
         </Dialog>
       </div>
     </div>
-  )
+  );
 }

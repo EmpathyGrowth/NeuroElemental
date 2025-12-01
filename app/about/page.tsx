@@ -244,7 +244,7 @@ export default function AboutPage() {
                   asChild
                 >
                   <a
-                    href="https://linkedin.com"
+                    href="https://linkedin.com/in/janniklaursen"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -257,7 +257,7 @@ export default function AboutPage() {
                   asChild
                 >
                   <a
-                    href="https://twitter.com"
+                    href="https://twitter.com/neuroelemental"
                     target="_blank"
                     rel="noopener noreferrer"
                   >

@@ -24,11 +24,8 @@ export const GET = createAdminRoute(async (request, _context, _admin) => {
     .from('credit_transactions')
     .select(`
       *,
-      organization:organizations(name,
-        slug
-      )
-    `
-    )
+      organization:organizations(id, name)
+    `)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 

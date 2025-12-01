@@ -1,16 +1,33 @@
-'use client';
+"use client";
 
-import { useAuth } from '@/components/auth/auth-provider';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { motion } from 'framer-motion';
-import { Award, BookOpen, Calendar, ExternalLink, Loader2, PlayCircle, TrendingUp } from 'lucide-react';
-import Link from 'next/link';
-import { useEffect } from 'react';
-import { ElementalIcons } from '@/components/icons/elemental-icons';
-import { useAsync } from '@/hooks/use-async';
-import { formatDate } from '@/lib/utils';
+import { useAuth } from "@/components/auth/auth-provider";
+import { LearningStatsCard } from "@/components/dashboard/learning-stats-card";
+import { DashboardQuickActions } from "@/components/dashboard/quick-actions";
+import { StreakDisplay } from "@/components/gamification/streak-display";
+import { ElementalIcons } from "@/components/icons/elemental-icons";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { useAsync } from "@/hooks/use-async";
+import { formatDate } from "@/lib/utils";
+import { motion } from "framer-motion";
+import {
+  Award,
+  BookOpen,
+  Calendar,
+  ExternalLink,
+  Loader2,
+  PlayCircle,
+  TrendingUp,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect } from "react";
 
 /** User enrollment data */
 interface Enrollment {
@@ -63,28 +80,29 @@ export default function StudentDashboardPage() {
     }
   }, [user]);
 
-  const fetchUserData = () => execute(async () => {
-    const res = await fetch('/api/dashboard/student');
-    if (!res.ok) throw new Error('Failed to fetch dashboard');
-    const result = await res.json();
+  const fetchUserData = () =>
+    execute(async () => {
+      const res = await fetch("/api/dashboard/student");
+      if (!res.ok) throw new Error("Failed to fetch dashboard");
+      const result = await res.json();
 
-    if (result.error) {
-      throw new Error(result.error);
-    }
+      if (result.error) {
+        throw new Error(result.error);
+      }
 
-    return {
-      enrollments: result.enrollments || [],
-      certificates: result.certificates || [],
-      events: result.events || [],
-      stats: result.stats || {
-        courses_enrolled: 0,
-        certificates_earned: 0,
-        upcoming_events: 0,
-        learning_progress: 0,
-      },
-      assessment: result.assessment,
-    };
-  });
+      return {
+        enrollments: result.enrollments || [],
+        certificates: result.certificates || [],
+        events: result.events || [],
+        stats: result.stats || {
+          courses_enrolled: 0,
+          certificates_earned: 0,
+          upcoming_events: 0,
+          learning_progress: 0,
+        },
+        assessment: result.assessment,
+      };
+    });
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -102,7 +120,11 @@ export default function StudentDashboardPage() {
             transition={{ duration: 0.5 }}
           >
             <h1 className="text-4xl font-bold mb-2">
-              Welcome back, <span className="gradient-text">{profile?.full_name || 'Student'}</span>!
+              Welcome back,{" "}
+              <span className="gradient-text">
+                {profile?.full_name || "Student"}
+              </span>
+              !
             </h1>
             <p className="text-xl text-muted-foreground font-light">
               Ready to explore your energy today?
@@ -117,30 +139,42 @@ export default function StudentDashboardPage() {
               title: "Courses Enrolled",
               icon: BookOpen,
               value: stats.courses_enrolled.toString(),
-              desc: stats.courses_enrolled > 0 ? "Active courses" : "Start your first course",
-              color: "text-blue-500"
+              desc:
+                stats.courses_enrolled > 0
+                  ? "Active courses"
+                  : "Start your first course",
+              color: "text-blue-500",
             },
             {
               title: "Certificates",
               icon: Award,
               value: stats.certificates_earned.toString(),
-              desc: stats.certificates_earned > 0 ? "Earned achievements" : "Complete courses to earn",
-              color: "text-amber-500"
+              desc:
+                stats.certificates_earned > 0
+                  ? "Earned achievements"
+                  : "Complete courses to earn",
+              color: "text-amber-500",
             },
             {
               title: "Upcoming Events",
               icon: Calendar,
               value: stats.upcoming_events.toString(),
-              desc: stats.upcoming_events > 0 ? "Events registered" : "No events registered",
-              color: "text-purple-500"
+              desc:
+                stats.upcoming_events > 0
+                  ? "Events registered"
+                  : "No events registered",
+              color: "text-purple-500",
             },
             {
               title: "Learning Progress",
               icon: TrendingUp,
               value: `${stats.learning_progress}%`,
-              desc: stats.learning_progress > 0 ? "Overall progress" : "Start learning to track",
-              color: "text-green-500"
-            }
+              desc:
+                stats.learning_progress > 0
+                  ? "Overall progress"
+                  : "Start learning to track",
+              color: "text-green-500",
+            },
           ].map((stat, i) => (
             <motion.div
               key={stat.title}
@@ -166,6 +200,34 @@ export default function StudentDashboardPage() {
           ))}
         </div>
 
+        {/* Learning Streak and Stats */}
+        <div className="grid md:grid-cols-2 gap-6 mb-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <StreakDisplay variant="card" />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+          >
+            <LearningStatsCard />
+          </motion.div>
+        </div>
+
+        {/* Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="mb-10"
+        >
+          <DashboardQuickActions userRole="student" />
+        </motion.div>
+
         {/* Main Content Sections */}
         <div className="grid gap-8 md:grid-cols-2">
           <motion.div
@@ -176,11 +238,10 @@ export default function StudentDashboardPage() {
             <Card className="glass-card border-border/50 h-full">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <PlayCircle className="w-5 h-5 text-primary" /> Continue Learning
+                  <PlayCircle className="w-5 h-5 text-primary" /> Continue
+                  Learning
                 </CardTitle>
-                <CardDescription>
-                  Pick up where you left off
-                </CardDescription>
+                <CardDescription>Pick up where you left off</CardDescription>
               </CardHeader>
               <CardContent>
                 {loading ? (
@@ -190,21 +251,34 @@ export default function StudentDashboardPage() {
                 ) : enrollments.length > 0 ? (
                   <div className="space-y-4">
                     {enrollments.slice(0, 2).map((enrollment: Enrollment) => (
-                      <div key={enrollment.id} className="border rounded-lg p-4 hover:border-primary/50 transition-colors bg-background/50">
+                      <div
+                        key={enrollment.id}
+                        className="border rounded-lg p-4 hover:border-primary/50 transition-colors bg-background/50"
+                      >
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
-                            <h4 className="font-semibold">{enrollment.course?.title}</h4>
+                            <h4 className="font-semibold">
+                              {enrollment.course?.title}
+                            </h4>
                             <p className="text-sm text-muted-foreground">
-                              Last accessed {enrollment.last_accessed_at ? formatDate(enrollment.last_accessed_at) : 'Never'}
+                              Last accessed{" "}
+                              {enrollment.last_accessed_at
+                                ? formatDate(enrollment.last_accessed_at)
+                                : "Never"}
                             </p>
                           </div>
                           <Button size="sm" asChild>
-                            <Link href={`/dashboard/student/courses/${enrollment.course_id}`}>
+                            <Link
+                              href={`/dashboard/student/courses/${enrollment.course_id}`}
+                            >
                               Continue
                             </Link>
                           </Button>
                         </div>
-                        <Progress value={enrollment.progress_percentage || 0} className="h-2" />
+                        <Progress
+                          value={enrollment.progress_percentage || 0}
+                          className="h-2"
+                        />
                         <p className="text-xs text-muted-foreground mt-2">
                           {enrollment.progress_percentage || 0}% complete
                         </p>
@@ -217,7 +291,10 @@ export default function StudentDashboardPage() {
                     <p className="text-muted-foreground mb-6">
                       You haven't started any courses yet
                     </p>
-                    <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
+                    <Button
+                      asChild
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
                       <Link href="/courses">Browse Courses</Link>
                     </Button>
                   </div>
@@ -235,7 +312,8 @@ export default function StudentDashboardPage() {
               <Card className="glass-premium border-primary/20">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-primary" /> Your Element Mix
+                    <TrendingUp className="w-5 h-5 text-primary" /> Your Element
+                    Mix
                   </CardTitle>
                   <CardDescription>
                     Understanding your energy profile
@@ -267,15 +345,16 @@ export default function StudentDashboardPage() {
                   <CardTitle className="flex items-center gap-2">
                     <Award className="w-5 h-5 text-amber-500" /> My Certificates
                   </CardTitle>
-                  <CardDescription>
-                    Your earned achievements
-                  </CardDescription>
+                  <CardDescription>Your earned achievements</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {certificates.length > 0 ? (
                     <div className="space-y-3">
                       {certificates.slice(0, 3).map((cert: Certificate) => (
-                        <div key={cert.id} className="flex items-center justify-between p-3 border rounded-lg bg-background/50">
+                        <div
+                          key={cert.id}
+                          className="flex items-center justify-between p-3 border rounded-lg bg-background/50"
+                        >
                           <div className="flex items-center gap-3">
                             <Award className="w-8 h-8 text-primary" />
                             <div>
@@ -286,7 +365,9 @@ export default function StudentDashboardPage() {
                             </div>
                           </div>
                           <Button size="sm" variant="outline" asChild>
-                            <Link href={`/dashboard/student/certificates/${cert.id}`}>
+                            <Link
+                              href={`/dashboard/student/certificates/${cert.id}`}
+                            >
                               <ExternalLink className="w-4 h-4 mr-1" />
                               View
                             </Link>

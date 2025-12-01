@@ -1,18 +1,26 @@
-import type { Database } from '@/lib/types/supabase';
-import { createClient } from '@supabase/supabase-js';
-import { logger } from '@/lib/logging';
+import { logger } from "@/lib/logging/logger";
+import { createClient as createBrowserSingleton } from "@/lib/supabase/client";
+import type { Database } from "@/lib/types/supabase";
+import { createClient as createJsClient } from "@supabase/supabase-js";
 
 // Create a single supabase client for interacting with your database
-export const supabase = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export const supabase =
+  typeof window !== "undefined"
+    ? createBrowserSingleton()
+    : createJsClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
 
 /**
  * Sign up a new user with email and password
  * Note: Profile is automatically created by database trigger
  */
-export async function signUp(email: string, password: string, full_name: string) {
+export async function signUp(
+  email: string,
+  password: string,
+  full_name: string
+) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -40,7 +48,7 @@ export async function signIn(email: string, password: string) {
  * Sign in with OAuth provider (Google, GitHub, etc.)
  */
 export async function signInWithOAuth(
-  provider: 'google' | 'github' | 'azure' | 'linkedin'
+  provider: "google" | "github" | "azure" | "linkedin"
 ) {
   return await supabase.auth.signInWithOAuth({
     provider,
@@ -68,7 +76,9 @@ export async function getSession() {
  * Get the current user
  */
 export async function getCurrentUser() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   return user;
 }
 
@@ -78,19 +88,22 @@ export async function getCurrentUser() {
 export async function getUserRole(userId: string): Promise<string | null> {
   try {
     const { data, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', userId)
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
       .maybeSingle();
 
     if (error) {
-      logger.error('Error fetching user role', new Error(JSON.stringify(error)));
+      logger.error(
+        "Error fetching user role",
+        new Error(JSON.stringify(error))
+      );
       return null;
     }
 
     return data?.role || null;
   } catch (err) {
-    logger.error('Exception in getUserRole', err as Error);
+    logger.error("Exception in getUserRole", err as Error);
     return null;
   }
 }
@@ -101,24 +114,32 @@ export async function getUserRole(userId: string): Promise<string | null> {
 export async function getUserProfile(userId: string) {
   try {
     const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
       .maybeSingle(); // Use maybeSingle instead of single to avoid errors if not found
 
     if (error) {
-      logger.error('Error fetching user profile', new Error(JSON.stringify(error)), { userId, errorDetails: error });
+      logger.error(
+        "Error fetching user profile",
+        new Error(JSON.stringify(error)),
+        { userId, errorDetails: error }
+      );
       return null;
     }
 
     if (!data) {
-      logger.warn('No profile found for user', { userId, message: 'Profile may need to be created manually or trigger may not have fired' });
+      logger.warn("No profile found for user", {
+        userId,
+        message:
+          "Profile may need to be created manually or trigger may not have fired",
+      });
       return null;
     }
 
     return data;
   } catch (err) {
-    logger.error('Exception in getUserProfile', err as Error);
+    logger.error("Exception in getUserProfile", err as Error);
     return null;
   }
 }
@@ -134,12 +155,12 @@ export async function updateUserProfile(
   }
 ) {
   const { data, error } = await supabase
-    .from('profiles')
+    .from("profiles")
     .update({
       ...updates,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', userId)
+    .eq("id", userId)
     .select()
     .single();
 

@@ -1,19 +1,6 @@
-import { badRequestError, createAdminRoute, notFoundError, successResponse, validateRequest } from '@/lib/api';
-import { getSupabaseServer } from '@/lib/db';
+import { createAdminRoute, successResponse, validateRequest } from '@/lib/api';
+import { lessonRepository } from '@/lib/db/lessons';
 import { lessonUpdateSchema } from '@/lib/validation/schemas';
-
-interface LessonRow {
-  id: string;
-  module_id: string | null;
-  title: string;
-  content_type: string;
-  content_text: string | null;
-  content_url: string | null;
-  duration_minutes: number | null;
-  order_index: number;
-  is_preview: boolean | null;
-  created_at: string | null;
-}
 
 /**
  * GET /api/lessons/[id]
@@ -21,17 +8,8 @@ interface LessonRow {
  */
 export const GET = createAdminRoute<{ id: string }>(async (_request, context) => {
   const params = await context.params;
-  const supabase = await getSupabaseServer();
 
-  const { data: lesson, error } = await supabase
-    .from('course_lessons')
-    .select('*')
-    .eq('id', params.id)
-    .single() as { data: LessonRow | null; error: { message: string } | null };
-
-  if (error || !lesson) {
-    throw notFoundError('Lesson');
-  }
+  const lesson = await lessonRepository.findById(params.id);
 
   return successResponse({ lesson });
 });
@@ -42,7 +20,6 @@ export const GET = createAdminRoute<{ id: string }>(async (_request, context) =>
  */
 export const PUT = createAdminRoute<{ id: string }>(async (request, context) => {
   const params = await context.params;
-  const supabase = await getSupabaseServer();
 
   // Validate request body
   const validation = await validateRequest(request, lessonUpdateSchema);
@@ -57,20 +34,7 @@ export const PUT = createAdminRoute<{ id: string }>(async (request, context) => 
     delete updateData.video_url;
   }
 
-  const { data: lesson, error } = await supabase
-    .from('course_lessons')
-    .update(updateData)
-    .eq('id', params.id)
-    .select()
-    .single() as { data: LessonRow | null; error: { message: string } | null };
-
-  if (error) {
-    throw badRequestError(error.message);
-  }
-
-  if (!lesson) {
-    throw notFoundError('Lesson');
-  }
+  const lesson = await lessonRepository.updateLesson(params.id, updateData);
 
   return successResponse({ lesson });
 });
@@ -81,16 +45,8 @@ export const PUT = createAdminRoute<{ id: string }>(async (request, context) => 
  */
 export const DELETE = createAdminRoute<{ id: string }>(async (_request, context) => {
   const params = await context.params;
-  const supabase = await getSupabaseServer();
 
-  const { error } = await supabase
-    .from('course_lessons')
-    .delete()
-    .eq('id', params.id);
-
-  if (error) {
-    throw badRequestError(error.message);
-  }
+  await lessonRepository.deleteLesson(params.id);
 
   return successResponse({ deleted: true });
 });

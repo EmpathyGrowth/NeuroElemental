@@ -1,15 +1,15 @@
 /**
  * Course Repository
  * Manages course data and course-related operations
- * 
+ *
  * Extends BaseRepository to inherit standard CRUD operations.
  * Contains domain-specific methods for course management.
  */
 
+import { internalError } from '@/lib/api';
 import { logger } from '@/lib/logging';
 import { Database } from '@/lib/types/supabase';
-import { internalError } from '@/lib/api';
-import { BaseRepository, PaginatedResult } from './base-repository';
+import { BaseRepository, PaginatedResult, queryBuilder } from './base-repository';
 
 type Course = Database['public']['Tables']['courses']['Row'];
 type Enrollment = Database['public']['Tables']['course_enrollments']['Row'];
@@ -45,7 +45,7 @@ export class CourseRepository extends BaseRepository<'courses'> {
 
   /**
    * Get a course by ID with instructor information
-   * 
+   *
    * @param id - The course ID
    * @returns The course with instructor details or null if not found
    */
@@ -66,7 +66,7 @@ export class CourseRepository extends BaseRepository<'courses'> {
 
   /**
    * Get course by slug
-   * 
+   *
    * @param slug - The course slug
    * @returns The course with instructor details or null if not found
    */
@@ -87,7 +87,7 @@ export class CourseRepository extends BaseRepository<'courses'> {
 
   /**
    * Get all courses with optional filters
-   * 
+   *
    * @param filters - Optional filters for category and other fields
    * @returns Array of courses with instructor information
    */
@@ -117,12 +117,58 @@ export class CourseRepository extends BaseRepository<'courses'> {
       throw internalError('Failed to fetch courses');
     }
 
-    return (data as unknown as CourseWithInstructor[]) || [];
+    return (data || []) as unknown as CourseWithInstructor[];
+  }
+
+  /**
+   * Get courses with advanced filtering and pagination
+   *
+   * @param options - Pagination and filtering options
+   * @returns Paginated result with courses
+   */
+  async getCourses(options: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    search?: string;
+    level?: string;
+    is_published?: boolean;
+  }): Promise<PaginatedResult<CourseWithInstructor>> {
+    const { page = 1, limit = 12, category, search, level, is_published = true } = options;
+
+    const query = queryBuilder('courses', this.supabase)
+      .select('*, creator:profiles!courses_created_by_fkey(id, full_name, avatar_url)')
+      .whereEq('is_published', is_published)
+      .orderBy('created_at', false)
+      .paginate(page, limit)
+      .withCount();
+
+    if (category) {
+      query.whereEq('category', category);
+    }
+
+    if (level) {
+      query.whereEq('difficulty_level', level);
+    }
+
+    if (search) {
+      query.search(['title', 'description'], search);
+    }
+
+    const { data, count } = await query.executeWithCount();
+
+    return {
+      data: (data as unknown as CourseWithInstructor[]) || [],
+      total: count,
+      page,
+      limit,
+      totalPages: Math.ceil(count / limit)
+    };
   }
 
   /**
    * Get published courses with optional filters
-   * 
+   *
    * @param filters - Optional filters for category, level, limit, and offset
    * @returns Array of published courses
    */
@@ -162,7 +208,7 @@ export class CourseRepository extends BaseRepository<'courses'> {
 
   /**
    * Get course enrollments for a specific course
-   * 
+   *
    * @param courseId - The course ID
    * @returns Array of enrollments with user information
    */
@@ -182,7 +228,7 @@ export class CourseRepository extends BaseRepository<'courses'> {
 
   /**
    * Get course enrollment count
-   * 
+   *
    * @param courseId - The course ID
    * @returns The number of enrollments for the course
    */
@@ -202,7 +248,7 @@ export class CourseRepository extends BaseRepository<'courses'> {
 
   /**
    * Enroll a user in a course
-   * 
+   *
    * @param userId - The user ID
    * @param courseId - The course ID
    * @returns The created enrollment record
@@ -229,7 +275,7 @@ export class CourseRepository extends BaseRepository<'courses'> {
 
   /**
    * Check if a user is enrolled in a course
-   * 
+   *
    * @param userId - The user ID
    * @param courseId - The course ID
    * @returns True if the user is enrolled, false otherwise
@@ -247,7 +293,7 @@ export class CourseRepository extends BaseRepository<'courses'> {
 
   /**
    * Get courses by category with pagination
-   * 
+   *
    * @param category - The category to filter by
    * @param page - Page number (1-indexed)
    * @param limit - Number of results per page
@@ -268,7 +314,7 @@ export class CourseRepository extends BaseRepository<'courses'> {
 
   /**
    * Search courses by title or description
-   * 
+   *
    * @param query - The search query string
    * @param limit - Maximum number of results to return (default: 20)
    * @returns Array of matching courses

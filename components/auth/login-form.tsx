@@ -1,33 +1,47 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { signIn, signInWithOAuth } from '@/lib/auth/supabase';
 import { useAuth } from '@/components/auth/auth-provider';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { signIn, signInWithOAuth } from '@/lib/auth/supabase';
 import { logger } from '@/lib/logging';
+import { loginSchema } from '@/lib/validation/schemas';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 /** Delay in ms before redirecting after successful login */
 const REDIRECT_DELAY = 500;
 
+type LoginFormValues = z.infer<typeof loginSchema>;
+
 export function LoginForm() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasRedirected = useRef(false);
 
-  // Redirect if already logged in
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+
+  // Redirect if already logged in (only once)
   useEffect(() => {
-    if (!authLoading && user) {
-      router.push('/dashboard');
+    if (!authLoading && user && !hasRedirected.current) {
+      hasRedirected.current = true;
+      router.replace('/dashboard');
     }
   }, [user, authLoading, router]);
 
@@ -40,28 +54,30 @@ export function LoginForm() {
     };
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (values: LoginFormValues) => {
     setError(null);
     setLoading(true);
 
     try {
       logger.info('Attempting login...');
-      const { error, data } = await signIn(email, password);
+      const { error: signInError, data } = await signIn(values.email, values.password);
 
-      if (error) {
-        logger.error('Login error:', error as Error);
-        setError(error.message);
+      if (signInError) {
+        logger.error('Login error:', signInError as Error);
+        setError(signInError.message);
         setLoading(false);
       } else {
         logger.info('Login successful!', data);
-        // Wait a moment for auth state to update, then redirect
-        redirectTimeoutRef.current = setTimeout(() => {
-          router.push('/dashboard');
-        }, REDIRECT_DELAY);
+        // Wait a moment for auth state to update, then redirect (only once)
+        if (!hasRedirected.current) {
+          hasRedirected.current = true;
+          redirectTimeoutRef.current = setTimeout(() => {
+            router.replace('/dashboard');
+          }, REDIRECT_DELAY);
+        }
       }
-    } catch (error) {
-      logger.error('Login exception:', error as Error);
+    } catch (err) {
+      logger.error('Login exception:', err as Error);
       setError('An unexpected error occurred. Please try again.');
       setLoading(false);
     }
@@ -72,9 +88,9 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      const { error } = await signInWithOAuth(provider);
-      if (error) {
-        setError(error.message);
+      const { error: oauthError } = await signInWithOAuth(provider);
+      if (oauthError) {
+        setError(oauthError.message);
         setLoading(false);
       }
       // If successful, user will be redirected by Supabase
@@ -93,52 +109,66 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-lg">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              <p className="text-sm">{error}</p>
-            </div>
-          )}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {error && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-lg" role="alert">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <p className="text-sm">{String(error).replace(/<[^>]*>/g, '')}</p>
+              </div>
+            )}
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={loading}
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="you@example.com"
+                      type="email"
+                      disabled={loading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <Link
-                href="/auth/forgot-password"
-                className="text-sm text-muted-foreground hover:text-primary"
-              >
-                Forgot password?
-              </Link>
-            </div>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Password</FormLabel>
+                    <Link
+                      href="/auth/forgot-password"
+                      className="text-sm text-muted-foreground hover:text-primary"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      disabled={loading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign in
-          </Button>
-        </form>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Sign in
+            </Button>
+          </form>
+        </Form>
 
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">

@@ -36,6 +36,12 @@ interface VideoPlayerProps {
   onProgress?: (progress: number) => void;
   onComplete?: () => void;
   className?: string;
+  /** Unique identifier for persisting playback position */
+  lessonId?: string;
+  /** Initial playback position in seconds */
+  initialTime?: number;
+  /** Callback when playback position changes (for persistence) */
+  onTimeUpdate?: (currentTime: number, duration: number) => void;
 }
 
 /**
@@ -100,6 +106,34 @@ function getVimeoEmbedUrl(url: string): string {
  * Video Player Component
  * Supports YouTube, Vimeo, and direct video URLs with custom controls for direct videos
  */
+/** Storage key prefix for video progress */
+const VIDEO_PROGRESS_KEY = 'ne_video_progress_';
+
+/**
+ * Get stored video progress from localStorage
+ */
+function getStoredProgress(lessonId: string): number {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const stored = localStorage.getItem(`${VIDEO_PROGRESS_KEY}${lessonId}`);
+    return stored ? parseFloat(stored) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Store video progress to localStorage
+ */
+function storeProgress(lessonId: string, time: number): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(`${VIDEO_PROGRESS_KEY}${lessonId}`, time.toString());
+  } catch {
+    // Storage might be full or disabled
+  }
+}
+
 export function VideoPlayer({
   url,
   title,
@@ -108,10 +142,14 @@ export function VideoPlayer({
   onProgress,
   onComplete,
   className,
+  lessonId,
+  initialTime,
+  onTimeUpdate,
 }: VideoPlayerProps) {
   const videoSource = detectVideoSource(url);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasRestoredProgress = useRef(false);
 
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isMuted, setIsMuted] = useState(false);
@@ -123,6 +161,8 @@ export function VideoPlayer({
   const [isLoading, setIsLoading] = useState(true);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [videoError, setVideoError] = useState<string | null>(null);
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const [storedTime, setStoredTime] = useState(0);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle fullscreen changes
@@ -150,18 +190,37 @@ export function VideoPlayer({
   const handleTimeUpdate = useCallback(() => {
     if (videoRef.current) {
       const time = videoRef.current.currentTime;
+      const videoDuration = videoRef.current.duration;
       setCurrentTime(time);
-      const progress = duration > 0 ? (time / duration) * 100 : 0;
+      const progress = videoDuration > 0 ? (time / videoDuration) * 100 : 0;
       onProgress?.(progress);
+      onTimeUpdate?.(time, videoDuration);
+
+      // Store progress every 5 seconds
+      if (lessonId && Math.floor(time) % 5 === 0) {
+        storeProgress(lessonId, time);
+      }
     }
-  }, [duration, onProgress]);
+  }, [duration, onProgress, onTimeUpdate, lessonId]);
 
   const handleLoadedMetadata = useCallback(() => {
     if (videoRef.current) {
       setDuration(videoRef.current.duration);
       setIsLoading(false);
+
+      // Check for stored progress or initial time
+      if (!hasRestoredProgress.current) {
+        hasRestoredProgress.current = true;
+        const savedTime = initialTime || (lessonId ? getStoredProgress(lessonId) : 0);
+
+        // Only show resume prompt if there's significant progress (> 10 seconds and < 90%)
+        if (savedTime > 10 && savedTime < videoRef.current.duration * 0.9) {
+          setStoredTime(savedTime);
+          setShowResumePrompt(true);
+        }
+      }
     }
-  }, []);
+  }, [initialTime, lessonId]);
 
   const handleEnded = useCallback(() => {
     setIsPlaying(false);
@@ -232,11 +291,144 @@ export function VideoPlayer({
     }
   }, []);
 
+  // Keyboard shortcuts - placed after all callbacks are defined
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't handle if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      switch (e.key.toLowerCase()) {
+        case ' ':
+        case 'k':
+          // Space or K - Play/Pause
+          e.preventDefault();
+          togglePlay();
+          break;
+
+        case 'arrowleft':
+        case 'j':
+          // Left arrow or J - Rewind 10 seconds
+          e.preventDefault();
+          skip(-10);
+          break;
+
+        case 'arrowright':
+        case 'l':
+          // Right arrow or L - Forward 10 seconds
+          e.preventDefault();
+          skip(10);
+          break;
+
+        case 'arrowup':
+          // Up arrow - Increase volume
+          e.preventDefault();
+          handleVolumeChange([Math.min(1, volume + 0.1)]);
+          break;
+
+        case 'arrowdown':
+          // Down arrow - Decrease volume
+          e.preventDefault();
+          handleVolumeChange([Math.max(0, volume - 0.1)]);
+          break;
+
+        case 'm':
+          // M - Toggle mute
+          e.preventDefault();
+          toggleMute();
+          break;
+
+        case 'f':
+          // F - Toggle fullscreen
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+
+        case '0':
+        case 'home':
+          // 0 or Home - Jump to start
+          e.preventDefault();
+          if (videoRef.current) {
+            videoRef.current.currentTime = 0;
+          }
+          break;
+
+        case 'end':
+          // End - Jump to end
+          e.preventDefault();
+          if (videoRef.current) {
+            videoRef.current.currentTime = duration - 5;
+          }
+          break;
+
+        case ',':
+          // Comma - Previous frame (when paused)
+          if (!isPlaying && videoRef.current) {
+            e.preventDefault();
+            videoRef.current.currentTime = Math.max(0, currentTime - 1 / 30);
+          }
+          break;
+
+        case '.':
+          // Period - Next frame (when paused)
+          if (!isPlaying && videoRef.current) {
+            e.preventDefault();
+            videoRef.current.currentTime = Math.min(duration, currentTime + 1 / 30);
+          }
+          break;
+
+        case '<':
+          // < - Decrease speed
+          e.preventDefault();
+          changePlaybackRate(Math.max(0.25, playbackRate - 0.25));
+          break;
+
+        case '>':
+          // > - Increase speed
+          e.preventDefault();
+          changePlaybackRate(Math.min(2, playbackRate + 0.25));
+          break;
+
+        default:
+          // Number keys 1-9 - Jump to percentage
+          if (e.key >= '1' && e.key <= '9') {
+            e.preventDefault();
+            const percent = parseInt(e.key) / 10;
+            if (videoRef.current) {
+              videoRef.current.currentTime = duration * percent;
+            }
+          }
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isPlaying, volume, currentTime, duration, playbackRate, togglePlay, toggleMute, toggleFullscreen, skip, handleVolumeChange, changePlaybackRate]);
+
   const formatTime = (time: number): string => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
+
+  // Resume from stored position
+  const handleResume = useCallback(() => {
+    if (videoRef.current && storedTime > 0) {
+      videoRef.current.currentTime = storedTime;
+      setCurrentTime(storedTime);
+    }
+    setShowResumePrompt(false);
+  }, [storedTime]);
+
+  // Start from beginning
+  const handleStartFromBeginning = useCallback(() => {
+    setShowResumePrompt(false);
+    if (lessonId) {
+      storeProgress(lessonId, 0);
+    }
+  }, [lessonId]);
 
   // Render embedded player for YouTube/Vimeo
   if (videoSource === 'youtube' || videoSource === 'vimeo') {
@@ -308,8 +500,31 @@ export function VideoPlayer({
           </div>
         )}
 
+        {/* Resume Prompt Overlay */}
+        {showResumePrompt && !isLoading && !videoError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
+            <div className="bg-background/95 backdrop-blur-sm rounded-lg p-6 max-w-sm mx-4 text-center shadow-xl">
+              <p className="text-lg font-medium mb-2">Resume where you left off?</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                You were at {formatTime(storedTime)}
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={handleStartFromBeginning}
+                >
+                  Start Over
+                </Button>
+                <Button onClick={handleResume}>
+                  Resume
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Play Button Overlay (when paused) */}
-        {!isPlaying && !isLoading && !videoError && (
+        {!isPlaying && !isLoading && !videoError && !showResumePrompt && (
           <button
             onClick={togglePlay}
             aria-label="Play video"

@@ -1,7 +1,24 @@
-/**
- * Reusable skeleton loading components for dashboard pages
- */
-export { DashboardSkeleton, DashboardCardsSkeleton } from './dashboard-skeleton'
-export { TableSkeleton } from './table-skeleton'
-export { FormSkeleton } from './form-skeleton'
-export { CardGridSkeleton } from './card-grid-skeleton'
+// Skeleton components barrel export
+// Re-exports from consolidated @/components/ui/skeleton
+export {
+  AvatarSkeleton,
+  BlogCardSkeleton,
+  CardGridSkeleton,
+  CommentSkeleton,
+  CourseCardSkeleton,
+  CoursesSkeleton,
+  DashboardSkeleton,
+  EventCardSkeleton,
+  EventsSkeleton,
+  FormFieldSkeleton,
+  FormSkeleton,
+  LessonItemSkeleton,
+  NavItemSkeleton,
+  Skeleton,
+  StatCardSkeleton,
+  TableRowSkeleton,
+  TableSkeleton,
+  TextSkeleton,
+  UsersSkeleton,
+  VideoPlayerSkeleton,
+} from '@/components/ui/skeleton';

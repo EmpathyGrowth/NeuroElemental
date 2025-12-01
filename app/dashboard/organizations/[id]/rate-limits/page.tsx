@@ -1,24 +1,27 @@
-'use client'
+"use client";
 
 /**
  * Rate Limits Management Page
  * View and manage API rate limits for the organization
  */
 
-import { logger } from '@/lib/logging'
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -26,279 +29,313 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { toast } from 'sonner'
+} from "@/components/ui/table";
+import { logger } from "@/lib/logging/logger";
+import { formatDistanceToNow } from "date-fns";
 import {
-  Shield,
-  Zap,
-  TrendingUp,
+  Activity,
   AlertTriangle,
+  CheckCircle,
   ChevronLeft,
   Clock,
-  CheckCircle,
-  Activity,
-} from 'lucide-react'
+  Shield,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
-  LineChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts'
-import { formatDistanceToNow } from 'date-fns'
-
-/** Interval in ms for refreshing rate limit status */
-const STATUS_REFRESH_INTERVAL = 30000;
+} from "recharts";
+import { toast } from "sonner";
 
 interface RateLimitConfig {
-  tier: string
-  requests_per_minute: number
-  requests_per_hour: number
-  requests_per_day: number
-  burst_allowance: number
-  enforce_hard_limits: boolean
+  tier: string;
+  requests_per_minute: number;
+  requests_per_hour: number;
+  requests_per_day: number;
+  burst_allowance: number;
+  enforce_hard_limits: boolean;
 }
 
 interface RateLimitStatus {
-  minute: { allowed: boolean; limit: number; remaining: number; reset: number }
-  hour: { allowed: boolean; limit: number; remaining: number; reset: number }
-  day: { allowed: boolean; limit: number; remaining: number; reset: number }
+  minute: { allowed: boolean; limit: number; remaining: number; reset: number };
+  hour: { allowed: boolean; limit: number; remaining: number; reset: number };
+  day: { allowed: boolean; limit: number; remaining: number; reset: number };
 }
 
 interface RateLimitTier {
-  id: string
-  tier_name: string
-  display_name: string
-  description: string
-  requests_per_minute: number
-  requests_per_hour: number
-  requests_per_day: number
-  burst_allowance: number
-  webhooks_per_minute: number
-  webhooks_per_hour: number
-  max_concurrent_requests: number
-  monthly_price_cents: number | null
+  id: string;
+  tier_name: string;
+  display_name: string;
+  description: string;
+  requests_per_minute: number;
+  requests_per_hour: number;
+  requests_per_day: number;
+  burst_allowance: number;
+  webhooks_per_minute: number;
+  webhooks_per_hour: number;
+  max_concurrent_requests: number;
+  monthly_price_cents: number | null;
 }
 
 interface RateLimitViolation {
-  id: string
-  endpoint: string
-  method: string
-  created_at: string
-  retry_after: number
-  current_count: number
-  limit_value: number
-  limit_type: string
+  id: string;
+  endpoint: string;
+  method: string;
+  created_at: string;
+  retry_after: number;
+  current_count: number;
+  limit_value: number;
+  limit_type: string;
   api_keys?: {
-    name: string
-    key_prefix: string
-  }
+    name: string;
+    key_prefix: string;
+  };
   profiles?: {
-    full_name: string
-    email: string
-  }
+    full_name: string;
+    email: string;
+  };
 }
 
 interface UsageData {
   summary: {
-    total_requests: number
-    total_webhooks: number
-    total_calls: number
-    days: number
-    peak_day: string
-    peak_requests: number
-    avg_daily_requests: number
-  }
+    total_requests: number;
+    total_webhooks: number;
+    total_calls: number;
+    days: number;
+    peak_day: string;
+    peak_requests: number;
+    avg_daily_requests: number;
+  };
   daily: Array<{
-    date: string
-    requests: number
-    webhooks: number
-    total: number
-  }>
+    date: string;
+    requests: number;
+    webhooks: number;
+    total: number;
+  }>;
 }
 
 export default function RateLimitsPage() {
-  const params = useParams()
-  const router = useRouter()
-  const organizationId = params.id as string
+  const params = useParams();
+  const router = useRouter();
+  const organizationId = params.id as string;
 
-  const [config, setConfig] = useState<RateLimitConfig | null>(null)
-  const [status, setStatus] = useState<RateLimitStatus | null>(null)
-  const [tiers, setTiers] = useState<RateLimitTier[]>([])
-  const [violations, setViolations] = useState<RateLimitViolation[]>([])
-  const [usageData, setUsageData] = useState<UsageData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [updating, setUpdating] = useState(false)
-    const [usageDays, setUsageDays] = useState<string>('7')
+  const [config, setConfig] = useState<RateLimitConfig | null>(null);
+  const [status, setStatus] = useState<RateLimitStatus | null>(null);
+  const [tiers, setTiers] = useState<RateLimitTier[]>([]);
+  const [violations, setViolations] = useState<RateLimitViolation[]>([]);
+  const [usageData, setUsageData] = useState<UsageData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [_selectedTier, setSelectedTier] = useState<string>("");
+  const [usageDays, setUsageDays] = useState<string>("7");
 
   useEffect(() => {
-    fetchRateLimitData()
-    fetchViolations()
-    fetchUsageData()
-    // Refresh status periodically
+    fetchRateLimitData();
+    fetchViolations();
+    fetchUsageData();
+    // Refresh status every 30 seconds
     const interval = setInterval(() => {
-      fetchRateLimitData()
-    }, STATUS_REFRESH_INTERVAL)
-    return () => clearInterval(interval)
-  }, [organizationId])
+      fetchRateLimitData();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [organizationId]);
 
   useEffect(() => {
     if (usageDays) {
-      fetchUsageData()
+      fetchUsageData();
     }
-  }, [usageDays])
+  }, [usageDays]);
 
   const fetchRateLimitData = async () => {
     try {
-      setLoading(true)
-      const res = await fetch(`/api/organizations/${organizationId}/rate-limits`)
+      setLoading(true);
+      const res = await fetch(
+        `/api/organizations/${organizationId}/rate-limits`
+      );
 
       if (!res.ok) {
-        throw new Error('Failed to fetch rate limit data')
+        throw new Error("Failed to fetch rate limit data");
       }
 
-      const data = await res.json()
-      setConfig(data.config)
-      setStatus(data.status)
-      setTiers(data.tiers || [])
-          } catch (error) {
-      logger.error('Error fetching rate limit data', error instanceof Error ? error : undefined, { errorMsg: String(error) })
-      toast.error('Error', {
-        description: 'Failed to load rate limit configuration',
-      })
+      const data = await res.json();
+      setConfig(data.config);
+      setStatus(data.status);
+      setTiers(data.tiers || []);
+      setSelectedTier(data.config.tier);
+    } catch (error) {
+      logger.error(
+        "Error fetching rate limit data",
+        error instanceof Error ? error : undefined,
+        { errorMsg: String(error) }
+      );
+      toast.error("Error", {
+        description: "Failed to load rate limit configuration",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const fetchViolations = async () => {
     try {
       const res = await fetch(
         `/api/organizations/${organizationId}/rate-limits/violations?limit=10`
-      )
+      );
 
       if (!res.ok) {
-        throw new Error('Failed to fetch violations')
+        throw new Error("Failed to fetch violations");
       }
 
-      const data = await res.json()
-      setViolations(data.violations || [])
+      const data = await res.json();
+      setViolations(data.violations || []);
     } catch (error) {
-      logger.error('Error fetching violations', error instanceof Error ? error : undefined, { errorMsg: String(error) })
+      logger.error(
+        "Error fetching violations",
+        error instanceof Error ? error : undefined,
+        { errorMsg: String(error) }
+      );
     }
-  }
+  };
 
   const fetchUsageData = async () => {
     try {
       const res = await fetch(
         `/api/organizations/${organizationId}/rate-limits/usage?days=${usageDays}`
-      )
+      );
 
       if (!res.ok) {
-        throw new Error('Failed to fetch usage data')
+        throw new Error("Failed to fetch usage data");
       }
 
-      const data = await res.json()
-      setUsageData(data)
+      const data = await res.json();
+      setUsageData(data);
     } catch (error) {
-      logger.error('Error fetching usage data', error instanceof Error ? error : undefined, { errorMsg: String(error) })
+      logger.error(
+        "Error fetching usage data",
+        error instanceof Error ? error : undefined,
+        { errorMsg: String(error) }
+      );
     }
-  }
+  };
 
   const handleUpdateTier = async (newTier: string) => {
     if (newTier === config?.tier) {
-      toast.info('No Change', {
-        description: 'This is already your current tier',
-      })
-      return
+      toast.info("No Change", {
+        description: "This is already your current tier",
+      });
+      return;
     }
 
     try {
-      setUpdating(true)
-      const res = await fetch(`/api/organizations/${organizationId}/rate-limits`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier: newTier }),
-      })
+      setUpdating(true);
+      const res = await fetch(
+        `/api/organizations/${organizationId}/rate-limits`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tier: newTier }),
+        }
+      );
 
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to update tier')
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update tier");
       }
 
-      const data = await res.json()
-      setConfig(data.config)
-      
-      toast.success('Tier Updated', {
+      const data = await res.json();
+      setConfig(data.config);
+      setSelectedTier(newTier);
+
+      toast.success("Tier Updated", {
         description: `Successfully updated to ${newTier} tier`,
-      })
+      });
 
       // Refresh data
-      await fetchRateLimitData()
-    } catch (error) {
-      logger.error('Error updating tier', error instanceof Error ? error : undefined, { errorMsg: String(error) })
-      toast.error('Error', {
-        description: error instanceof Error ? error.message : 'Failed to update tier',
-      })
+      await fetchRateLimitData();
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "An unexpected error occurred";
+      logger.error(
+        "Error updating tier",
+        error instanceof Error ? error : undefined,
+        { errorMsg: String(error) }
+      );
+      toast.error("Error", {
+        description: message || "Failed to update tier",
+      });
     } finally {
-      setUpdating(false)
+      setUpdating(false);
     }
-  }
+  };
 
   const getTierBadgeVariant = (tierName: string) => {
     switch (tierName) {
-      case 'free':
-        return 'secondary'
-      case 'starter':
-        return 'default'
-      case 'pro':
-        return 'default'
-      case 'enterprise':
-        return 'default'
+      case "free":
+        return "secondary";
+      case "starter":
+        return "default";
+      case "pro":
+        return "default";
+      case "enterprise":
+        return "default";
       default:
-        return 'secondary'
+        return "secondary";
     }
-  }
+  };
 
   const getTierColor = (tierName: string) => {
     switch (tierName) {
-      case 'free':
-        return 'text-gray-600'
-      case 'starter':
-        return 'text-blue-600'
-      case 'pro':
-        return 'text-purple-600'
-      case 'enterprise':
-        return 'text-green-600'
+      case "free":
+        return "text-gray-600";
+      case "starter":
+        return "text-blue-600";
+      case "pro":
+        return "text-purple-600";
+      case "enterprise":
+        return "text-green-600";
       default:
-        return 'text-gray-600'
+        return "text-gray-600";
     }
-  }
+  };
 
   const formatPrice = (cents: number | null) => {
-    if (cents === null) return 'Contact Sales'
-    if (cents === 0) return 'Free'
-    return `$${(cents / 100).toFixed(2)}/mo`
-  }
+    if (cents === null) return "Contact Sales";
+    if (cents === 0) return "Free";
+    return `$${(cents / 100).toFixed(2)}/mo`;
+  };
 
   const calculatePercentage = (remaining: number, limit: number) => {
-    const used = limit - remaining
-    return (used / limit) * 100
-  }
+    const used = limit - remaining;
+    return (used / limit) * 100;
+  };
+
+  const _getProgressColor = (percentage: number) => {
+    if (percentage >= 90) return "bg-red-500";
+    if (percentage >= 75) return "bg-amber-500";
+    return "bg-green-500";
+  };
 
   if (loading) {
     return (
       <div className="container mx-auto py-8">
         <Card>
           <CardContent className="py-8">
-            <p className="text-center text-muted-foreground">Loading rate limit data...</p>
+            <p className="text-center text-muted-foreground">
+              Loading rate limit data...
+            </p>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (!config || !status) {
@@ -312,7 +349,7 @@ export default function RateLimitsPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -323,7 +360,9 @@ export default function RateLimitsPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push(`/dashboard/organizations/${organizationId}`)}
+            onClick={() =>
+              router.push(`/dashboard/organizations/${organizationId}`)
+            }
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
             Back
@@ -339,7 +378,10 @@ export default function RateLimitsPage() {
           </div>
         </div>
 
-        <Badge variant={getTierBadgeVariant(config.tier)} className="text-lg px-4 py-2">
+        <Badge
+          variant={getTierBadgeVariant(config.tier)}
+          className="text-lg px-4 py-2"
+        >
           {config.tier.toUpperCase()} Tier
         </Badge>
       </div>
@@ -365,7 +407,10 @@ export default function RateLimitsPage() {
                 </span>
               </div>
               <Progress
-                value={calculatePercentage(status.minute.remaining, status.minute.limit)}
+                value={calculatePercentage(
+                  status.minute.remaining,
+                  status.minute.limit
+                )}
                 className="h-2"
               />
               <p className="text-xs text-muted-foreground">
@@ -394,7 +439,10 @@ export default function RateLimitsPage() {
                 </span>
               </div>
               <Progress
-                value={calculatePercentage(status.hour.remaining, status.hour.limit)}
+                value={calculatePercentage(
+                  status.hour.remaining,
+                  status.hour.limit
+                )}
                 className="h-2"
               />
               <p className="text-xs text-muted-foreground">
@@ -423,7 +471,10 @@ export default function RateLimitsPage() {
                 </span>
               </div>
               <Progress
-                value={calculatePercentage(status.day.remaining, status.day.limit)}
+                value={calculatePercentage(
+                  status.day.remaining,
+                  status.day.limit
+                )}
                 className="h-2"
               />
               <p className="text-xs text-muted-foreground">
@@ -471,13 +522,15 @@ export default function RateLimitsPage() {
                       dataKey="date"
                       tick={{ fontSize: 12 }}
                       tickFormatter={(value) => {
-                        const date = new Date(value)
-                        return `${date.getMonth() + 1}/${date.getDate()}`
+                        const date = new Date(value);
+                        return `${date.getMonth() + 1}/${date.getDate()}`;
                       }}
                     />
                     <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip
-                      labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                      labelFormatter={(value) =>
+                        new Date(value).toLocaleDateString()
+                      }
                     />
                     <Legend />
                     <Line
@@ -498,28 +551,46 @@ export default function RateLimitsPage() {
                 </ResponsiveContainer>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t">
                   <div>
-                    <p className="text-xs text-muted-foreground">Total Requests</p>
-                    <p className="text-2xl font-bold">{usageData.summary.total_requests.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Total Requests
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {usageData.summary.total_requests.toLocaleString()}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Total Webhooks</p>
-                    <p className="text-2xl font-bold">{usageData.summary.total_webhooks.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Total Webhooks
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {usageData.summary.total_webhooks.toLocaleString()}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Peak Day</p>
-                    <p className="text-2xl font-bold">{usageData.summary.peak_requests.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">{usageData.summary.peak_day}</p>
+                    <p className="text-2xl font-bold">
+                      {usageData.summary.peak_requests.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {usageData.summary.peak_day}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Daily Average</p>
-                    <p className="text-2xl font-bold">{usageData.summary.avg_daily_requests.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Daily Average
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {usageData.summary.avg_daily_requests.toLocaleString()}
+                    </p>
                   </div>
                 </div>
               </>
             ) : (
               <div className="text-center py-12">
                 <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No usage data available yet</p>
+                <p className="text-muted-foreground">
+                  No usage data available yet
+                </p>
               </div>
             )}
           </CardContent>
@@ -555,16 +626,21 @@ export default function RateLimitsPage() {
                   <TableRow
                     key={tier.id}
                     className={
-                      tier.tier_name === config.tier ? 'bg-muted/50' : ''
+                      tier.tier_name === config.tier ? "bg-muted/50" : ""
                     }
                   >
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className={`font-semibold ${getTierColor(tier.tier_name)}`}>
+                        <span
+                          className={`font-semibold ${getTierColor(tier.tier_name)}`}
+                        >
                           {tier.display_name}
                         </span>
                         {tier.tier_name === config.tier && (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                          <Badge
+                            variant="outline"
+                            className="bg-green-50 text-green-700 border-green-200"
+                          >
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Current
                           </Badge>
@@ -592,7 +668,7 @@ export default function RateLimitsPage() {
                         onClick={() => handleUpdateTier(tier.tier_name)}
                         disabled={tier.tier_name === config.tier || updating}
                       >
-                        {tier.tier_name === config.tier ? 'Current' : 'Select'}
+                        {tier.tier_name === config.tier ? "Current" : "Select"}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -656,7 +732,7 @@ export default function RateLimitsPage() {
                           {violation.current_count}
                         </span>
                         <span className="text-muted-foreground">
-                          {' '}
+                          {" "}
                           / {violation.limit_value}
                         </span>
                       </TableCell>
@@ -670,5 +746,5 @@ export default function RateLimitsPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

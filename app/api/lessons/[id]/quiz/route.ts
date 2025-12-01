@@ -9,7 +9,7 @@ import {
   successResponse,
   notFoundError,
 } from '@/lib/api';
-import { quizRepository } from '@/lib/db';
+import { quizRepository, type QuizQuestion } from '@/lib/db';
 
 type LessonParams = { id: string };
 
@@ -33,7 +33,7 @@ export const GET = createAuthenticatedRoute<LessonParams>(
     const hasPassed = await quizRepository.hasUserPassed(user.id, quiz.id);
 
     // Remove correct answers from questions for quiz-taking
-    const questionsForTaking = quiz.questions.map(q => ({
+    const questionsForTaking = quiz.questions.map((q: QuizQuestion) => ({
       id: q.id,
       question: q.question,
       type: q.type,

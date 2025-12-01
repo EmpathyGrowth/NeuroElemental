@@ -1,44 +1,15 @@
-import { RouteContext } from '@/lib/types/api';
-import { NextRequest } from 'next/server';
-import { getSupabaseServer } from '@/lib/db';
-import { badRequestError, createAuthenticatedRoute, successResponse } from '@/lib/api';
-import { getCompletionTimestamp, getCurrentTimestamp, getUpdateTimestamp } from '@/lib/utils';
-
-/** Lesson record with course_id */
-interface LessonRecord {
-  id: string;
-  course_id: string;
-}
-
-/** Lesson ID result */
-interface LessonIdResult {
-  id: string;
-}
-
-/** Lesson completion record */
-interface LessonCompletionResult {
-  lesson_id: string;
-}
-
-/** Course title result */
-interface CourseTitleResult {
-  title: string;
-}
-
-/** Lesson completion upsert data */
-interface LessonCompletionInsert {
-  user_id: string;
-  lesson_id: string;
-  completed_at: string;
-}
-
-/** Certificate insert data */
-interface CertificateInsert {
-  user_id: string;
-  course_id: string;
-  verification_code: string;
-  issued_at: string;
-}
+import { createAuthenticatedRoute, successResponse } from "@/lib/api";
+import { certificateRepository } from "@/lib/db/certificates";
+import { enrollmentRepository } from "@/lib/db/enrollments";
+import { learningStreaksRepository } from "@/lib/db/learning-streaks";
+import { lessonCompletionsRepository } from "@/lib/db/lesson-completions";
+import {
+  checkCourseAchievements,
+  checkLessonAchievements,
+} from "@/lib/gamification/achievement-service";
+import { logger } from "@/lib/logging";
+import { RouteContext } from "@/lib/types/api";
+import { NextRequest } from "next/server";
 
 /** Completion response */
 interface CompletionResponse {
@@ -48,86 +19,73 @@ interface CompletionResponse {
 }
 
 export const POST = createAuthenticatedRoute<{ id: string }>(
-  async (request: NextRequest, context: RouteContext<{ id: string }>, user) => {
+  async (
+    _request: NextRequest,
+    context: RouteContext<{ id: string }>,
+    user
+  ) => {
     const { id } = await context.params;
-    const supabase = await getSupabaseServer();
 
-    // Mark lesson as complete
-    const completionData: LessonCompletionInsert = {
-      user_id: user.id,
-      lesson_id: id,
-      ...getCompletionTimestamp(),
-    };
-    const { error } = await supabase
-      .from('lesson_completions')
-      .upsert(completionData, {
-        onConflict: 'user_id,lesson_id',
+    // Mark lesson as complete using repository
+    await lessonCompletionsRepository.markCompleted(user.id, id);
+
+    // Update learning streak (async, don't block response)
+    learningStreaksRepository
+      .recordActivity(user.id, "lesson_complete", `Lesson ${id}`)
+      .catch((err) => {
+        logger.error("Error updating learning streak:", err as Error);
       });
 
-    if (error) {
-      throw badRequestError(error.message);
+    // Check lesson achievements (async, don't block response)
+    checkLessonAchievements(user.id).catch((err) => {
+      logger.error("Error checking lesson achievements:", err as Error);
+    });
+
+    // Get course ID for this lesson
+    const courseId = await lessonCompletionsRepository.getCourseIdForLesson(id);
+
+    if (!courseId) {
+      return successResponse({ completed: true });
     }
 
-    // Check if this completes the course
-    const { data: lesson } = await supabase
-      .from('course_lessons')
-      .select('course_id')
-      .eq('id', id)
-      .single() as { data: LessonRecord | null; error: unknown };
+    // Check course completion and get statistics
+    const completion = await lessonCompletionsRepository.checkCourseCompletion(
+      user.id,
+      courseId
+    );
 
-    if (lesson) {
-      // Get all lessons for this course
-      const { data: allLessons } = await supabase
-        .from('course_lessons')
-        .select('id')
-        .eq('course_id', lesson.course_id) as { data: LessonIdResult[] | null; error: unknown };
+    // Update enrollment progress
+    await enrollmentRepository.updateProgress(
+      user.id,
+      courseId,
+      completion.progressPercentage
+    );
 
-      // Get all completions for this user and course
-      const { data: completions } = await supabase
-        .from('lesson_completions')
-        .select('lesson_id')
-        .eq('user_id', user.id)
-        .in('lesson_id', allLessons?.map((l) => l.id) || []) as { data: LessonCompletionResult[] | null; error: unknown };
+    // Check if all lessons are complete
+    if (completion.isComplete) {
+      // Check if certificate already exists
+      const existingCertificate =
+        await certificateRepository.getByUserAndCourse(user.id, courseId);
 
-      // Calculate and update enrollment progress
-      if (allLessons && allLessons.length > 0) {
-        const completedCount = completions?.length || 0;
-        const progressPercentage = Math.round((completedCount / allLessons.length) * 100);
-
-        await supabase
-          .from('course_enrollments')
-          .update({
-            progress_percentage: progressPercentage,
-            last_accessed_at: new Date().toISOString(),
-            ...getUpdateTimestamp(),
-          })
-          .eq('user_id', user.id)
-          .eq('course_id', lesson.course_id);
-      }
-
-      // Check if all lessons are complete
-      if (allLessons && completions && completions.length === allLessons.length) {
+      if (!existingCertificate) {
         // Generate certificate
-        const { generateCertificateNumber } = await import('@/lib/certificate/generator');
+        const { generateCertificateNumber } = await import(
+          "@/lib/certificate/generator"
+        );
         const certificateNumber = generateCertificateNumber();
 
-        // Get course details (query needed for future course title in certificates)
-        const { data: _course } = await supabase
-          .from('courses')
-          .select('title')
-          .eq('id', lesson.course_id)
-          .single() as { data: CourseTitleResult | null; error: unknown };
-
-        // Create certificate record
-        const certData: CertificateInsert = {
+        // Create certificate record using repository
+        await certificateRepository.createCertificate({
           user_id: user.id,
-          course_id: lesson.course_id,
+          course_id: courseId,
           verification_code: certificateNumber,
-          issued_at: getCurrentTimestamp(),
-        };
-        await supabase
-          .from('certificates')
-          .insert(certData);
+          issued_at: new Date().toISOString(),
+        });
+
+        // Check course achievements (async, don't block response)
+        checkCourseAchievements(user.id).catch((err) => {
+          logger.error("Error checking course achievements:", err as Error);
+        });
 
         const response: CompletionResponse = {
           completed: true,
@@ -136,6 +94,14 @@ export const POST = createAuthenticatedRoute<{ id: string }>(
         };
         return successResponse(response);
       }
+
+      // Certificate already exists
+      const response: CompletionResponse = {
+        completed: true,
+        courseCompleted: true,
+        certificateNumber: existingCertificate.verification_code,
+      };
+      return successResponse(response);
     }
 
     return successResponse({ completed: true });

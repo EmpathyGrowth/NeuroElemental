@@ -3,142 +3,67 @@
  * Fetch all users for admin management
  */
 
-import { createAdminRoute, successResponse } from '@/lib/api'
-import { getSupabaseServer } from '@/lib/db'
-import { logger } from '@/lib/logging'
-import { subDays } from 'date-fns'
+import { createAdminRoute, successResponse } from "@/lib/api";
+import { userRepository } from "@/lib/db";
+import { logger } from "@/lib/logging";
 
 /**
  * GET /api/dashboard/admin/users
  * Get all users with stats (admin only)
  */
 export const GET = createAdminRoute(async (request) => {
-  const supabase = getSupabaseServer()
-  const { searchParams } = new URL(request.url)
-  const search = searchParams.get('search') || ''
-  const roleFilter = searchParams.get('role') || 'all'
-  const page = parseInt(searchParams.get('page') || '1', 10)
-  const limit = parseInt(searchParams.get('limit') || '50', 10)
-  const offset = (page - 1) * limit
+  const { searchParams } = new URL(request.url);
+  const search = searchParams.get("search") || "";
+  const roleFilter = searchParams.get("role") || "all";
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const limit = parseInt(searchParams.get("limit") || "50", 10);
 
   try {
-    // Build the query for profiles
-    let query = supabase
-      .from('profiles')
-      .select('id, email, full_name, role, created_at, updated_at, instructor_status', { count: 'exact' })
+    // 1. Fetch Paginated Users
+    const {
+      data: profiles,
+      total,
+      totalPages,
+    } = await userRepository.getPaginated(page, limit, {
+      search: search || undefined,
+      role: roleFilter && roleFilter !== "all" ? roleFilter : undefined,
+    });
 
-    // Apply search filter
-    if (search) {
-      query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`)
-    }
+    const userIds = profiles.map((p) => p.id);
 
-    // Apply role filter
-    if (roleFilter && roleFilter !== 'all') {
-      query = query.eq('role', roleFilter)
-    }
+    // 2. Fetch User Related Counts (Enrollments, Certifications)
+    const { enrollments: enrollmentCounts, certificates: certificateCounts } =
+      await userRepository.getUserRelatedCounts(userIds);
 
-    // Apply pagination
-    query = query
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+    // 3. Fetch Admin Stats
+    const stats = await userRepository.getAdminStats();
 
-    const { data: profiles, count, error } = await query
-
-    if (error) {
-      logger.error('Error fetching users:', error)
-      return successResponse({ users: [], stats: getDefaultStats(), total: 0 })
-    }
-
-    const userIds = profiles?.map(p => p.id) || []
-
-    // Get enrollment counts for these users
-    const enrollmentCounts: Record<string, number> = {}
-    if (userIds.length > 0) {
-      const { data: enrollments } = await supabase
-        .from('course_enrollments')
-        .select('user_id')
-        .in('user_id', userIds) as { data: Array<{ user_id: string }> | null; error: unknown }
-
-      if (enrollments) {
-        enrollments.forEach(e => {
-          enrollmentCounts[e.user_id] = (enrollmentCounts[e.user_id] || 0) + 1
-        })
-      }
-    }
-
-    // Get certificate counts for these users
-    const certificateCounts: Record<string, number> = {}
-    if (userIds.length > 0) {
-      const { data: certificates } = await supabase
-        .from('certificates')
-        .select('user_id')
-        .in('user_id', userIds) as { data: Array<{ user_id: string }> | null; error: unknown }
-
-      if (certificates) {
-        certificates.forEach(c => {
-          certificateCounts[c.user_id] = (certificateCounts[c.user_id] || 0) + 1
-        })
-      }
-    }
-
-    // Transform to response format
-    const users = profiles?.map(profile => ({
+    // 4. Transform to response format
+    const users = profiles.map((profile) => ({
       id: profile.id,
-      fullName: profile.full_name || 'Unknown',
-      email: profile.email || '',
-      role: profile.role || 'registered',
+      fullName: profile.full_name || "Unknown",
+      email: profile.email || "",
+      role: profile.role || "registered",
       instructorStatus: profile.instructor_status,
       enrolledCourses: enrollmentCounts[profile.id] || 0,
       certificates: certificateCounts[profile.id] || 0,
       createdAt: profile.created_at,
       lastActive: profile.updated_at,
-    })) || []
-
-    // Calculate stats
-    const weekAgo = subDays(new Date(), 7)
-
-    // Total users count
-    const { count: totalUsers } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-
-    // Active users (last 7 days) - using updated_at as proxy for activity
-    const { count: activeUsers } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .gte('updated_at', weekAgo.toISOString())
-
-    // Instructors count
-    const { count: instructors } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .eq('role', 'instructor')
-
-    // Pending instructor approvals
-    const { count: pendingInstructors } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .eq('instructor_status', 'pending')
-
-    const stats = {
-      totalUsers: totalUsers || 0,
-      activeUsers: activeUsers || 0,
-      instructors: instructors || 0,
-      pendingInstructors: pendingInstructors || 0,
-    }
+    }));
 
     return successResponse({
       users,
       stats,
-      total: count || 0,
+      total,
       page,
       limit,
-    })
+      totalPages,
+    });
   } catch (error) {
-    logger.error('Error in admin users route:', error as Error)
-    return successResponse({ users: [], stats: getDefaultStats(), total: 0 })
+    logger.error("Error in admin users route:", error as Error);
+    return successResponse({ users: [], stats: getDefaultStats(), total: 0 });
   }
-})
+});
 
 function getDefaultStats() {
   return {
@@ -146,5 +71,5 @@ function getDefaultStats() {
     activeUsers: 0,
     instructors: 0,
     pendingInstructors: 0,
-  }
+  };
 }

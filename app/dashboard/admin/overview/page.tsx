@@ -1,141 +1,150 @@
-'use client'
+"use client";
 
 /**
  * Admin Platform Overview Dashboard
  * High-level platform metrics and health monitoring
  */
 
-import { useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useAsync } from '@/hooks/use-async'
+import { AdminPageHeader } from "@/components/dashboard/admin-page-header";
+import { AdminPageShell } from "@/components/dashboard/admin-page-shell";
 import {
-  Building2,
-  Users,
-  Coins,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  ComparisonStatsCard,
+  MetricCard,
+  MetricRow,
+  ProgressStatsCard,
+  StatsCard,
+  StatsCardGrid,
+} from "@/components/ui/stats-card";
+import { useToast } from "@/components/ui/use-toast";
+import { useAsync } from "@/hooks/use-async";
+import {
   Activity,
-  UserPlus,
   AlertCircle,
+  Building2,
   CheckCircle2,
   Clock,
-} from 'lucide-react'
-import { toast } from 'sonner'
+  Coins,
+  DollarSign,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import { useEffect } from "react";
 
 interface PlatformStats {
   organizations: {
-    total: number
-    active: number
-    growth: number
-  }
+    total: number;
+    active: number;
+    growth: number;
+  };
   users: {
-    total: number
-    new_this_month: number
-    growth: number
-  }
+    total: number;
+    new_this_month: number;
+    growth: number;
+  };
   credits: {
-    total_purchased: number
-    total_used: number
-    total_remaining: number
-    revenue: number
-  }
+    total_purchased: number;
+    total_used: number;
+    total_remaining: number;
+    revenue: number;
+  };
   activity: {
-    transactions_today: number
-    invitations_pending: number
-    waitlist_signups: number
-    active_coupons: number
-  }
+    transactions_today: number;
+    invitations_pending: number;
+    waitlist_signups: number;
+    active_coupons: number;
+  };
   recentActivity: Array<{
-    id: string
-    type: 'organization' | 'credit' | 'invitation' | 'coupon'
-    message: string
-    timestamp: string
-  }>
+    id: string;
+    type: "organization" | "credit" | "invitation" | "coupon";
+    message: string;
+    timestamp: string;
+  }>;
   alerts: Array<{
-    id: string
-    severity: 'info' | 'warning' | 'error'
-    message: string
-    timestamp: string
-  }>
+    id: string;
+    severity: "info" | "warning" | "error";
+    message: string;
+    timestamp: string;
+  }>;
 }
 
 export default function AdminOverviewPage() {
-  const { data: stats, loading, error, execute } = useAsync<PlatformStats>()
+  const { toast } = useToast();
+  const { data: stats, loading, error, execute } = useAsync<PlatformStats>();
 
   useEffect(() => {
-    fetchPlatformStats()
-  }, [])
+    fetchPlatformStats();
+  }, []);
 
   useEffect(() => {
     if (error) {
-      toast.error(error)
+      toast({
+        title: "Error",
+        description: error,
+        variant: "destructive",
+      });
     }
-  }, [error])
+  }, [error, toast]);
 
-  const fetchPlatformStats = () => execute(async () => {
-    const res = await fetch('/api/admin/platform/stats')
-    if (!res.ok) throw new Error('Failed to fetch stats')
+  const fetchPlatformStats = () =>
+    execute(async () => {
+      const res = await fetch("/api/admin/platform/stats");
+      if (!res.ok) throw new Error("Failed to fetch stats");
 
-    const result = await res.json()
-    return result.stats
-  })
-
-  const formatTrend = (value: number) => {
-    const isPositive = value >= 0
-    return (
-      <span className={`flex items-center gap-1 text-sm ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-        {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-        {Math.abs(value)}%
-      </span>
-    )
-  }
+      const result = await res.json();
+      return result.stats;
+    });
 
   const getAlertIcon = (severity: string) => {
     switch (severity) {
-      case 'error':
-        return <AlertCircle className="h-4 w-4 text-red-600" />
-      case 'warning':
-        return <AlertCircle className="h-4 w-4 text-orange-600" />
+      case "error":
+        return <AlertCircle className="h-4 w-4 text-red-600" />;
+      case "warning":
+        return <AlertCircle className="h-4 w-4 text-orange-600" />;
       default:
-        return <CheckCircle2 className="h-4 w-4 text-blue-600" />
+        return <CheckCircle2 className="h-4 w-4 text-blue-600" />;
     }
-  }
+  };
 
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case 'organization':
-        return <Building2 className="h-4 w-4 text-blue-600" />
-      case 'credit':
-        return <Coins className="h-4 w-4 text-green-600" />
-      case 'invitation':
-        return <UserPlus className="h-4 w-4 text-purple-600" />
-      case 'coupon':
-        return <DollarSign className="h-4 w-4 text-orange-600" />
+      case "organization":
+        return <Building2 className="h-4 w-4 text-blue-600" />;
+      case "credit":
+        return <Coins className="h-4 w-4 text-green-600" />;
+      case "invitation":
+        return <UserPlus className="h-4 w-4 text-purple-600" />;
+      case "coupon":
+        return <DollarSign className="h-4 w-4 text-orange-600" />;
       default:
-        return <Activity className="h-4 w-4" />
+        return <Activity className="h-4 w-4" />;
     }
-  }
+  };
 
   const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const minutes = Math.floor(diff / 60000)
-    const hours = Math.floor(minutes / 60)
-    const days = Math.floor(hours / 24)
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
 
-    if (minutes < 1) return 'Just now'
-    if (minutes < 60) return `${minutes}m ago`
-    if (hours < 24) return `${hours}h ago`
-    return `${days}d ago`
-  }
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  };
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6 max-w-7xl">
+      <AdminPageShell>
         <div className="space-y-6">
           <Skeleton className="h-12 w-64" />
           <div className="grid gap-4 md:grid-cols-4">
@@ -149,13 +158,13 @@ export default function AdminOverviewPage() {
             <Skeleton className="h-96" />
           </div>
         </div>
-      </div>
-    )
+      </AdminPageShell>
+    );
   }
 
   if (!stats) {
     return (
-      <div className="container mx-auto p-6 max-w-7xl">
+      <AdminPageShell>
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-6 text-destructive">
@@ -163,178 +172,123 @@ export default function AdminOverviewPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    )
+      </AdminPageShell>
+    );
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Platform Overview</h1>
-          <p className="text-muted-foreground">
-            Monitor platform health and key metrics
-          </p>
-        </div>
+    <AdminPageShell>
+      <AdminPageHeader
+        title="Platform Overview"
+        description="Monitor platform health and key metrics"
+      />
 
+      <div className="space-y-8">
         {/* Key Metrics */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Organizations</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.organizations.total}</div>
-              <div className="flex items-center justify-between mt-1">
-                <p className="text-xs text-muted-foreground">
-                  {stats.organizations.active} active
-                </p>
-                {formatTrend(stats.organizations.growth)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.users.total}</div>
-              <div className="flex items-center justify-between mt-1">
-                <p className="text-xs text-muted-foreground">
-                  +{stats.users.new_this_month} this month
-                </p>
-                {formatTrend(stats.users.growth)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                ${(stats.credits.revenue / 100).toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                From credit purchases
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Credits Remaining</CardTitle>
-              <Coins className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats.credits.total_remaining.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Across all organizations
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        <StatsCardGrid columns={4}>
+          <StatsCard
+            title="Organizations"
+            value={stats.organizations.total}
+            description={`${stats.organizations.active} active`}
+            trend={{
+              direction: stats.organizations.growth >= 0 ? "up" : "down",
+              value: `${Math.abs(stats.organizations.growth)}%`,
+            }}
+            icon={<Building2 className="h-5 w-5" />}
+            accent="blue"
+          />
+          <StatsCard
+            title="Total Users"
+            value={stats.users.total}
+            description={`+${stats.users.new_this_month} this month`}
+            trend={{
+              direction: stats.users.growth >= 0 ? "up" : "down",
+              value: `${Math.abs(stats.users.growth)}%`,
+            }}
+            icon={<Users className="h-5 w-5" />}
+            accent="purple"
+          />
+          <StatsCard
+            title="Total Revenue"
+            value={`$${(stats.credits.revenue / 100).toLocaleString()}`}
+            description="From credit purchases"
+            icon={<DollarSign className="h-5 w-5" />}
+            accent="green"
+          />
+          <StatsCard
+            title="Credits Remaining"
+            value={stats.credits.total_remaining.toLocaleString()}
+            description="Across all organizations"
+            icon={<Coins className="h-5 w-5" />}
+            accent="amber"
+          />
+        </StatsCardGrid>
 
         {/* Credit Metrics */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Credits Purchased</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {stats.credits.total_purchased.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Lifetime purchases
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Credits Used</CardTitle>
-              <TrendingDown className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {stats.credits.total_used.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Lifetime consumption
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Usage Rate</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats.credits.total_purchased > 0
-                  ? Math.round((stats.credits.total_used / stats.credits.total_purchased) * 100)
-                  : 0}%
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Credits consumed
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid gap-4 md:grid-cols-2">
+          <ComparisonStatsCard
+            title="Credit Usage Overview"
+            current={{
+              label: "Total Purchased",
+              value: stats.credits.total_purchased.toLocaleString(),
+            }}
+            previous={{
+              label: "Total Used",
+              value: stats.credits.total_used.toLocaleString(),
+            }}
+            change={{
+              direction: "neutral",
+              value: "Lifetime",
+            }}
+            icon={<Coins className="h-5 w-5" />}
+            accent="cyan"
+          />
+          <ProgressStatsCard
+            title="Usage Rate"
+            current={stats.credits.total_used}
+            total={Math.max(stats.credits.total_purchased, 1)}
+            unit=" credits"
+            description="Percentage of purchased credits consumed"
+            icon={<Activity className="h-5 w-5" />}
+            accent="pink"
+          />
         </div>
 
         {/* Today's Activity */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Transactions Today</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.activity.transactions_today}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Invitations</CardTitle>
-              <UserPlus className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.activity.invitations_pending}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Waitlist Signups</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.activity.waitlist_signups}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Coupons</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.activity.active_coupons}</div>
-            </CardContent>
-          </Card>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Today's Activity</CardTitle>
+            <CardDescription>Operational metrics for today</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <MetricRow>
+              <MetricCard
+                label="Transactions"
+                value={stats.activity.transactions_today}
+                change="Processed"
+                accent="blue"
+              />
+              <MetricCard
+                label="Pending Invites"
+                value={stats.activity.invitations_pending}
+                change="Awaiting"
+                accent="purple"
+              />
+              <MetricCard
+                label="Waitlist"
+                value={stats.activity.waitlist_signups}
+                change="New Signups"
+                accent="green"
+              />
+              <MetricCard
+                label="Active Coupons"
+                value={stats.activity.active_coupons}
+                change="Valid"
+                accent="pink"
+              />
+            </MetricRow>
+          </CardContent>
+        </Card>
 
         {/* Recent Activity & Alerts */}
         <div className="grid gap-4 md:grid-cols-2">
@@ -352,10 +306,17 @@ export default function AdminOverviewPage() {
                   </div>
                 ) : (
                   stats.recentActivity.map((activity) => (
-                    <div key={activity.id} className="flex items-start gap-3">
-                      {getActivityIcon(activity.type)}
+                    <div
+                      key={activity.id}
+                      className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="mt-0.5 p-2 rounded-full bg-primary/10 text-primary">
+                        {getActivityIcon(activity.type)}
+                      </div>
                       <div className="flex-1 space-y-1">
-                        <p className="text-sm">{activity.message}</p>
+                        <p className="text-sm font-medium">
+                          {activity.message}
+                        </p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" />
                           {formatTimestamp(activity.timestamp)}
@@ -378,7 +339,7 @@ export default function AdminOverviewPage() {
               <div className="space-y-4">
                 {stats.alerts.length === 0 ? (
                   <div className="text-center py-6 text-muted-foreground">
-                    <CheckCircle2 className="h-12 w-12 mx-auto mb-2 opacity-20" />
+                    <CheckCircle2 className="h-12 w-12 mx-auto mb-2 opacity-20 text-green-500" />
                     <p>All systems operational</p>
                   </div>
                 ) : (
@@ -386,32 +347,23 @@ export default function AdminOverviewPage() {
                     <div
                       key={alert.id}
                       className={`flex items-start gap-3 p-3 rounded-lg border ${
-                        alert.severity === 'error'
-                          ? 'bg-red-50 border-red-200 dark:bg-red-950/20'
-                          : alert.severity === 'warning'
-                          ? 'bg-orange-50 border-orange-200 dark:bg-orange-950/20'
-                          : 'bg-blue-50 border-blue-200 dark:bg-blue-950/20'
+                        alert.severity === "error"
+                          ? "bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-400"
+                          : alert.severity === "warning"
+                            ? "bg-orange-500/10 border-orange-500/20 text-orange-700 dark:text-orange-400"
+                            : "bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-400"
                       }`}
                     >
-                      {getAlertIcon(alert.severity)}
+                      <div className="mt-0.5">
+                        {getAlertIcon(alert.severity)}
+                      </div>
                       <div className="flex-1 space-y-1">
                         <p className="text-sm font-medium">{alert.message}</p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs opacity-80">
                           <Clock className="h-3 w-3" />
                           {formatTimestamp(alert.timestamp)}
                         </div>
                       </div>
-                      <Badge
-                        variant={
-                          alert.severity === 'error'
-                            ? 'destructive'
-                            : alert.severity === 'warning'
-                            ? 'secondary'
-                            : 'default'
-                        }
-                      >
-                        {alert.severity}
-                      </Badge>
                     </div>
                   ))
                 )}
@@ -420,6 +372,6 @@ export default function AdminOverviewPage() {
           </Card>
         </div>
       </div>
-    </div>
-  )
+    </AdminPageShell>
+  );
 }

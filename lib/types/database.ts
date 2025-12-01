@@ -1,5 +1,60 @@
 // Database Type Definitions for Supabase Tables
 
+/** Energy profile for elemental personality framework */
+export interface EnergyProfile {
+  electric?: number;
+  fire?: number;
+  water?: number;
+  earth?: number;
+  air?: number;
+  metal?: number;
+  dominantElement?: string;
+  secondaryElement?: string;
+  [key: string]: unknown;
+}
+
+/** Invoice line item */
+export interface InvoiceItem {
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+}
+
+/** Billing details for invoices */
+export interface BillingDetails {
+  name?: string;
+  email?: string;
+  company?: string;
+  address?: {
+    line1?: string;
+    line2?: string;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+    country?: string;
+  };
+  tax_id?: string;
+}
+
+/** Assessment element scores */
+export interface ElementScores {
+  electric: number;
+  fire: number;
+  water: number;
+  earth: number;
+  air: number;
+  metal: number;
+}
+
+/** Personality traits from assessment */
+export interface PersonalityTraits {
+  strengths?: string[];
+  challenges?: string[];
+  recommendations?: string[];
+  [key: string]: unknown;
+}
+
 export interface Profile {
   id: string;
   email: string;
@@ -8,8 +63,14 @@ export interface Profile {
   bio?: string;
   location?: string;
   phone?: string;
-  role: 'registered' | 'student' | 'instructor' | 'business' | 'school' | 'admin';
-  energy_profile?: any;
+  role:
+    | "registered"
+    | "student"
+    | "instructor"
+    | "business"
+    | "school"
+    | "admin";
+  energy_profile?: EnergyProfile;
   created_at: string;
   updated_at: string;
   deleted_at?: string;
@@ -30,7 +91,7 @@ export interface Course {
   instructor_id: string;
   price: number;
   duration_hours: number;
-  level: 'beginner' | 'intermediate' | 'advanced';
+  level: "beginner" | "intermediate" | "advanced";
   thumbnail_url?: string;
   is_published: boolean;
   created_at: string;
@@ -44,7 +105,7 @@ export interface Enrollment {
   enrolled_at: string;
   progress: number;
   completed_at?: string;
-  status: 'active' | 'completed' | 'paused';
+  status: "active" | "completed" | "paused";
   course?: Course;
   user?: Profile;
 }
@@ -55,7 +116,7 @@ export interface Session {
   instructor_id: string;
   scheduled_at: string;
   duration_minutes: number;
-  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  status: "scheduled" | "confirmed" | "completed" | "cancelled";
   type: string;
   meeting_link?: string;
   notes?: string;
@@ -69,7 +130,7 @@ export interface Payment {
   user_id: string;
   amount: number;
   currency: string;
-  status: 'pending' | 'succeeded' | 'failed' | 'refunded';
+  status: "pending" | "succeeded" | "failed" | "refunded";
   payment_type: string;
   stripe_payment_intent_id?: string;
   created_at: string;
@@ -93,12 +154,12 @@ export interface Invoice {
   amount: number;
   tax_amount: number;
   total_amount: number;
-  status: 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
+  status: "draft" | "pending" | "paid" | "overdue" | "cancelled";
   issued_at: string;
   due_date: string;
   paid_at?: string;
-  items: any[];
-  billing_details: any;
+  items: InvoiceItem[];
+  billing_details: BillingDetails;
   pdf_url?: string;
   payment?: Payment;
 }
@@ -108,7 +169,7 @@ export interface Subscription {
   user_id: string;
   plan_name: string;
   price: number;
-  status: 'active' | 'paused' | 'cancelled' | 'expired';
+  status: "active" | "paused" | "cancelled" | "expired";
   stripe_subscription_id?: string;
   current_period_start: string;
   current_period_end: string;
@@ -167,7 +228,7 @@ export interface Notification {
   type: string;
   read: boolean;
   created_at: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 export interface EmailPreferences {
@@ -184,9 +245,9 @@ export interface ScheduledEmail {
   id: string;
   to: string;
   type: string;
-  props: any;
+  props: Record<string, unknown>;
   scheduled_for: string;
-  status: 'pending' | 'sent' | 'failed';
+  status: "pending" | "sent" | "failed";
   sent_at?: string;
   error?: string;
   created_at: string;
@@ -194,20 +255,20 @@ export interface ScheduledEmail {
 
 export interface LogEntry {
   id?: string;
-  level: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+  level: "debug" | "info" | "warn" | "error" | "fatal";
   message: string;
   timestamp: string;
   userId?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   category?: string;
-  error?: any;
+  error?: Error | Record<string, unknown>;
 }
 
 export interface OrganizationMember {
   id: string;
   organization_id: string;
   user_id: string;
-  role: 'owner' | 'admin' | 'member';
+  role: "owner" | "admin" | "member";
   joined_at: string;
   user?: Profile;
 }
@@ -216,9 +277,9 @@ export interface AssessmentResult {
   id: string;
   user_id: string;
   completed_at: string;
-  element_scores: any;
+  element_scores: ElementScores;
   top_element: string;
-  personality_traits: any;
+  personality_traits: PersonalityTraits;
   created_at: string;
 }
 
@@ -237,13 +298,13 @@ export interface CourseProgress {
 
 // Type guards
 export function isProfile(obj: any): obj is Profile {
-  return obj && typeof obj.id === 'string' && typeof obj.email === 'string';
+  return obj && typeof obj.id === "string" && typeof obj.email === "string";
 }
 
 export function isCourse(obj: any): obj is Course {
-  return obj && typeof obj.id === 'string' && typeof obj.title === 'string';
+  return obj && typeof obj.id === "string" && typeof obj.title === "string";
 }
 
 export function isPayment(obj: any): obj is Payment {
-  return obj && typeof obj.id === 'string' && typeof obj.amount === 'number';
+  return obj && typeof obj.id === "string" && typeof obj.amount === "number";
 }

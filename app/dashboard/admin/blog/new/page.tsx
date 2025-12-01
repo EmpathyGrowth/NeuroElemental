@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { FormLabel } from '@/components/ui/form-label';
 import {
     Select,
     SelectContent,
@@ -13,12 +14,14 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { ArrowLeft, Eye, Loader2, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logging';
+import { ImageUpload } from '@/components/forms/image-upload';
 
 const categories = [
   'Energy Management',
@@ -92,7 +95,15 @@ export default function NewBlogPostPage() {
 
   return (
     <div className="container mx-auto p-6 max-w-5xl">
-      <div className="mb-8">
+      <div className="mb-6">
+        <Breadcrumbs
+          items={[
+            { label: 'Admin', href: '/dashboard/admin' },
+            { label: 'Blog', href: '/dashboard/admin/blog' },
+            { label: 'New Post' },
+          ]}
+          className="mb-4"
+        />
         <Link href="/dashboard/admin/blog">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -117,7 +128,7 @@ export default function NewBlogPostPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
+              <FormLabel htmlFor="title" required>Title</FormLabel>
               <Input
                 id="title"
                 value={title}
@@ -128,9 +139,9 @@ export default function NewBlogPostPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="slug">URL Slug *</Label>
-              <div className="flex gap-2">
-                <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md text-sm text-muted-foreground bg-muted">
+              <FormLabel htmlFor="slug" required>URL Slug</FormLabel>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 h-10 border border-r-0 border-input rounded-l-md text-sm text-muted-foreground bg-muted dark:bg-muted/50 dark:border-input/50">
                   /blog/
                 </span>
                 <Input
@@ -138,7 +149,7 @@ export default function NewBlogPostPage() {
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
                   placeholder="energy-management-neurodivergent"
-                  className="rounded-l-none"
+                  className="rounded-l-none flex-1"
                   required
                 />
               </div>
@@ -188,13 +199,17 @@ export default function NewBlogPostPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="featuredImage">Featured Image URL</Label>
-              <Input
-                id="featuredImage"
+              <Label>Featured Image</Label>
+              <ImageUpload
                 value={featuredImage}
-                onChange={(e) => setFeaturedImage(e.target.value)}
-                placeholder="https://example.com/image.jpg"
+                onChange={(url) => setFeaturedImage(url || '')}
+                category="blogs"
+                aspectRatio="video"
+                placeholder="Upload featured image"
               />
+              <p className="text-xs text-muted-foreground">
+                Recommended size: 1200x630 for social sharing
+              </p>
             </div>
           </CardContent>
         </Card>

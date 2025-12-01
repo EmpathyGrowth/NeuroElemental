@@ -10,4 +10,5 @@ export {
   extractPathFromUrl,
   formatFileSize,
   type UploadOptions,
+  type StorageBucket,
 } from './upload'

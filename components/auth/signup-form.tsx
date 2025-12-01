@@ -1,26 +1,41 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
-import { signUp, signInWithOAuth } from '@/lib/auth/supabase';
+import { PasswordStrengthMeter } from '@/components/auth/password-strength-meter';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Loader2, CheckCircle } from 'lucide-react';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { signInWithOAuth, signUp } from '@/lib/auth/supabase';
+import { signupSchema } from '@/lib/validation/schemas';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 /** Delay in ms before redirecting after successful signup */
 const REDIRECT_DELAY = 2000;
 
+type SignupFormValues = z.infer<typeof signupSchema>;
+
 export function SignupForm() {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const form = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      fullName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+  });
 
   // Cleanup redirect timeout on unmount
   useEffect(() => {
@@ -31,40 +46,25 @@ export function SignupForm() {
     };
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (values: SignupFormValues) => {
     setError(null);
-
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    // Validate password strength
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const { error } = await signUp(email, password, fullName);
+      const { error: signUpError } = await signUp(values.email, values.password, values.fullName);
 
-      if (error) {
-        setError(error.message);
+      if (signUpError) {
+        setError(signUpError.message);
         setLoading(false);
       } else {
         setSuccess(true);
-        // Wait before redirecting
+        // Wait before redirecting - use router.replace for consistent behavior
         redirectTimeoutRef.current = setTimeout(() => {
-          window.location.href = '/dashboard';
+          router.replace('/dashboard');
         }, REDIRECT_DELAY);
       }
     } catch (_err) {
       setError('An unexpected error occurred');
-    } finally {
       setLoading(false);
     }
   };
@@ -74,9 +74,9 @@ export function SignupForm() {
     setLoading(true);
 
     try {
-      const { error } = await signInWithOAuth(provider);
-      if (error) {
-        setError(error.message);
+      const { error: oauthError } = await signInWithOAuth(provider);
+      if (oauthError) {
+        setError(oauthError.message);
         setLoading(false);
       }
       // If successful, user will be redirected by Supabase
@@ -113,82 +113,108 @@ export function SignupForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-lg">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              <p className="text-sm">{error}</p>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {error && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-lg" role="alert">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <p className="text-sm">{String(error).replace(/<[^>]*>/g, '')}</p>
+              </div>
+            )}
+
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="John Doe"
+                      disabled={loading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="you@example.com"
+                      type="email"
+                      disabled={loading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="8+ chars, uppercase, lowercase, number"
+                      disabled={loading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <PasswordStrengthMeter password={field.value || ''} className="mt-2" />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm password</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      disabled={loading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="text-xs text-muted-foreground">
+              By creating an account, you agree to our{' '}
+              <Link href="/terms" className="text-primary hover:underline">
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="text-primary hover:underline">
+                Privacy Policy
+              </Link>
+              .
             </div>
-          )}
 
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full name</Label>
-            <Input
-              id="fullName"
-              type="text"
-              placeholder="John Doe"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-              placeholder="At least 8 characters"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <div className="text-xs text-muted-foreground">
-            By creating an account, you agree to our{' '}
-            <Link href="/terms" className="text-primary hover:underline">
-              Terms of Service
-            </Link>{' '}
-            and{' '}
-            <Link href="/privacy" className="text-primary hover:underline">
-              Privacy Policy
-            </Link>
-            .
-          </div>
-
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create account
-          </Button>
-        </form>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create account
+            </Button>
+          </form>
+        </Form>
 
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">

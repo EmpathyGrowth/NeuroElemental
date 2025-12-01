@@ -7,169 +7,339 @@
  */
 
 // Supabase clients
-export { getSupabaseServer } from './supabase-server'
+export { getSupabaseServer } from "./supabase-server";
 
 // Activity logging
-export * from './activity-log'
+export * from "./activity-log";
 
 // Repositories - prefer using these directly
-export { blogRepository, BlogRepository } from './blog'
-export { courseRepository, CourseRepository } from './courses'
-export { couponRepository, CouponRepository, validateCoupon, calculateDiscount } from './coupons'
 export {
-  creditRepository,
-  CreditRepository,
+  AchievementRepository,
+  achievementRepository,
+  type AchievementStats,
+  type AchievementWithStatus,
+} from "./achievements";
+export { AssessmentRepository, assessmentRepository } from "./assessments";
+export { BlogRepository, blogRepository } from "./blog";
+export {
+  BlogCommentsRepository,
+  blogCommentsRepository,
+  type BlogComment,
+  type BlogCommentWithAuthor,
+  type BlogCommentWithReplies,
+} from "./blog-comments";
+export {
+  BlogReactionsRepository,
+  blogReactionsRepository,
+  type BlogReaction,
+  type ReactionCounts,
+  type ReactionType,
+} from "./blog-reactions";
+export { CertificateRepository, certificateRepository } from "./certificates";
+export {
+  CertificationRepository,
+  certificationRepository,
+} from "./certifications";
+export {
+  calculateDiscount,
+  CouponRepository,
+  couponRepository,
+  validateCoupon,
+} from "./coupons";
+export { CourseRepository, courseRepository } from "./courses";
+export {
   // Legacy wrapper exports for backward compatibility
   addCredits,
-  deductCredits,
-  getOrganizationCreditBalance,
-  getOrganizationAllCredits,
-  getCreditTransactions,
-  getUserCreditUsage,
-  getTotalCreditsUsed,
-  hasSufficientCredits,
-  getCreditStatistics,
   addOrganizationCredits,
-} from './credits'
-export { userRepository, UserRepository } from './users'
+  CreditRepository,
+  creditRepository,
+  deductCredits,
+  getCreditStatistics,
+  getCreditTransactions,
+  getOrganizationAllCredits,
+  getOrganizationCreditBalance,
+  getTotalCreditsUsed,
+  getUserCreditUsage,
+  hasSufficientCredits,
+} from "./credits";
 export {
-  waitlistRepository,
-  WaitlistRepository,
-  // Legacy wrapper exports
-  addToWaitlist,
-  getAllWaitlistEntries,
-  getPendingWaitlist,
-  getWaitlistCount,
-  isEmailOnWaitlist,
-  removeFromWaitlist,
-  getWaitlistEmails,
-  getRecentWaitlistSignups,
-  exportWaitlistCSV,
-} from './waitlist'
-export { eventRepository } from './events'
-
-// Memberships and Invitations (consolidated - uses new schema tables)
+  DiagnosticsRepository,
+  diagnosticsRepository,
+  type DiagnosticResponse,
+  type DiagnosticStatus,
+  type DiagnosticTemplate,
+  type DiagnosticType,
+  type DiagnosticWithTemplate,
+} from "./diagnostics";
 export {
-  MembershipRepository,
-  membershipRepository,
-  addOrganizationMember,
-  removeOrganizationMember,
-  updateMemberRole,
-  updateMemberRole as updateMembershipRole,
-  getOrganizationMembers,
-  getOrganizationMembers as getMembershipList,
-  // Invitation functions (use these instead of old invitations.ts)
-  createOrganizationInvite,
-  getOrganizationInvites,
-  getInviteById,
-  acceptInvitation,
-  cancelInvitation,
-  getPendingInvitesForEmail,
-  isEmailAlreadyMember,
-  transferOwnership,
-} from './memberships'
-
-// Organizations - use organizationRepository for all operations
+  EmailPreferencesRepository,
+  emailPreferencesRepository,
+} from "./email-preferences";
+export { EnrollmentRepository, enrollmentRepository } from "./enrollments";
 export {
-  OrganizationRepository,
-  organizationRepository,
-  // Convenience bindings for common checks
-  isUserOrgAdmin,
-  isUserOrgMember,
-  isUserOrgOwner,
-  getUserOrgRole,
-  isSlugAvailable,
-} from './organizations'
-
-// Base repository (for extension)
-export { BaseRepository, queryBuilder, createRepository } from './base-repository'
-
-// Select fragments for relation queries
-export { selectFragments, buildSelectFragment, combineFragments } from './select-fragments'
-
-// Instructor Resources
+  EventRegistrationRepository,
+  eventRegistrationRepository,
+} from "./event-registrations";
+export {
+  eventRepository,
+  type AgendaItem,
+  type Event,
+  type EventType,
+  type EventWithStats,
+} from "./events";
 export {
   InstructorResourceRepository,
   instructorResourceRepository,
   type InstructorResource,
-  type InstructorResourceInsert,
-  type InstructorResourceUpdate,
   type InstructorResourceCategory,
   type InstructorResourceType,
-  type ResourceDownload,
-} from './instructor-resources'
-
-// Diagnostics
+} from "./instructor-resources";
 export {
-  DiagnosticsRepository,
-  diagnosticsRepository,
-  type DiagnosticTemplate,
-  type OrganizationDiagnostic,
-  type DiagnosticResponse,
-  type DiagnosticWithTemplate,
-  type DiagnosticType,
-  type DiagnosticStatus,
-  type DiagnosticQuestion,
-} from './diagnostics'
-
-// Certifications
+  LessonCompletionsRepository,
+  lessonCompletionsRepository,
+} from "./lesson-completions";
 export {
-  CertificationRepository,
-  certificationRepository,
-  type CertificationApplication,
-  type CertificationApplicationInsert,
-  type CertificationApplicationStatus,
-  type CertificationLevel,
-} from './certifications'
+  LessonProgressRepository,
+  lessonProgressRepository,
+} from "./lesson-progress";
+export { LessonRepository, lessonRepository } from "./lessons";
 
-// Enrollments
+// New LMS feature repositories
 export {
-  EnrollmentRepository,
-  enrollmentRepository,
-  type CourseEnrollment,
-  type CourseEnrollmentInsert,
-  type CourseEnrollmentUpdate,
-  type EnrollmentPaymentStatus,
-  type EnrollmentWithUser,
-  type EnrollmentWithCourse,
-  type EnrollmentFull,
-  type EnrollmentStats,
-  type UserEnrollmentSummary,
-} from './enrollments'
+  CourseAnnouncementsRepository,
+  courseAnnouncementsRepository,
+  type AnnouncementWithCourse,
+  type AnnouncementWithInstructor,
+} from "./course-announcements";
+export {
+  LearningStreaksRepository,
+  learningStreaksRepository,
+  type StreakHistoryEntry,
+  type StreakStats,
+} from "./learning-streaks";
+export {
+  LessonBookmarksRepository,
+  lessonBookmarksRepository,
+  type LessonBookmarkWithContext,
+  type LessonBookmarkWithLesson,
+} from "./lesson-bookmarks";
+export {
+  LessonNotesRepository,
+  lessonNotesRepository,
+  type LessonNoteWithContext,
+  type LessonNoteWithLesson,
+} from "./lesson-notes";
+export { LogsRepository, logsRepository } from "./logs";
+export { ModuleRepository, moduleRepository } from "./modules";
+export { PricingRepository, pricingRepository } from "./pricing";
+export { QuizRepository, quizRepository, type QuizQuestion } from "./quizzes";
+export {
+  ScheduledEmailRepository,
+  scheduledEmailRepository,
+} from "./scheduled-emails";
+export { TestimonialRepository, testimonialRepository } from "./testimonials";
+export { UserRepository, userRepository } from "./users";
+export {
+  // Legacy wrapper exports
+  addToWaitlist,
+  exportWaitlistCSV,
+  getAllWaitlistEntries,
+  getPendingWaitlist,
+  getRecentWaitlistSignups,
+  getWaitlistCount,
+  getWaitlistEmails,
+  isEmailOnWaitlist,
+  removeFromWaitlist,
+  WaitlistRepository,
+  waitlistRepository,
+} from "./waitlist";
+export {
+  WebhookRepository,
+  webhookRepository,
+  type WebhookWithDeliveries,
+} from "./webhooks";
 
-// Pricing
+// Memberships
 export {
-  PricingRepository,
-  pricingRepository,
-  type PricingPlan,
-  type PricingPlanInsert,
-  type PricingTier,
-  type PricingType,
-  type PricingFeature,
-  type PricingLimits,
-} from './pricing'
+  acceptInvitation,
+  acceptInvitation as acceptMembershipInvite,
+  addOrganizationMember,
+  cancelInvitation,
+  createOrganizationInvite,
+  getInviteById,
+  getOrganizationMembers as getMembershipList,
+  getOrganizationInvites,
+  getOrganizationMembers,
+  getPendingInvitesForEmail,
+  isEmailAlreadyMember,
+  MembershipRepository,
+  membershipRepository,
+  removeOrganizationMember,
+  transferOwnership,
+  updateMemberRole,
+  updateMemberRole as updateMembershipRole,
+} from "./memberships";
 
-// Quizzes
+// Organizations - use organizationRepository for all operations
 export {
-  QuizRepository,
-  quizRepository,
-  type QuizQuestion,
-  type QuizWithQuestions,
-  type QuizAttemptResult,
-} from './quizzes'
+  getUserOrgRole,
+  isSlugAvailable,
+  // Convenience bindings for common checks
+  isUserOrgAdmin,
+  isUserOrgMember,
+  isUserOrgOwner,
+  OrganizationRepository,
+  organizationRepository,
+} from "./organizations";
 
-// Typed RPC function wrappers
+// Platform settings
 export {
-  getAuditLogForExport,
-  getUserPermissions,
-  userHasPermission,
-  checkSSORequired,
-  autoProvisionSSOUser,
-  checkRateLimit,
-  incrementRateLimit,
-  logDataAccess,
-  getUserDataSummary,
-  incrementUsageMetric,
-  incrementEventSpots,
-  generateDeletionConfirmationToken,
-} from './rpc-functions'
+  platformSettingsRepository,
+  type BrandingSettings,
+  type EmailSettings,
+  type FeatureFlags,
+  type GeneralSettings,
+  type PlatformSettings,
+  type SecuritySettings,
+} from "./platform-settings";
+
+// CMS repositories
+export {
+  FAQsRepository,
+  faqsRepository,
+  type FAQ,
+  type FAQInsert,
+  type FAQUpdate,
+} from "./faqs";
+export {
+  SiteAnnouncementsRepository,
+  siteAnnouncementsRepository,
+  type AnnouncementType,
+  type SiteAnnouncement,
+  type SiteAnnouncementInsert,
+  type SiteAnnouncementUpdate,
+} from "./site-announcements";
+export {
+  SiteContentRepository,
+  siteContentRepository,
+  type SiteContent,
+  type SiteContentInsert,
+  type SiteContentUpdate,
+} from "./site-content";
+
+// Navigation management
+export {
+  NavigationRepository,
+  navigationRepository,
+  type MenuLocation,
+  type NavigationMenu,
+  type NavigationMenuItem,
+  type NavigationMenuItemWithChildren,
+  type NavigationMenuWithItems,
+} from "./navigation";
+
+// Footer content
+export {
+  FooterContentRepository,
+  footerContentRepository,
+  type FooterAboutContent,
+  type FooterContent,
+  type FooterData,
+  type FooterLegalContent,
+  type FooterLinksContent,
+  type FooterNewsletterContent,
+  type FooterSection,
+  type FooterSocialContent,
+} from "./footer-content";
+
+// Media library
+export {
+  MediaLibraryRepository,
+  mediaLibraryRepository,
+  type MediaFilterOptions,
+  type MediaItem,
+  type MediaItemInsert,
+  type MediaItemUpdate,
+} from "./media-library";
+
+// Email templates
+export {
+  EmailTemplatesRepository,
+  emailTemplatesRepository,
+  type EmailTemplate,
+  type EmailTemplateCategory,
+  type EmailTemplateInsert,
+  type EmailTemplateUpdate,
+  type RenderedEmail,
+} from "./email-templates";
+
+// Content revisions
+export {
+  ContentRevisionsRepository,
+  contentRevisionsRepository,
+  type ContentRevision,
+  type ContentRevisionWithAuthor,
+  type RevisionContentType,
+} from "./content-revisions";
+
+// URL Redirects
+export {
+  UrlRedirectsRepository,
+  urlRedirectsRepository,
+  type RedirectType,
+  type UrlRedirect,
+  type UrlRedirectInsert,
+  type UrlRedirectUpdate,
+} from "./url-redirects";
+
+// SEO Settings
+export {
+  SeoSettingsRepository,
+  seoSettingsRepository,
+  type ChangeFrequency,
+  type PageSeo,
+  type SeoSettings,
+  type SeoSettingsInsert,
+  type SeoSettingsUpdate,
+} from "./seo-settings";
+
+// Contact Forms
+export {
+  ContactFormsRepository,
+  contactFormsRepository,
+  type ContactForm,
+  type ContactFormInsert,
+  type ContactFormUpdate,
+  type FormField,
+  type FormSubmission,
+  type FormSubmissionWithForm,
+  type SubmissionStatus,
+} from "./contact-forms";
+
+// Content Blocks
+export {
+  ContentBlocksRepository,
+  contentBlocksRepository,
+  type BlockPlacement,
+  type BlockPlacementWithBlock,
+  type BlockType,
+  type ContentBlock,
+  type ContentBlockInsert,
+  type ContentBlockUpdate,
+} from "./content-blocks";
+
+// Theme Settings
+export {
+  ThemeSettingsRepository,
+  themeSettingsRepository,
+  type ThemeColors,
+  type ThemeComponents,
+  type ThemeCssVariables,
+  type ThemeLayout,
+  type ThemeSettings,
+  type ThemeSettingsUpdate,
+  type ThemeTypography,
+} from "./theme-settings";
+
+// Base repository (for extension)
+export { BaseRepository, createRepository } from "./base-repository";

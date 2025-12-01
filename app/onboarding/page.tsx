@@ -1,108 +1,294 @@
 'use client';
 
-import { useAuth } from '@/components/auth/auth-provider';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { createClient } from '@/lib/supabase/client';
-import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
-import { BookOpen, Building2, CheckCircle2, GraduationCap, Loader2, School } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
+import { useAuth } from '@/components/auth/auth-provider';
+import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logging';
+import { Loader2 } from 'lucide-react';
+
+import {
+  OnboardingWizard,
+  useOnboardingWizard,
+  StepWelcome,
+  StepRole,
+  StepProfile,
+  StepAssessment,
+  StepComplete,
+  type UserRole,
+  type OnboardingStep,
+} from '@/components/onboarding';
+
+const ONBOARDING_STEPS: OnboardingStep[] = [
+  { id: 'welcome', title: 'Welcome' },
+  { id: 'role', title: 'Role' },
+  { id: 'profile', title: 'Profile' },
+  { id: 'assessment', title: 'Assessment' },
+  { id: 'complete', title: 'Complete' },
+];
+
+interface OnboardingData {
+  role: UserRole;
+  displayName: string;
+  bio: string;
+  avatarUrl?: string;
+}
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user, refetchProfile } = useAuth();
-  const [role, setRole] = useState<string>('student');
-  const [loading, setLoading] = useState(false);
+  const { user, profile, refetchProfile } = useAuth();
+  const { currentStep, nextStep, prevStep, goToStep } = useOnboardingWizard(ONBOARDING_STEPS.length);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [onboardingData, setOnboardingData] = useState<OnboardingData>({
+    role: 'student',
+    displayName: profile?.full_name || user?.user_metadata?.full_name || '',
+    bio: '',
+    avatarUrl: profile?.avatar_url || '',
+  });
+
+  /**
+   * Save the current step to the server for resume functionality
+   */
+  const persistStep = useCallback(async (stepId: string) => {
+    try {
+      await fetch('/api/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: stepId }),
+      });
+    } catch (error) {
+      // Non-critical - log but don't show error to user
+      logger.error('Failed to persist onboarding step', error instanceof Error ? error : new Error(String(error)));
+    }
+  }, []);
+
+  /**
+   * Mark onboarding as complete
+   */
+  const markComplete = useCallback(async () => {
+    try {
+      await fetch('/api/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ complete: true }),
+      });
+    } catch (error) {
+      logger.error('Failed to mark onboarding complete', error instanceof Error ? error : new Error(String(error)));
+    }
+  }, []);
+
+  /**
+   * Load saved onboarding state on mount
+   */
+  useEffect(() => {
+    const loadOnboardingState = async () => {
+      try {
+        const response = await fetch('/api/onboarding');
+        if (response.ok) {
+          const data = await response.json();
+
+          // If already completed, redirect to dashboard
+          if (data.isCompleted) {
+            router.replace('/dashboard');
+            return;
+          }
+
+          // Resume from saved step
+          if (data.currentStep) {
+            const stepIndex = ONBOARDING_STEPS.findIndex(s => s.id === data.currentStep);
+            if (stepIndex > 0) {
+              goToStep(stepIndex);
+            }
+          }
+        }
+      } catch (error) {
+        logger.error('Failed to load onboarding state', error instanceof Error ? error : new Error(String(error)));
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    if (user) {
+      loadOnboardingState();
+    } else {
+      setInitialLoading(false);
+    }
+  }, [user, router, goToStep]);
+
+  const handleRoleChange = (role: UserRole) => {
+    setOnboardingData((prev) => ({ ...prev, role }));
+  };
+
+  const handleDisplayNameChange = (displayName: string) => {
+    setOnboardingData((prev) => ({ ...prev, displayName }));
+  };
+
+  const handleBioChange = (bio: string) => {
+    setOnboardingData((prev) => ({ ...prev, bio }));
+  };
+
+  const saveOnboardingData = async () => {
+    if (!user) return false;
 
     setLoading(true);
-
     try {
       const supabase = createClient();
-      const { error } = await supabase.from('profiles')
-        .update({ role: role })
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          role: onboardingData.role,
+          full_name: onboardingData.displayName,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', user.id);
 
       if (error) throw error;
 
       await refetchProfile();
-
-      toast.success('Profile updated successfully!');
-
-      // Redirect based on role
-      switch (role) {
-        case 'student':
-          router.push('/dashboard/student');
-          break;
-        case 'instructor':
-          router.push('/dashboard/instructor');
-          break;
-        case 'business':
-          router.push('/dashboard/business');
-          break;
-        case 'school':
-          router.push('/dashboard/school');
-          break;
-        default:
-          router.push('/dashboard');
-      }
+      return true;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-
-      logger.error('Error updating profile:', err as Error);
-      toast.error('Failed to update profile. Please try again.');
+      logger.error('Error saving onboarding data:', err);
+      toast.error('Failed to save profile. Please try again.');
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const roles = [
-    {
-      id: 'student',
-      icon: GraduationCap,
-      title: 'Student / Individual',
-      description: 'I want to understand my energy and improve my life.',
-      color: 'text-blue-500',
-      bg: 'bg-blue-500/10',
-      border: 'border-blue-500/20'
-    },
-    {
-      id: 'instructor',
-      icon: BookOpen,
-      title: 'Instructor / Coach',
-      description: 'I want to use the framework with my clients.',
-      color: 'text-purple-500',
-      bg: 'bg-purple-500/10',
-      border: 'border-purple-500/20'
-    },
-    {
-      id: 'business',
-      icon: Building2,
-      title: 'Business',
-      description: 'I want to improve team dynamics and productivity.',
-      color: 'text-amber-500',
-      bg: 'bg-amber-500/10',
-      border: 'border-amber-500/20'
-    },
-    {
-      id: 'school',
-      icon: School,
-      title: 'School / Institution',
-      description: 'I want to support neurodivergent students.',
-      color: 'text-green-500',
-      bg: 'bg-green-500/10',
-      border: 'border-green-500/20'
+  /**
+   * Wrapper for nextStep that also persists the new step
+   */
+  const handleNextStep = useCallback(async (targetStepIndex: number) => {
+    const targetStepId = ONBOARDING_STEPS[targetStepIndex]?.id;
+    if (targetStepId) {
+      await persistStep(targetStepId);
     }
-  ];
+    nextStep();
+  }, [nextStep, persistStep]);
+
+  const handleAssessmentContinue = async () => {
+    const success = await saveOnboardingData();
+    if (success) {
+      await persistStep('assessment');
+      nextStep();
+    }
+  };
+
+  const handleTakeAssessment = async () => {
+    const success = await saveOnboardingData();
+    if (success) {
+      await persistStep('assessment');
+      router.push('/assessment');
+    }
+  };
+
+  const handleSkipAssessment = async () => {
+    const success = await saveOnboardingData();
+    if (success) {
+      await persistStep('complete');
+      nextStep();
+    }
+  };
+
+  const handleGoToDashboard = async () => {
+    // Mark onboarding as complete before navigating
+    await markComplete();
+
+    const { role } = onboardingData;
+    switch (role) {
+      case 'student':
+        router.push('/dashboard/student');
+        break;
+      case 'instructor':
+        router.push('/dashboard/instructor');
+        break;
+      case 'business':
+        router.push('/dashboard/business');
+        break;
+      case 'school':
+        router.push('/dashboard/school');
+        break;
+      default:
+        router.push('/dashboard');
+    }
+  };
+
+  const renderStep = () => {
+    // Show loading during initial state restore
+    if (initialLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Loading your progress...</p>
+        </div>
+      );
+    }
+
+    if (loading) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Saving your preferences...</p>
+        </div>
+      );
+    }
+
+    switch (currentStep) {
+      case 0:
+        return (
+          <StepWelcome
+            userName={onboardingData.displayName || user?.user_metadata?.full_name}
+            onContinue={() => handleNextStep(1)}
+          />
+        );
+      case 1:
+        return (
+          <StepRole
+            selectedRole={onboardingData.role}
+            onRoleChange={handleRoleChange}
+            onContinue={() => handleNextStep(2)}
+            onBack={prevStep}
+          />
+        );
+      case 2:
+        return (
+          <StepProfile
+            displayName={onboardingData.displayName}
+            bio={onboardingData.bio}
+            avatarUrl={onboardingData.avatarUrl}
+            onDisplayNameChange={handleDisplayNameChange}
+            onBioChange={handleBioChange}
+            onContinue={handleAssessmentContinue}
+            onBack={prevStep}
+          />
+        );
+      case 3:
+        return (
+          <StepAssessment
+            onTakeAssessment={handleTakeAssessment}
+            onSkip={handleSkipAssessment}
+            onBack={prevStep}
+          />
+        );
+      case 4:
+        return (
+          <StepComplete
+            userName={onboardingData.displayName}
+            onGoToDashboard={handleGoToDashboard}
+            onTakeAssessment={handleTakeAssessment}
+            hasCompletedAssessment={false}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
@@ -119,73 +305,17 @@ export default function OnboardingPage() {
         className="w-full max-w-3xl relative z-10"
       >
         <Card className="glass-premium border-primary/10 shadow-2xl">
-          <CardHeader className="text-center pb-8">
-            <CardTitle className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500">
-              Welcome to NeuroElemental
-            </CardTitle>
-            <CardDescription className="text-lg mt-3 text-muted-foreground/80">
-              Let's personalize your experience. How will you use the platform?
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <RadioGroup value={role} onValueChange={setRole} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {roles.map((r) => (
-                  <Label
-                    key={r.id}
-                    htmlFor={r.id}
-                    className={cn(
-                      "relative flex flex-col items-center justify-between rounded-xl border-2 p-6 cursor-pointer transition-all duration-300 group overflow-hidden",
-                      role === r.id
-                        ? `border-primary bg-primary/5 shadow-lg scale-[1.02]`
-                        : "border-muted/50 hover:border-primary/30 hover:bg-accent/50"
-                    )}
-                  >
-                    <RadioGroupItem value={r.id} id={r.id} className="sr-only" />
-
-                    {role === r.id && (
-                      <motion.div
-                        layoutId="selected-check"
-                        className="absolute top-3 right-3 text-primary"
-                      >
-                        <CheckCircle2 className="w-5 h-5" />
-                      </motion.div>
-                    )}
-
-                    <div className={cn("p-4 rounded-full mb-4 transition-colors", r.bg, role === r.id ? "bg-primary/20" : "")}>
-                      <r.icon className={cn("h-8 w-8", r.color)} />
-                    </div>
-
-                    <div className="text-center relative z-10">
-                      <h3 className="font-bold text-lg mb-1">{r.title}</h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {r.description}
-                      </p>
-                    </div>
-                  </Label>
-                ))}
-              </RadioGroup>
-
-              <Button
-                type="submit"
-                className="w-full text-lg py-6 font-bold shadow-lg hover:shadow-xl transition-all hover:scale-[1.01] bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90"
-                size="lg"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Setting up your profile...
-                  </>
-                ) : (
-                  'Continue to Dashboard'
-                )}
-              </Button>
-            </form>
+          <CardContent className="pt-8 pb-8">
+            <OnboardingWizard
+              steps={ONBOARDING_STEPS}
+              currentStep={currentStep}
+              onStepChange={goToStep}
+            >
+              {renderStep()}
+            </OnboardingWizard>
           </CardContent>
         </Card>
       </motion.div>
     </div>
   );
 }
-

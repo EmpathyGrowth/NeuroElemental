@@ -1,34 +1,10 @@
-'use client'
+"use client";
 
 /**
  * Reports Page
  * List and manage generated reports
  */
 
-import { logger } from '@/lib/logging'
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,91 +15,129 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import { Calendar } from '@/components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { toast } from 'sonner'
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
-  FileText,
-  Download,
-  Trash2,
-  Plus,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { logger } from "@/lib/logging/logger";
+import { cn } from "@/lib/utils";
+import { format as formatDate } from "date-fns";
+import {
   Calendar as CalendarIcon,
   ChevronLeft,
-} from 'lucide-react'
-import { format as formatDate } from 'date-fns'
-import { cn } from '@/lib/utils'
+  Download,
+  FileText,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface Report {
-  id: string
-  type: string
-  start_date: string
-  end_date: string
-  format: string
-  include_raw_data: boolean
-  generated_at: string
+  id: string;
+  type: string;
+  start_date: string;
+  end_date: string;
+  format: string;
+  include_raw_data: boolean;
+  generated_at: string;
   generated_by: {
-    full_name: string
-    email: string
-  }
+    full_name: string;
+    email: string;
+  };
 }
 
 export default function ReportsPage() {
-  const params = useParams()
-  const router = useRouter()
-  const organizationId = params.id as string
+  const params = useParams();
+  const router = useRouter();
+  const organizationId = params.id as string;
 
-  const [reports, setReports] = useState<Report[]>([])
-  const [loading, setLoading] = useState(true)
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [generating, setGenerating] = useState(false)
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   // Generate report form state
-  const [reportType, setReportType] = useState<string>('Activity')
-  const [startDate, setStartDate] = useState<Date>()
-  const [endDate, setEndDate] = useState<Date>()
-  const [format, setFormat] = useState<string>('JSON')
-  const [includeRawData, setIncludeRawData] = useState(false)
+  const [reportType, setReportType] = useState<string>("Activity");
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
+  const [format, setFormat] = useState<string>("JSON");
+  const [includeRawData, setIncludeRawData] = useState(false);
 
   useEffect(() => {
-    fetchReports()
-  }, [organizationId])
+    fetchReports();
+  }, [organizationId]);
 
   const fetchReports = async () => {
     try {
-      setLoading(true)
-      const res = await fetch(`/api/organizations/${organizationId}/reports`)
+      setLoading(true);
+      const res = await fetch(`/api/organizations/${organizationId}/reports`);
 
       if (!res.ok) {
-        throw new Error('Failed to fetch reports')
+        throw new Error("Failed to fetch reports");
       }
 
-      const data = await res.json()
-      setReports(data.reports || [])
+      const data = await res.json();
+      setReports(data.reports || []);
     } catch (error) {
-      logger.error('Error fetching reports', error instanceof Error ? error : undefined, { errorMsg: String(error) })
-      toast.error('Failed to load reports')
+      logger.error(
+        "Error fetching reports",
+        error instanceof Error ? error : undefined,
+        { errorMsg: String(error) }
+      );
+      toast.error("Failed to load reports");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleGenerateReport = async () => {
     if (!startDate || !endDate) {
-      toast.error('Please select both start and end dates')
-      return
+      toast.error("Please select both start and end dates");
+      return;
     }
 
     if (endDate < startDate) {
-      toast.error('End date must be after start date')
-      return
+      toast.error("End date must be after start date");
+      return;
     }
 
     try {
-      setGenerating(true)
+      setGenerating(true);
       const res = await fetch(`/api/organizations/${organizationId}/reports`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: reportType,
           start_date: startDate.toISOString(),
@@ -131,98 +145,117 @@ export default function ReportsPage() {
           format,
           include_raw_data: includeRawData,
         }),
-      })
+      });
 
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to generate report')
+        const error = await res.json();
+        throw new Error(error.error || "Failed to generate report");
       }
 
-      const data = await res.json()
-      setReports([data.report, ...reports])
+      const data = await res.json();
+      setReports([data.report, ...reports]);
 
       // Reset form
-      setReportType('Activity')
-      setStartDate(undefined)
-      setEndDate(undefined)
-      setFormat('JSON')
-      setIncludeRawData(false)
-      setCreateDialogOpen(false)
+      setReportType("Activity");
+      setStartDate(undefined);
+      setEndDate(undefined);
+      setFormat("JSON");
+      setIncludeRawData(false);
+      setCreateDialogOpen(false);
 
-      toast.success('Report Generated', {
-        description: 'Your report has been generated successfully',
-      })
-    } catch (error) {
-      logger.error('Error generating report', error instanceof Error ? error : undefined, { errorMsg: String(error) })
-      toast.error(error instanceof Error ? error.message : 'Failed to generate report')
+      toast.success("Report Generated", {
+        description: "Your report has been generated successfully",
+      });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "An unexpected error occurred";
+      logger.error(
+        "Error generating report",
+        error instanceof Error ? error : undefined,
+        { errorMsg: String(error) }
+      );
+      toast.error(message || "Failed to generate report");
     } finally {
-      setGenerating(false)
+      setGenerating(false);
     }
-  }
+  };
 
   const handleExportReport = async (reportId: string) => {
     try {
-      const res = await fetch(`/api/organizations/${organizationId}/reports/${reportId}/export`)
+      const res = await fetch(
+        `/api/organizations/${organizationId}/reports/${reportId}/export`
+      );
 
       if (!res.ok) {
-        throw new Error('Failed to export report')
+        throw new Error("Failed to export report");
       }
 
-      const blob = await res.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `report-${reportId}.csv`
-      a.click()
-      window.URL.revokeObjectURL(url)
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `report-${reportId}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
 
-      toast.success('Report Exported', {
-        description: 'Report has been downloaded as CSV',
-      })
+      toast.success("Report Exported", {
+        description: "Report has been downloaded as CSV",
+      });
     } catch (error) {
-      logger.error('Error exporting report', error instanceof Error ? error : undefined, { errorMsg: String(error) })
-      toast.error('Failed to export report')
+      logger.error(
+        "Error exporting report",
+        error instanceof Error ? error : undefined,
+        { errorMsg: String(error) }
+      );
+      toast.error("Failed to export report");
     }
-  }
+  };
 
   const handleDeleteReport = async (reportId: string) => {
     try {
-      const res = await fetch(`/api/organizations/${organizationId}/reports/${reportId}`, {
-        method: 'DELETE',
-      })
+      const res = await fetch(
+        `/api/organizations/${organizationId}/reports/${reportId}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!res.ok) {
-        throw new Error('Failed to delete report')
+        throw new Error("Failed to delete report");
       }
 
-      setReports(reports.filter((r) => r.id !== reportId))
+      setReports(reports.filter((r) => r.id !== reportId));
 
-      toast.success('Report Deleted', {
-        description: 'The report has been permanently deleted',
-      })
+      toast.success("Report Deleted", {
+        description: "The report has been permanently deleted",
+      });
     } catch (error) {
-      logger.error('Error deleting report', error instanceof Error ? error : undefined, { errorMsg: String(error) })
-      toast.error('Failed to delete report')
+      logger.error(
+        "Error deleting report",
+        error instanceof Error ? error : undefined,
+        { errorMsg: String(error) }
+      );
+      toast.error("Failed to delete report");
     }
-  }
+  };
 
   const getReportTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      Activity: 'Activity Report',
-      Usage: 'Usage Report',
-      Members: 'Members Report',
-    }
-    return labels[type] || type
-  }
+      Activity: "Activity Report",
+      Usage: "Usage Report",
+      Members: "Members Report",
+    };
+    return labels[type] || type;
+  };
 
   const getReportTypeBadgeVariant = (type: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'outline'> = {
-      Activity: 'default',
-      Usage: 'secondary',
-      Members: 'outline',
-    }
-    return variants[type] || 'outline'
-  }
+    const variants: Record<string, "default" | "secondary" | "outline"> = {
+      Activity: "default",
+      Usage: "secondary",
+      Members: "outline",
+    };
+    return variants[type] || "outline";
+  };
 
   return (
     <div className="container mx-auto py-8 space-y-6">
@@ -231,7 +264,9 @@ export default function ReportsPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push(`/dashboard/organizations/${organizationId}`)}
+            onClick={() =>
+              router.push(`/dashboard/organizations/${organizationId}`)
+            }
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
             Back
@@ -288,12 +323,14 @@ export default function ReportsPage() {
                       <Button
                         variant="outline"
                         className={cn(
-                          'w-full justify-start text-left font-normal mt-2',
-                          !startDate && 'text-muted-foreground'
+                          "w-full justify-start text-left font-normal mt-2",
+                          !startDate && "text-muted-foreground"
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {startDate ? formatDate(startDate, 'PPP') : 'Pick a date'}
+                        {startDate
+                          ? formatDate(startDate, "PPP")
+                          : "Pick a date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
@@ -314,12 +351,12 @@ export default function ReportsPage() {
                       <Button
                         variant="outline"
                         className={cn(
-                          'w-full justify-start text-left font-normal mt-2',
-                          !endDate && 'text-muted-foreground'
+                          "w-full justify-start text-left font-normal mt-2",
+                          !endDate && "text-muted-foreground"
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {endDate ? formatDate(endDate, 'PPP') : 'Pick a date'}
+                        {endDate ? formatDate(endDate, "PPP") : "Pick a date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
@@ -354,7 +391,9 @@ export default function ReportsPage() {
                 <Checkbox
                   id="includeRawData"
                   checked={includeRawData}
-                  onCheckedChange={(checked) => setIncludeRawData(checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    setIncludeRawData(checked as boolean)
+                  }
                 />
                 <div className="flex-1">
                   <Label htmlFor="includeRawData" className="cursor-pointer">
@@ -368,14 +407,17 @@ export default function ReportsPage() {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setCreateDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
                 onClick={handleGenerateReport}
                 disabled={generating || !startDate || !endDate}
               >
-                {generating ? 'Generating...' : 'Generate Report'}
+                {generating ? "Generating..." : "Generate Report"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -385,7 +427,9 @@ export default function ReportsPage() {
       {loading ? (
         <Card>
           <CardContent className="py-8">
-            <p className="text-center text-muted-foreground">Loading reports...</p>
+            <p className="text-center text-muted-foreground">
+              Loading reports...
+            </p>
           </CardContent>
         </Card>
       ) : reports.length === 0 ? (
@@ -421,8 +465,8 @@ export default function ReportsPage() {
                       <Badge variant="outline">{report.format}</Badge>
                     </div>
                     <CardDescription className="mt-2">
-                      {formatDate(new Date(report.start_date), 'PPP')} -{' '}
-                      {formatDate(new Date(report.end_date), 'PPP')}
+                      {formatDate(new Date(report.start_date), "PPP")} -{" "}
+                      {formatDate(new Date(report.end_date), "PPP")}
                     </CardDescription>
                   </div>
 
@@ -445,8 +489,8 @@ export default function ReportsPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Report?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This will permanently delete the report. This action cannot be
-                            undone.
+                            This will permanently delete the report. This action
+                            cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -467,28 +511,37 @@ export default function ReportsPage() {
               <CardContent>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <Label className="text-xs text-muted-foreground">Generated At</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      Generated At
+                    </Label>
                     <p className="font-medium mt-1">
-                      {formatDate(new Date(report.generated_at), 'PPP')}
+                      {formatDate(new Date(report.generated_at), "PPP")}
                     </p>
                   </div>
 
                   <div>
-                    <Label className="text-xs text-muted-foreground">Generated By</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      Generated By
+                    </Label>
                     <p className="font-medium mt-1">
-                      {report.generated_by.full_name || report.generated_by.email}
+                      {report.generated_by.full_name ||
+                        report.generated_by.email}
                     </p>
                   </div>
 
                   <div>
-                    <Label className="text-xs text-muted-foreground">Format</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      Format
+                    </Label>
                     <p className="font-medium mt-1">{report.format}</p>
                   </div>
 
                   <div>
-                    <Label className="text-xs text-muted-foreground">Raw Data</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      Raw Data
+                    </Label>
                     <p className="font-medium mt-1">
-                      {report.include_raw_data ? 'Included' : 'Not included'}
+                      {report.include_raw_data ? "Included" : "Not included"}
                     </p>
                   </div>
                 </div>
@@ -498,5 +551,5 @@ export default function ReportsPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -1,52 +1,66 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
+import { AdminPageHeader } from "@/components/dashboard/admin-page-header";
+import { AdminPageShell } from "@/components/dashboard/admin-page-shell";
+import { LazyWYSIWYG } from "@/components/editor/lazy-wysiwyg";
+import { ImageUpload } from "@/components/forms/image-upload";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { FormLabel } from "@/components/ui/form-label";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Loader2, Save, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
-import { toast } from 'sonner';
-import { logger } from '@/lib/logging';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { logger } from "@/lib/logging";
+import { ArrowLeft, Loader2, Save } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const eventTypes = [
-  { value: 'online_workshop', label: 'Online Workshop' },
-  { value: 'in_person_workshop', label: 'In-Person Workshop' },
-  { value: 'webinar', label: 'Webinar' },
-  { value: 'conference', label: 'Conference' },
+  { value: "online_workshop", label: "Online Workshop" },
+  { value: "in_person_workshop", label: "In-Person Workshop" },
+  { value: "webinar", label: "Webinar" },
+  { value: "conference", label: "Conference" },
 ];
 
-const timezones = ['PST', 'MST', 'CST', 'EST', 'GMT', 'CET', 'JST', 'AEST'];
+const timezones = ["PST", "MST", "CST", "EST", "GMT", "CET", "JST", "AEST"];
 
 export default function NewEventPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [title, setTitle] = useState('');
-  const [slug, setSlug] = useState('');
-  const [description, setDescription] = useState('');
-  const [eventType, setEventType] = useState('online_workshop');
-  const [startDate, setStartDate] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [timezone, setTimezone] = useState('PST');
-  const [priceUsd, setPriceUsd] = useState('');
-  const [capacity, setCapacity] = useState('');
-  const [locationName, setLocationName] = useState('');
-  const [locationAddress, setLocationAddress] = useState('');
-  const [onlineMeetingUrl, setOnlineMeetingUrl] = useState('');
-  const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+  const [description, setDescription] = useState("");
+  const [eventType, setEventType] = useState("online_workshop");
+  const [startDate, setStartDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [timezone, setTimezone] = useState("PST");
+  const [priceUsd, setPriceUsd] = useState("");
+  const [capacity, setCapacity] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [locationStreet, setLocationStreet] = useState("");
+  const [locationCity, setLocationCity] = useState("");
+  const [locationState, setLocationState] = useState("");
+  const [locationZip, setLocationZip] = useState("");
+  const [onlineMeetingUrl, setOnlineMeetingUrl] = useState("");
+  const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [isPublished, setIsPublished] = useState(false);
 
   const handleTitleChange = (value: string) => {
@@ -54,8 +68,8 @@ export default function NewEventPage() {
     if (!slug) {
       const generatedSlug = value
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
       setSlug(generatedSlug);
     }
   };
@@ -67,9 +81,9 @@ export default function NewEventPage() {
       const startDatetime = `${startDate}T${startTime}:00`;
       const endDatetime = `${endDate}T${endTime}:00`;
 
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
           slug,
@@ -81,7 +95,15 @@ export default function NewEventPage() {
           price_usd: parseFloat(priceUsd) || 0,
           capacity: capacity ? parseInt(capacity) : null,
           location_name: locationName || null,
-          location_address: locationAddress ? JSON.parse(locationAddress) : null,
+          location_address:
+            locationStreet || locationCity || locationState || locationZip
+              ? {
+                  street: locationStreet,
+                  city: locationCity,
+                  state: locationState,
+                  zip: locationZip,
+                }
+              : null,
           online_meeting_url: onlineMeetingUrl || null,
           thumbnail_url: thumbnailUrl || null,
           is_published: isPublished,
@@ -90,27 +112,35 @@ export default function NewEventPage() {
       });
 
       if (response.ok) {
-        toast.success('Event created successfully');
-        router.push('/dashboard/admin/events');
+        toast.success("Event created successfully");
+        router.push("/dashboard/admin/events");
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to create event');
+        toast.error(error.error || "Failed to create event");
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
 
-      logger.error('Error creating event:', err as Error);
-      toast.error('Failed to create event');
+      logger.error("Error creating event:", err as Error);
+      toast.error("Failed to create event");
     } finally {
       setLoading(false);
     }
   };
 
-  const isOnline = eventType === 'online_workshop' || eventType === 'webinar';
+  const isOnline = eventType === "online_workshop" || eventType === "webinar";
 
   return (
-    <div className="container mx-auto p-6 max-w-5xl">
-      <div className="mb-8">
+    <AdminPageShell>
+      <div className="mb-6">
+        <Breadcrumbs
+          items={[
+            { label: "Admin", href: "/dashboard/admin" },
+            { label: "Events", href: "/dashboard/admin/events" },
+            { label: "New Event" },
+          ]}
+          className="mb-4"
+        />
         <Link href="/dashboard/admin/events">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -119,23 +149,25 @@ export default function NewEventPage() {
         </Link>
       </div>
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Create New Event</h1>
-        <p className="text-muted-foreground">
-          Add a new event to your calendar
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Create New Event"
+        description="Add a new event to your calendar"
+      />
 
       <div className="space-y-6">
         {/* Basic Info */}
         <Card className="glass-card">
           <CardHeader>
             <CardTitle>Event Details</CardTitle>
-            <CardDescription>Basic information about your event</CardDescription>
+            <CardDescription>
+              Basic information about your event
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
+              <FormLabel htmlFor="title" required>
+                Title
+              </FormLabel>
               <Input
                 id="title"
                 value={title}
@@ -146,9 +178,11 @@ export default function NewEventPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="slug">URL Slug *</Label>
-              <div className="flex gap-2">
-                <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md text-sm text-muted-foreground bg-muted">
+              <FormLabel htmlFor="slug" required>
+                URL Slug
+              </FormLabel>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 h-10 border border-r-0 border-input rounded-l-md text-sm text-muted-foreground bg-muted dark:bg-muted/50 dark:border-input/50">
                   /events/
                 </span>
                 <Input
@@ -156,7 +190,7 @@ export default function NewEventPage() {
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
                   placeholder="energy-reset-workshop"
-                  className="rounded-l-none"
+                  className="rounded-l-none flex-1"
                   required
                 />
               </div>
@@ -164,23 +198,23 @@ export default function NewEventPage() {
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+              <LazyWYSIWYG
+                content={description}
+                onChange={setDescription}
                 placeholder="A brief overview of the event..."
-                rows={4}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="eventType">Event Type *</Label>
+              <FormLabel htmlFor="eventType" required>
+                Event Type
+              </FormLabel>
               <Select value={eventType} onValueChange={setEventType}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {eventTypes.map(type => (
+                  {eventTypes.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
                     </SelectItem>
@@ -200,7 +234,9 @@ export default function NewEventPage() {
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date *</Label>
+                <FormLabel htmlFor="startDate" required>
+                  Start Date
+                </FormLabel>
                 <Input
                   id="startDate"
                   type="date"
@@ -211,7 +247,9 @@ export default function NewEventPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="startTime">Start Time *</Label>
+                <FormLabel htmlFor="startTime" required>
+                  Start Time
+                </FormLabel>
                 <Input
                   id="startTime"
                   type="time"
@@ -224,7 +262,9 @@ export default function NewEventPage() {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="endDate">End Date *</Label>
+                <FormLabel htmlFor="endDate" required>
+                  End Date
+                </FormLabel>
                 <Input
                   id="endDate"
                   type="date"
@@ -235,7 +275,9 @@ export default function NewEventPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="endTime">End Time *</Label>
+                <FormLabel htmlFor="endTime" required>
+                  End Time
+                </FormLabel>
                 <Input
                   id="endTime"
                   type="time"
@@ -247,14 +289,18 @@ export default function NewEventPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="timezone">Timezone *</Label>
+              <FormLabel htmlFor="timezone" required>
+                Timezone
+              </FormLabel>
               <Select value={timezone} onValueChange={setTimezone}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {timezones.map(tz => (
-                    <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                  {timezones.map((tz) => (
+                    <SelectItem key={tz} value={tz}>
+                      {tz}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -267,7 +313,9 @@ export default function NewEventPage() {
           <CardHeader>
             <CardTitle>Location</CardTitle>
             <CardDescription>
-              {isOnline ? 'Online meeting details' : 'Physical location details'}
+              {isOnline
+                ? "Online meeting details"
+                : "Physical location details"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -297,17 +345,45 @@ export default function NewEventPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="locationAddress">Address (JSON format)</Label>
-                  <Textarea
-                    id="locationAddress"
-                    value={locationAddress}
-                    onChange={(e) => setLocationAddress(e.target.value)}
-                    placeholder='{"street": "123 Main St", "city": "New York", "state": "NY", "zip": "10001"}'
-                    rows={3}
+                  <Label htmlFor="locationStreet">Street Address</Label>
+                  <Input
+                    id="locationStreet"
+                    value={locationStreet}
+                    onChange={(e) => setLocationStreet(e.target.value)}
+                    placeholder="123 Main Street"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Format as JSON object with street, city, state, zip
-                  </p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="locationCity">City</Label>
+                    <Input
+                      id="locationCity"
+                      value={locationCity}
+                      onChange={(e) => setLocationCity(e.target.value)}
+                      placeholder="New York"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="locationState">State</Label>
+                    <Input
+                      id="locationState"
+                      value={locationState}
+                      onChange={(e) => setLocationState(e.target.value)}
+                      placeholder="NY"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="locationZip">ZIP Code</Label>
+                    <Input
+                      id="locationZip"
+                      value={locationZip}
+                      onChange={(e) => setLocationZip(e.target.value)}
+                      placeholder="10001"
+                    />
+                  </div>
                 </div>
               </>
             )}
@@ -318,14 +394,18 @@ export default function NewEventPage() {
         <Card className="glass-card">
           <CardHeader>
             <CardTitle>Pricing & Capacity</CardTitle>
-            <CardDescription>Set ticket price and attendee limits</CardDescription>
+            <CardDescription>
+              Set ticket price and attendee limits
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="priceUsd">Ticket Price (USD) *</Label>
-                <div className="flex gap-2">
-                  <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md text-sm text-muted-foreground bg-muted">
+                <FormLabel htmlFor="priceUsd" required>
+                  Ticket Price (USD)
+                </FormLabel>
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 h-10 border border-r-0 border-input rounded-l-md text-sm text-muted-foreground bg-muted dark:bg-muted/50 dark:border-input/50">
                     $
                   </span>
                   <Input
@@ -336,7 +416,7 @@ export default function NewEventPage() {
                     placeholder="47"
                     min="0"
                     step="1"
-                    className="rounded-l-none"
+                    className="rounded-l-none flex-1"
                     required
                   />
                 </div>
@@ -371,13 +451,17 @@ export default function NewEventPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="thumbnailUrl">Thumbnail Image URL</Label>
-              <Input
-                id="thumbnailUrl"
+              <Label>Thumbnail Image</Label>
+              <ImageUpload
                 value={thumbnailUrl}
-                onChange={(e) => setThumbnailUrl(e.target.value)}
-                placeholder="https://example.com/event-image.jpg"
+                onChange={(url) => setThumbnailUrl(url || "")}
+                category="events"
+                aspectRatio="video"
+                placeholder="Upload event thumbnail"
               />
+              <p className="text-xs text-muted-foreground">
+                Recommended size: 1280x720 (16:9 aspect ratio)
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -414,15 +498,23 @@ export default function NewEventPage() {
           </Link>
           <Button
             onClick={handleSubmit}
-            disabled={loading || !title || !slug || !startDate || !startTime || !endDate || !endTime}
+            disabled={
+              loading ||
+              !title ||
+              !slug ||
+              !startDate ||
+              !startTime ||
+              !endDate ||
+              !endTime
+            }
             className="bg-gradient-to-r from-primary to-[#764BA2]"
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             <Save className="w-4 h-4 mr-2" />
-            {isPublished ? 'Create & Publish' : 'Save as Draft'}
+            {isPublished ? "Create & Publish" : "Save as Draft"}
           </Button>
         </div>
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

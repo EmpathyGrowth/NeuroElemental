@@ -8,7 +8,7 @@ type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
 export const PATCH = createAdminRoute<{ id: string }>(async (request, context, _admin) => {
   const { id } = await context.params;
-  const { role } = await request.json();
+  const { role, full_name, instructor_status } = await request.json();
 
   // Validate role
   const validRoles = ['registered', 'student', 'instructor', 'business', 'school', 'admin'] as const;
@@ -16,11 +16,19 @@ export const PATCH = createAdminRoute<{ id: string }>(async (request, context, _
     validateEnum(role, [...validRoles], 'role');
   }
 
+  // Validate instructor_status
+  const validInstructorStatuses = ['pending', 'approved', 'rejected'] as const;
+  if (instructor_status) {
+    validateEnum(instructor_status, [...validInstructorStatuses], 'instructor_status');
+  }
+
   const supabase = getSupabaseServer();
 
   // Build update data with proper typing
   const updateData: ProfileUpdate = {
     ...(role && { role: role as ProfileRow['role'] }),
+    ...(full_name && { full_name }),
+    ...(instructor_status && { instructor_status }),
     ...getUpdateTimestamp(),
   };
 

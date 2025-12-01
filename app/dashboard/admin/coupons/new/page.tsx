@@ -1,130 +1,138 @@
-'use client'
+"use client";
 
 /**
  * Create Coupon Page
  * Admin interface to create new promotional coupons
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
-import { ArrowLeft, Save } from 'lucide-react'
-import { toast } from 'sonner'
-import { formatDate } from '@/lib/utils'
-
-/** Delay in ms before redirecting after successful creation */
-const REDIRECT_DELAY = 1000
-
-interface CouponPayload {
-  code: string
-  discount_type: string
-  discount_value: number
-  applicable_to: string
-  max_uses?: number
-  course_id?: string
-  expires_at?: string
-}
+} from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
+import { formatDate } from "@/lib/utils";
+import { ArrowLeft, Save } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function CreateCouponPage() {
-  const router = useRouter()
-  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const router = useRouter();
+  const { toast } = useToast();
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (redirectTimeoutRef.current) {
-        clearTimeout(redirectTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  const [code, setCode] = useState('')
-  const [discountType, setDiscountType] = useState<string>('percentage')
-  const [discountValue, setDiscountValue] = useState<string>('')
-  const [maxUses, setMaxUses] = useState<string>('')
-  const [applicableTo, setApplicableTo] = useState<string>('all')
-  const [courseId, setCourseId] = useState<string>('')
-  const [expiresAt, setExpiresAt] = useState<string>('')
-  const [hasExpiration, setHasExpiration] = useState(false)
-  const [hasMaxUses, setHasMaxUses] = useState(false)
-  const [creating, setCreating] = useState(false)
+  const [code, setCode] = useState("");
+  const [discountType, setDiscountType] = useState<string>("percentage");
+  const [discountValue, setDiscountValue] = useState<string>("");
+  const [maxUses, setMaxUses] = useState<string>("");
+  const [applicableTo, setApplicableTo] = useState<string>("all");
+  const [courseId, setCourseId] = useState<string>("");
+  const [expiresAt, setExpiresAt] = useState<string>("");
+  const [hasExpiration, setHasExpiration] = useState(false);
+  const [hasMaxUses, setHasMaxUses] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const generateCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-    let code = ''
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
     for (let i = 0; i < 8; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length))
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    setCode(code)
-  }
+    setCode(code);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!code || !discountValue) {
-      toast.error('Please fill in all required fields')
-      return
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
     }
 
-    if (applicableTo === 'course' && !courseId) {
-      toast.error('Please specify a course ID')
-      return
+    if (applicableTo === "course" && !courseId) {
+      toast({
+        title: "Error",
+        description: "Please specify a course ID",
+        variant: "destructive",
+      });
+      return;
     }
 
-    setCreating(true)
+    setCreating(true);
 
     try {
-      const payload: CouponPayload = {
+      const payload: {
+        code: string;
+        discount_type: string;
+        discount_value: number;
+        applicable_to: string;
+        max_uses?: number;
+        course_id?: string;
+        expires_at?: string;
+      } = {
         code: code.toUpperCase(),
         discount_type: discountType,
         discount_value: parseFloat(discountValue),
         applicable_to: applicableTo,
-      }
+      };
 
       if (hasMaxUses && maxUses) {
-        payload.max_uses = parseInt(maxUses)
+        payload.max_uses = parseInt(maxUses);
       }
 
-      if (applicableTo === 'course' && courseId) {
-        payload.course_id = courseId
+      if (applicableTo === "course" && courseId) {
+        payload.course_id = courseId;
       }
 
       if (hasExpiration && expiresAt) {
-        payload.expires_at = new Date(expiresAt).toISOString()
+        payload.expires_at = new Date(expiresAt).toISOString();
       }
 
-      const res = await fetch('/api/admin/coupons', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/admin/coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-      })
+      });
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to create coupon')
+        const data = await res.json();
+        throw new Error(data.error || "Failed to create coupon");
       }
 
-      toast.success(`Coupon ${code} created successfully`)
+      toast({
+        title: "Success",
+        description: `Coupon ${code} created successfully`,
+      });
 
-      redirectTimeoutRef.current = setTimeout(() => {
-        router.push('/dashboard/admin/coupons')
-      }, REDIRECT_DELAY)
+      setTimeout(() => {
+        router.push("/dashboard/admin/coupons");
+      }, 1000);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create coupon')
-      setCreating(false)
+      toast({
+        title: "Error",
+        description:
+          err instanceof Error ? err.message : "Failed to create coupon",
+        variant: "destructive",
+      });
+      setCreating(false);
     }
-  }
+  };
 
   return (
     <div className="container mx-auto p-6 max-w-3xl">
@@ -134,7 +142,7 @@ export default function CreateCouponPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push('/dashboard/admin/coupons')}
+            onClick={() => router.push("/dashboard/admin/coupons")}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -168,7 +176,11 @@ export default function CreateCouponPage() {
                     required
                     className="font-mono"
                   />
-                  <Button type="button" variant="outline" onClick={generateCode}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={generateCode}
+                  >
                     Generate
                   </Button>
                 </div>
@@ -186,7 +198,9 @@ export default function CreateCouponPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="percentage">Percentage Off</SelectItem>
-                    <SelectItem value="fixed_amount">Fixed Amount Off</SelectItem>
+                    <SelectItem value="fixed_amount">
+                      Fixed Amount Off
+                    </SelectItem>
                     <SelectItem value="credits">Credits</SelectItem>
                   </SelectContent>
                 </Select>
@@ -195,24 +209,24 @@ export default function CreateCouponPage() {
               {/* Discount Value */}
               <div className="space-y-2">
                 <Label htmlFor="discount-value">
-                  {discountType === 'percentage'
-                    ? 'Percentage (%) *'
-                    : discountType === 'fixed_amount'
-                    ? 'Amount ($) *'
-                    : 'Credits *'}
+                  {discountType === "percentage"
+                    ? "Percentage (%) *"
+                    : discountType === "fixed_amount"
+                      ? "Amount ($) *"
+                      : "Credits *"}
                 </Label>
                 <Input
                   id="discount-value"
                   type="number"
-                  step={discountType === 'fixed_amount' ? '0.01' : '1'}
+                  step={discountType === "fixed_amount" ? "0.01" : "1"}
                   min="0"
-                  max={discountType === 'percentage' ? '100' : undefined}
+                  max={discountType === "percentage" ? "100" : undefined}
                   placeholder={
-                    discountType === 'percentage'
-                      ? '10'
-                      : discountType === 'fixed_amount'
-                      ? '9.99'
-                      : '5'
+                    discountType === "percentage"
+                      ? "10"
+                      : discountType === "fixed_amount"
+                        ? "9.99"
+                        : "5"
                   }
                   value={discountValue}
                   onChange={(e) => setDiscountValue(e.target.value)}
@@ -236,7 +250,7 @@ export default function CreateCouponPage() {
               </div>
 
               {/* Course ID (if applicable) */}
-              {applicableTo === 'course' && (
+              {applicableTo === "course" && (
                 <div className="space-y-2">
                   <Label htmlFor="course-id">Course ID *</Label>
                   <Input
@@ -256,7 +270,9 @@ export default function CreateCouponPage() {
                   <Checkbox
                     id="has-max-uses"
                     checked={hasMaxUses}
-                    onCheckedChange={(checked) => setHasMaxUses(checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      setHasMaxUses(checked as boolean)
+                    }
                   />
                   <Label htmlFor="has-max-uses" className="cursor-pointer">
                     Limit number of uses
@@ -279,7 +295,9 @@ export default function CreateCouponPage() {
                   <Checkbox
                     id="has-expiration"
                     checked={hasExpiration}
-                    onCheckedChange={(checked) => setHasExpiration(checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      setHasExpiration(checked as boolean)
+                    }
                   />
                   <Label htmlFor="has-expiration" className="cursor-pointer">
                     Set expiration date
@@ -298,12 +316,12 @@ export default function CreateCouponPage() {
               <div className="flex gap-3 pt-4">
                 <Button type="submit" disabled={creating}>
                   <Save className="h-4 w-4 mr-2" />
-                  {creating ? 'Creating...' : 'Create Coupon'}
+                  {creating ? "Creating..." : "Create Coupon"}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.push('/dashboard/admin/coupons')}
+                  onClick={() => router.push("/dashboard/admin/coupons")}
                 >
                   Cancel
                 </Button>
@@ -321,22 +339,24 @@ export default function CreateCouponPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Code:</span>
-                <span className="font-mono font-bold">{code || 'COUPON123'}</span>
+                <span className="font-mono font-bold">
+                  {code || "COUPON123"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Discount:</span>
                 <span className="font-medium">
-                  {discountType === 'percentage'
-                    ? `${discountValue || '0'}%`
-                    : discountType === 'fixed_amount'
-                    ? `$${discountValue || '0'}`
-                    : `${discountValue || '0'} credits`}
+                  {discountType === "percentage"
+                    ? `${discountValue || "0"}%`
+                    : discountType === "fixed_amount"
+                      ? `$${discountValue || "0"}`
+                      : `${discountValue || "0"} credits`}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Applies to:</span>
                 <span className="capitalize">
-                  {applicableTo === 'course' && courseId
+                  {applicableTo === "course" && courseId
                     ? `Course: ${courseId}`
                     : applicableTo}
                 </span>
@@ -358,5 +378,5 @@ export default function CreateCouponPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

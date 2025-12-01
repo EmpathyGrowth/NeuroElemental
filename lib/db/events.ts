@@ -1,20 +1,55 @@
-import { getSupabaseServer } from '@/lib/db/supabase-server';
-import { logger } from '@/lib/logging';
-import type { Event as DbEvent, EventInsert, EventUpdate } from '@/lib/types/supabase';
+import { getSupabaseServer } from "@/lib/db/supabase-server";
+import { logger } from "@/lib/logging/logger";
 
-// Re-export the Event type from the database schema
-export type Event = DbEvent;
+export type EventType =
+  | "online_workshop"
+  | "in_person_workshop"
+  | "webinar"
+  | "conference";
 
-export interface EventWithStats extends Event {
-  spots_remaining?: number | null;
-  registration_count?: number | null;
+export interface AgendaItem {
+  time: string;
+  title: string;
+  description: string;
 }
 
-export interface EventWithInstructor extends Event {
-  instructor?: {
-    full_name: string | null;
-    email: string | null;
-  } | null;
+export interface Event {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  long_description: string | null;
+  event_type: EventType;
+  start_datetime: string;
+  end_datetime: string;
+  timezone: string;
+  location_name: string | null;
+  location_address: Record<string, unknown> | null;
+  online_meeting_url: string | null;
+  instructor_id: string | null;
+  instructor_name: string | null;
+  instructor_bio: string | null;
+  price_usd: number;
+  capacity: number | null;
+  spots_taken: number;
+  is_published: boolean;
+  thumbnail_url: string | null;
+  // Rich content fields
+  benefits: string[];
+  agenda: AgendaItem[];
+  requirements: string[];
+  tags: string[];
+  rating: number | null;
+  review_count: number;
+  // Metadata
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EventWithStats extends Event {
+  spots_remaining?: number;
+  registration_count?: number;
 }
 
 /**
@@ -26,25 +61,32 @@ export async function getUpcomingEvents(): Promise<EventWithStats[]> {
     const now = new Date().toISOString();
 
     const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .eq('is_published', true)
-      .gte('start_datetime', now)
-      .order('start_datetime', { ascending: true });
+      .from("events")
+      .select("*")
+      .eq("is_published", true)
+      .gte("start_datetime", now)
+      .order("start_datetime", { ascending: true });
 
     if (error) {
-      logger.error('Error fetching events', error);
+      logger.error("Error fetching events", error);
       return [];
     }
 
     // Calculate spots remaining
-    return (data || []).map((event) => ({
+    return (data || []).map((event: any) => ({
       ...event,
-      spots_remaining: event.capacity && event.spots_taken != null ? event.capacity - event.spots_taken : null,
-      registration_count: event.spots_taken ?? 0,
-    }));
+      event_type: event.event_type as Event["event_type"],
+      spots_remaining: event.capacity
+        ? event.capacity - event.spots_taken
+        : null,
+      registration_count: event.spots_taken,
+    })) as EventWithStats[];
   } catch (err) {
-    logger.error('Error in getUpcomingEvents', err instanceof Error ? err : undefined, { error: String(err) });
+    logger.error(
+      "Error in getUpcomingEvents",
+      err instanceof Error ? err : undefined,
+      { error: String(err) }
+    );
     return [];
   }
 }
@@ -57,18 +99,25 @@ export async function getAllEvents(): Promise<Event[]> {
     const supabase = getSupabaseServer();
 
     const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .order('start_datetime', { ascending: false });
+      .from("events")
+      .select("*")
+      .order("start_datetime", { ascending: false });
 
     if (error) {
-      logger.error('Error fetching all events', error);
+      logger.error("Error fetching all events", error);
       return [];
     }
 
-    return data || [];
+    return (data || []).map((event: any) => ({
+      ...event,
+      event_type: event.event_type as Event["event_type"],
+    })) as Event[];
   } catch (err) {
-    logger.error('Error in getAllEvents', err instanceof Error ? err : undefined, { error: String(err) });
+    logger.error(
+      "Error in getAllEvents",
+      err instanceof Error ? err : undefined,
+      { error: String(err) }
+    );
     return [];
   }
 }
@@ -81,19 +130,28 @@ export async function getEventBySlug(slug: string): Promise<Event | null> {
     const supabase = getSupabaseServer();
 
     const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .eq('slug', slug)
+      .from("events")
+      .select("*")
+      .eq("slug", slug)
       .single();
 
     if (error) {
-      logger.error('Error fetching event', error);
+      logger.error("Error fetching event", error);
       return null;
     }
 
-    return data;
+    return data
+      ? ({
+          ...data,
+          event_type: data.event_type as Event["event_type"],
+        } as Event)
+      : null;
   } catch (err) {
-    logger.error('Error in getEventBySlug', err instanceof Error ? err : undefined, { error: String(err) });
+    logger.error(
+      "Error in getEventBySlug",
+      err instanceof Error ? err : undefined,
+      { error: String(err) }
+    );
     return null;
   }
 }
@@ -101,24 +159,28 @@ export async function getEventBySlug(slug: string): Promise<Event | null> {
 /**
  * Create a new event
  */
-export async function createEvent(event: EventInsert) {
+export async function createEvent(event: Partial<Event>) {
   try {
     const supabase = getSupabaseServer();
 
     const { data, error } = await supabase
-      .from('events')
-      .insert(event)
+      .from("events")
+      .insert([event as any])
       .select()
       .single();
 
     if (error) {
-      logger.error('Error creating event', error);
+      logger.error("Error creating event", error);
       return { data: null, error };
     }
 
     return { data, error: null };
   } catch (err) {
-    logger.error('Error in createEvent', err instanceof Error ? err : undefined, { error: String(err) });
+    logger.error(
+      "Error in createEvent",
+      err instanceof Error ? err : undefined,
+      { error: String(err) }
+    );
     return { data: null, error: err };
   }
 }
@@ -126,28 +188,32 @@ export async function createEvent(event: EventInsert) {
 /**
  * Update an event
  */
-export async function updateEvent(id: string, updates: EventUpdate) {
+export async function updateEvent(id: string, updates: Partial<Event>) {
   try {
     const supabase = getSupabaseServer();
 
     const { data, error } = await supabase
-      .from('events')
+      .from("events")
       .update({
-        ...updates,
+        ...(updates as any),
         updated_at: new Date().toISOString(),
       })
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
     if (error) {
-      logger.error('Error updating event', error);
+      logger.error("Error updating event", error);
       return { data: null, error };
     }
 
     return { data, error: null };
   } catch (err) {
-    logger.error('Error in updateEvent', err instanceof Error ? err : undefined, { error: String(err) });
+    logger.error(
+      "Error in updateEvent",
+      err instanceof Error ? err : undefined,
+      { error: String(err) }
+    );
     return { data: null, error: err };
   }
 }
@@ -159,19 +225,20 @@ export async function deleteEvent(id: string) {
   try {
     const supabase = getSupabaseServer();
 
-    const { error } = await supabase
-      .from('events')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from("events").delete().eq("id", id);
 
     if (error) {
-      logger.error('Error deleting event', error);
+      logger.error("Error deleting event", error);
       return { error };
     }
 
     return { error: null };
   } catch (err) {
-    logger.error('Error in deleteEvent', err instanceof Error ? err : undefined, { error: String(err) });
+    logger.error(
+      "Error in deleteEvent",
+      err instanceof Error ? err : undefined,
+      { error: String(err) }
+    );
     return { error: err };
   }
 }
@@ -187,26 +254,32 @@ export async function registerForEvent(userId: string, eventId: string) {
     const ticketCode = `NE-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
     const { data, error } = await supabase
-      .from('event_registrations')
-      .insert([{
-        user_id: userId,
-        event_id: eventId,
-        ticket_code: ticketCode,
-      }])
+      .from("event_registrations")
+      .insert([
+        {
+          user_id: userId,
+          event_id: eventId,
+          ticket_code: ticketCode,
+        },
+      ])
       .select()
       .single();
 
     if (error) {
-      logger.error('Error registering for event', error);
+      logger.error("Error registering for event", error);
       return { data: null, error };
     }
 
     // Increment spots_taken
-    await supabase.rpc('increment_event_spots', { event_id: eventId });
+    await supabase.rpc("increment_event_spots", { event_id: eventId });
 
     return { data, error: null };
   } catch (err) {
-    logger.error('Error in registerForEvent', err instanceof Error ? err : undefined, { error: String(err) });
+    logger.error(
+      "Error in registerForEvent",
+      err instanceof Error ? err : undefined,
+      { error: String(err) }
+    );
     return { data: null, error: err };
   }
 }
@@ -214,15 +287,18 @@ export async function registerForEvent(userId: string, eventId: string) {
 /**
  * Check if user is registered for an event
  */
-export async function isUserRegistered(userId: string, eventId: string): Promise<boolean> {
+export async function isUserRegistered(
+  userId: string,
+  eventId: string
+): Promise<boolean> {
   try {
     const supabase = getSupabaseServer();
 
     const { data, error } = await supabase
-      .from('event_registrations')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('event_id', eventId)
+      .from("event_registrations")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("event_id", eventId)
       .single();
 
     return !!data && !error;
@@ -239,19 +315,28 @@ export async function getEventById(id: string): Promise<Event | null> {
     const supabase = getSupabaseServer();
 
     const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .eq('id', id)
+      .from("events")
+      .select("*")
+      .eq("id", id)
       .single();
 
     if (error) {
-      logger.error('Error fetching event by ID', error);
+      logger.error("Error fetching event by ID", error);
       return null;
     }
 
-    return data;
+    return data
+      ? ({
+          ...data,
+          event_type: data.event_type as Event["event_type"],
+        } as Event)
+      : null;
   } catch (err) {
-    logger.error('Error in getEventById', err instanceof Error ? err : undefined, { error: String(err) });
+    logger.error(
+      "Error in getEventById",
+      err instanceof Error ? err : undefined,
+      { error: String(err) }
+    );
     return null;
   }
 }
@@ -259,26 +344,35 @@ export async function getEventById(id: string): Promise<Event | null> {
 /**
  * Get all events with instructor information
  */
-export async function getAllEventsWithInstructor(): Promise<EventWithInstructor[]> {
+export async function getAllEventsWithInstructor(): Promise<Event[]> {
   try {
     const supabase = getSupabaseServer();
 
     const { data, error } = await supabase
-      .from('events')
-      .select(`
+      .from("events")
+      .select(
+        `
         *,
         instructor:profiles!events_instructor_id_fkey(full_name, email)
-      `)
-      .order('start_datetime', { ascending: false });
+      `
+      )
+      .order("start_datetime", { ascending: false });
 
     if (error) {
-      logger.error('Error fetching events with instructor', error);
+      logger.error("Error fetching events with instructor", error);
       return [];
     }
 
-    return (data || []) as unknown as EventWithInstructor[];
+    return (data || []).map((event: any) => ({
+      ...event,
+      event_type: event.event_type as Event["event_type"],
+    })) as Event[];
   } catch (err) {
-    logger.error('Error in getAllEventsWithInstructor', err instanceof Error ? err : undefined, { error: String(err) });
+    logger.error(
+      "Error in getAllEventsWithInstructor",
+      err instanceof Error ? err : undefined,
+      { error: String(err) }
+    );
     return [];
   }
 }
@@ -297,4 +391,4 @@ export const eventRepository = {
   delete: deleteEvent,
   registerUser: registerForEvent,
   isUserRegistered,
-}
+};

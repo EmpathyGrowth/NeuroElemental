@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { FormLabel } from '@/components/ui/form-label';
+import { ConfirmDialog, useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -46,6 +48,9 @@ import Link from 'next/link';
 import { logger } from '@/lib/logging';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+import { LazyWYSIWYG } from '@/components/editor/lazy-wysiwyg';
+import { ImageUpload } from '@/components/forms/image-upload';
 
 const categories = [
   'Energy Management',
@@ -96,7 +101,8 @@ interface Course {
   is_published: boolean;
 }
 
-export default function EditCoursePage({ params }: { params: { id: string } }) {
+export default function EditCoursePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -142,11 +148,14 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
   const [lessonIsPreview, setLessonIsPreview] = useState(false);
   const [savingLesson, setSavingLesson] = useState(false);
 
+  // Confirmation dialog
+  const { confirm, dialogProps } = useConfirmDialog();
+
   // Fetch course details
   useEffect(() => {
     const fetchCourse = async () => {
       try {
-        const response = await fetch(`/api/courses/${params.id}`);
+        const response = await fetch(`/api/courses/${id}`);
         if (!response.ok) {
           toast.error('Course not found');
           router.push('/dashboard/admin/courses');
@@ -179,13 +188,13 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
     };
 
     fetchCourse();
-  }, [params.id, router]);
+  }, [id, router]);
 
   // Fetch modules and lessons
   const fetchModules = useCallback(async () => {
     setLoadingModules(true);
     try {
-      const response = await fetch(`/api/courses/${params.id}/modules`);
+      const response = await fetch(`/api/courses/${id}/modules`);
       if (response.ok) {
         const data = await response.json();
         setModules(data.modules || []);
@@ -195,19 +204,19 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
     } finally {
       setLoadingModules(false);
     }
-  }, [params.id]);
+  }, [id]);
 
   useEffect(() => {
-    if (params.id) {
+    if (id) {
       fetchModules();
     }
-  }, [params.id, fetchModules]);
+  }, [id, fetchModules]);
 
   // Save course details
   const handleSaveCourse = async () => {
     setSaving(true);
     try {
-      const response = await fetch(`/api/courses/${params.id}`, {
+      const response = await fetch(`/api/courses/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -284,7 +293,7 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
         }
       } else {
         // Create new module
-        const response = await fetch(`/api/courses/${params.id}/modules`, {
+        const response = await fetch(`/api/courses/${id}/modules`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -312,27 +321,31 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
     }
   };
 
-  const handleDeleteModule = async (moduleId: string) => {
-    if (!confirm('Are you sure? This will delete all lessons in this module.')) {
-      return;
-    }
+  const handleDeleteModule = (moduleId: string) => {
+    confirm({
+      title: 'Delete Module',
+      description: 'Are you sure? This will delete all lessons in this module. This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/modules/${moduleId}`, {
+            method: 'DELETE',
+          });
 
-    try {
-      const response = await fetch(`/api/modules/${moduleId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        toast.success('Module deleted');
-        fetchModules();
-      } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to delete module');
-      }
-    } catch (error) {
-      logger.error('Error deleting module:', error instanceof Error ? error : new Error(String(error)));
-      toast.error('Failed to delete module');
-    }
+          if (response.ok) {
+            toast.success('Module deleted');
+            fetchModules();
+          } else {
+            const error = await response.json();
+            toast.error(error.error || 'Failed to delete module');
+          }
+        } catch (error) {
+          logger.error('Error deleting module:', error instanceof Error ? error : new Error(String(error)));
+          toast.error('Failed to delete module');
+        }
+      },
+    });
   };
 
   // Lesson CRUD operations
@@ -395,7 +408,7 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
         const module = modules.find(m => m.id === lessonModuleId);
         const lessonCount = module?.lessons?.length || 0;
 
-        const response = await fetch(`/api/courses/${params.id}/lessons`, {
+        const response = await fetch(`/api/courses/${id}/lessons`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -423,27 +436,31 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
     }
   };
 
-  const handleDeleteLesson = async (lessonId: string) => {
-    if (!confirm('Are you sure you want to delete this lesson?')) {
-      return;
-    }
+  const handleDeleteLesson = (lessonId: string) => {
+    confirm({
+      title: 'Delete Lesson',
+      description: 'Are you sure you want to delete this lesson? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/lessons/${lessonId}`, {
+            method: 'DELETE',
+          });
 
-    try {
-      const response = await fetch(`/api/lessons/${lessonId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        toast.success('Lesson deleted');
-        fetchModules();
-      } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to delete lesson');
-      }
-    } catch (error) {
-      logger.error('Error deleting lesson:', error instanceof Error ? error : new Error(String(error)));
-      toast.error('Failed to delete lesson');
-    }
+          if (response.ok) {
+            toast.success('Lesson deleted');
+            fetchModules();
+          } else {
+            const error = await response.json();
+            toast.error(error.error || 'Failed to delete lesson');
+          }
+        } catch (error) {
+          logger.error('Error deleting lesson:', error instanceof Error ? error : new Error(String(error)));
+          toast.error('Failed to delete lesson');
+        }
+      },
+    });
   };
 
   // Module reordering
@@ -532,7 +549,15 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
-      <div className="mb-8">
+      <div className="mb-6">
+        <Breadcrumbs
+          items={[
+            { label: 'Admin', href: '/dashboard/admin' },
+            { label: 'Courses', href: '/dashboard/admin/courses' },
+            { label: course?.title || 'Edit Course' },
+          ]}
+          className="mb-4"
+        />
         <Link href="/dashboard/admin/courses">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -578,7 +603,7 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Title *</Label>
+                <FormLabel htmlFor="title" required>Title</FormLabel>
                 <Input
                   id="title"
                   value={title}
@@ -588,16 +613,16 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="slug">URL Slug *</Label>
-                <div className="flex gap-2">
-                  <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md text-sm text-muted-foreground bg-muted">
+                <FormLabel htmlFor="slug" required>URL Slug</FormLabel>
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 h-10 border border-r-0 border-input rounded-l-md text-sm text-muted-foreground bg-muted dark:bg-muted/50 dark:border-input/50">
                     /courses/
                   </span>
                   <Input
                     id="slug"
                     value={slug}
                     onChange={(e) => setSlug(e.target.value)}
-                    className="rounded-l-none"
+                    className="rounded-l-none flex-1"
                   />
                 </div>
               </div>
@@ -623,11 +648,10 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
 
               <div className="space-y-2">
                 <Label htmlFor="longDescription">Full Description</Label>
-                <Textarea
-                  id="longDescription"
-                  value={longDescription}
-                  onChange={(e) => setLongDescription(e.target.value)}
-                  rows={6}
+                <LazyWYSIWYG
+                  content={longDescription}
+                  onChange={setLongDescription}
+                  placeholder="Write a detailed description for the course page..."
                 />
               </div>
             </CardContent>
@@ -643,8 +667,8 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="priceUsd">Price (USD)</Label>
-                  <div className="flex gap-2">
-                    <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md text-sm text-muted-foreground bg-muted">
+                  <div className="flex">
+                    <span className="inline-flex items-center px-3 h-10 border border-r-0 border-input rounded-l-md text-sm text-muted-foreground bg-muted dark:bg-muted/50 dark:border-input/50">
                       $
                     </span>
                     <Input
@@ -652,7 +676,7 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
                       type="number"
                       value={priceUsd}
                       onChange={(e) => setPriceUsd(e.target.value)}
-                      className="rounded-l-none"
+                      className="rounded-l-none flex-1"
                     />
                   </div>
                 </div>
@@ -726,14 +750,19 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
               <CardTitle>Media</CardTitle>
               <CardDescription>Course images and preview video</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="thumbnailUrl">Thumbnail Image URL</Label>
-                <Input
-                  id="thumbnailUrl"
+                <Label>Thumbnail Image</Label>
+                <ImageUpload
                   value={thumbnailUrl}
-                  onChange={(e) => setThumbnailUrl(e.target.value)}
+                  onChange={(url) => setThumbnailUrl(url || '')}
+                  category="courses"
+                  aspectRatio="video"
+                  placeholder="Upload course thumbnail"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Recommended size: 1280x720 (16:9 aspect ratio)
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -742,7 +771,11 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
                   id="previewVideoUrl"
                   value={previewVideoUrl}
                   onChange={(e) => setPreviewVideoUrl(e.target.value)}
+                  placeholder="https://youtube.com/watch?v=..."
                 />
+                <p className="text-xs text-muted-foreground">
+                  YouTube, Vimeo, or direct video URL
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -981,7 +1014,7 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="moduleTitle">Module Title *</Label>
+              <FormLabel htmlFor="moduleTitle" required>Module Title</FormLabel>
               <Input
                 id="moduleTitle"
                 value={moduleTitle}
@@ -990,7 +1023,7 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="moduleDescription">Description</Label>
+              <FormLabel htmlFor="moduleDescription" optional>Description</FormLabel>
               <Textarea
                 id="moduleDescription"
                 value={moduleDescription}
@@ -1027,7 +1060,7 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="lessonTitle">Lesson Title *</Label>
+              <FormLabel htmlFor="lessonTitle" required>Lesson Title</FormLabel>
               <Input
                 id="lessonTitle"
                 value={lessonTitle}
@@ -1117,6 +1150,9 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

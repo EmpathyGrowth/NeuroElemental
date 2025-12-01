@@ -26,7 +26,7 @@ import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth/get-current-user'
 import { getSupabaseServer } from '@/lib/db/supabase-server'
 import { unauthorizedError, forbiddenError, errorResponse, ApiError } from '@/lib/api'
-import { logger } from '@/lib/logging'
+import { logger } from '@/lib/logging/logger'
 
 export interface OrgAccessResult {
   hasAccess: boolean
@@ -181,13 +181,11 @@ export async function requireOrgPermission(
   const supabase = getSupabaseServer()
 
   // Check if user has the permission
-   
-  // Note: user_has_permission RPC may not be in generated types
-  const { data, error } = await supabase.rpc('user_has_permission' as never, {
+  const { data, error } = await (supabase.rpc as any)('user_has_permission', {
     p_user_id: user.id,
     p_organization_id: organizationId,
     p_permission_code: permissionCode,
-  } as never)
+  })
 
   if (error || !data) {
     return {

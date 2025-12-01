@@ -1,27 +1,34 @@
-'use client';
+"use client";
 
-import { useAuth } from '@/components/auth/auth-provider';
-import { logger } from '@/lib/logging';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useAuth } from "@/components/auth/auth-provider";
+import { Button } from "@/components/ui/button";
 import {
-  Users,
-  TrendingUp,
-  Target,
-  MessageSquare,
-  Shield,
-  Briefcase,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { StatsCard, StatsCardGrid } from "@/components/ui/stats-card";
+import { useAsync } from "@/hooks/use-async";
+import type { DiagnosticTemplate, DiagnosticWithTemplate } from "@/lib/db";
+import { logger } from "@/lib/logging";
+import {
   BarChart3,
-  UserPlus,
-  Loader2,
-  Play,
-  Clock,
+  Briefcase,
   CheckCircle,
-} from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useAsync } from '@/hooks/use-async';
-import Link from 'next/link';
-import type { DiagnosticTemplate, DiagnosticWithTemplate } from '@/lib/db';
+  Clock,
+  Loader2,
+  MessageSquare,
+  Play,
+  Shield,
+  Target,
+  TrendingUp,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 const diagnosticIcons: Record<string, typeof Briefcase> = {
   leadership: Briefcase,
@@ -34,13 +41,13 @@ const diagnosticIcons: Record<string, typeof Briefcase> = {
 };
 
 const diagnosticColors: Record<string, string> = {
-  leadership: 'text-blue-500',
-  communication: 'text-green-500',
-  conflict_resolution: 'text-red-500',
-  motivation_engagement: 'text-amber-500',
-  sales_optimization: 'text-purple-500',
-  team_composition: 'text-cyan-500',
-  custom: 'text-gray-500',
+  leadership: "text-blue-500",
+  communication: "text-green-500",
+  conflict_resolution: "text-red-500",
+  motivation_engagement: "text-amber-500",
+  sales_optimization: "text-purple-500",
+  team_composition: "text-cyan-500",
+  custom: "text-gray-500",
 };
 
 interface DiagnosticsData {
@@ -60,16 +67,22 @@ export default function BusinessDashboardPage() {
   const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
 
   // Fetch user's organizations
-  const { data: orgsData, execute: fetchOrgs } = useAsync<{ organizations: Array<{ id: string; name: string }> }>();
+  const { data: orgsData, execute: fetchOrgs } = useAsync<{
+    organizations: Array<{ id: string; name: string }>;
+  }>();
 
   // Fetch diagnostics for selected organization
-  const { data: diagnosticsData, loading: loadingDiagnostics, execute: fetchDiagnostics } = useAsync<DiagnosticsData>();
+  const {
+    data: diagnosticsData,
+    loading: loadingDiagnostics,
+    execute: fetchDiagnostics,
+  } = useAsync<DiagnosticsData>();
 
   useEffect(() => {
     if (user) {
       fetchOrgs(async () => {
-        const res = await fetch('/api/organizations');
-        if (!res.ok) throw new Error('Failed to fetch organizations');
+        const res = await fetch("/api/organizations");
+        if (!res.ok) throw new Error("Failed to fetch organizations");
         return res.json();
       });
     }
@@ -85,8 +98,10 @@ export default function BusinessDashboardPage() {
   useEffect(() => {
     if (selectedOrg) {
       fetchDiagnostics(async () => {
-        const res = await fetch(`/api/organizations/${selectedOrg}/diagnostics`);
-        if (!res.ok) throw new Error('Failed to fetch diagnostics');
+        const res = await fetch(
+          `/api/organizations/${selectedOrg}/diagnostics`
+        );
+        if (!res.ok) throw new Error("Failed to fetch diagnostics");
         return res.json();
       });
     }
@@ -108,8 +123,8 @@ export default function BusinessDashboardPage() {
 
     try {
       const res = await fetch(`/api/organizations/${selectedOrg}/diagnostics`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           template_id: template.id,
           name: `${template.name} - ${new Date().toLocaleDateString()}`,
@@ -120,13 +135,15 @@ export default function BusinessDashboardPage() {
       if (res.ok) {
         // Refresh diagnostics list
         fetchDiagnostics(async () => {
-          const res = await fetch(`/api/organizations/${selectedOrg}/diagnostics`);
-          if (!res.ok) throw new Error('Failed to fetch diagnostics');
+          const res = await fetch(
+            `/api/organizations/${selectedOrg}/diagnostics`
+          );
+          if (!res.ok) throw new Error("Failed to fetch diagnostics");
           return res.json();
         });
       }
     } catch (error) {
-      logger.error('Failed to launch diagnostic:', error as Error);
+      logger.error("Failed to launch diagnostic:", error as Error);
     }
   };
 
@@ -157,55 +174,38 @@ export default function BusinessDashboardPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-4 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Team Members</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{memberCount}</div>
-            <p className="text-xs text-muted-foreground">
-              {memberCount === 0 ? 'Invite your team' : 'Active members'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Assessments Completed</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalResponses}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.completedDiagnostics} diagnostics completed
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Diagnostics</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeDiagnostics}</div>
-            <p className="text-xs text-muted-foreground">In progress</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Diagnostics Run</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalDiagnostics}</div>
-            <p className="text-xs text-muted-foreground">Total all time</p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatsCardGrid columns={4} className="mb-8">
+        <StatsCard
+          title="Team Members"
+          value={memberCount}
+          description={
+            memberCount === 0 ? "Invite your team" : "Active members"
+          }
+          icon={<Users className="h-5 w-5" />}
+          accent="blue"
+        />
+        <StatsCard
+          title="Assessments Completed"
+          value={stats.totalResponses}
+          description={`${stats.completedDiagnostics} diagnostics completed`}
+          icon={<TrendingUp className="h-5 w-5" />}
+          accent="green"
+        />
+        <StatsCard
+          title="Active Diagnostics"
+          value={stats.activeDiagnostics}
+          description="In progress"
+          icon={<Target className="h-5 w-5" />}
+          accent="purple"
+        />
+        <StatsCard
+          title="Diagnostics Run"
+          value={stats.totalDiagnostics}
+          description="Total all time"
+          icon={<BarChart3 className="h-5 w-5" />}
+          accent="amber"
+        />
+      </StatsCardGrid>
 
       {/* Diagnostic Tools */}
       <div className="mb-8">
@@ -218,10 +218,14 @@ export default function BusinessDashboardPage() {
           <div className="grid gap-4 md:grid-cols-3">
             {templates.map((template) => {
               const Icon = diagnosticIcons[template.type] || BarChart3;
-              const colorClass = diagnosticColors[template.type] || 'text-primary';
+              const colorClass =
+                diagnosticColors[template.type] || "text-primary";
 
               return (
-                <Card key={template.id} className="hover:shadow-lg transition-shadow">
+                <Card
+                  key={template.id}
+                  className="hover:shadow-lg transition-shadow"
+                >
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <Icon className={`h-8 w-8 ${colorClass}`} />
@@ -257,8 +261,12 @@ export default function BusinessDashboardPage() {
           <h2 className="text-2xl font-bold mb-4">Recent Diagnostics</h2>
           <div className="space-y-4">
             {diagnostics.slice(0, 5).map((diagnostic) => {
-              const Icon = diagnosticIcons[diagnostic.template?.type || 'custom'] || BarChart3;
-              const colorClass = diagnosticColors[diagnostic.template?.type || 'custom'] || 'text-primary';
+              const Icon =
+                diagnosticIcons[diagnostic.template?.type || "custom"] ||
+                BarChart3;
+              const colorClass =
+                diagnosticColors[diagnostic.template?.type || "custom"] ||
+                "text-primary";
 
               return (
                 <Card key={diagnostic.id}>
@@ -271,17 +279,18 @@ export default function BusinessDashboardPage() {
                         <div>
                           <h4 className="font-semibold">{diagnostic.name}</h4>
                           <p className="text-sm text-muted-foreground">
-                            {diagnostic.completed_participants} / {diagnostic.total_participants} responses
+                            {diagnostic.completed_participants} /{" "}
+                            {diagnostic.total_participants} responses
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
-                        {diagnostic.status === 'completed' ? (
+                        {diagnostic.status === "completed" ? (
                           <span className="flex items-center gap-1 text-green-500 text-sm">
                             <CheckCircle className="h-4 w-4" />
                             Completed
                           </span>
-                        ) : diagnostic.status === 'active' ? (
+                        ) : diagnostic.status === "active" ? (
                           <span className="flex items-center gap-1 text-blue-500 text-sm">
                             <Play className="h-4 w-4" />
                             Active
@@ -292,7 +301,9 @@ export default function BusinessDashboardPage() {
                           </span>
                         )}
                         <Button variant="outline" size="sm" asChild>
-                          <Link href={`/dashboard/organizations/${selectedOrg}/diagnostics/${diagnostic.id}`}>
+                          <Link
+                            href={`/dashboard/organizations/${selectedOrg}/diagnostics/${diagnostic.id}`}
+                          >
                             View
                           </Link>
                         </Button>
@@ -332,16 +343,21 @@ export default function BusinessDashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Team Analytics</CardTitle>
-            <CardDescription>Element distribution and energy patterns</CardDescription>
+            <CardDescription>
+              Element distribution and energy patterns
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-center py-8">
               <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <p className="text-muted-foreground mb-4">
-                Analytics will appear once team members complete their assessments
+                Analytics will appear once team members complete their
+                assessments
               </p>
               <Button variant="outline" asChild>
-                <Link href={`/dashboard/organizations/${selectedOrg}/analytics`}>
+                <Link
+                  href={`/dashboard/organizations/${selectedOrg}/analytics`}
+                >
                   View Analytics
                 </Link>
               </Button>

@@ -12,7 +12,7 @@ import {
 } from '@/lib/api'
 import { getAuditExportJob } from '@/lib/audit/export'
 import { getSupabaseServer } from '@/lib/db/supabase-server'
-import { logger } from '@/lib/logging'
+import { logger } from '@/lib/logging/logger'
 
 /**
  * Get job and verify it belongs to organization

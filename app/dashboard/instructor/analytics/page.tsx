@@ -1,32 +1,39 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/components/auth/auth-provider';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from "@/components/auth/auth-provider";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { StatsCard, StatsCardGrid } from "@/components/ui/stats-card";
+import { useAsync } from "@/hooks/use-async";
+import { formatDate } from "@/lib/utils";
 import {
   ArrowLeft,
+  Award,
+  BarChart3,
+  BookOpen,
+  Clock,
+  DollarSign,
+  Star,
   TrendingUp,
   Users,
-  DollarSign,
-  BookOpen,
-  Star,
-  Award,
-  Clock,
-  BarChart3,
-} from 'lucide-react';
-import Link from 'next/link';
-import { useAsync } from '@/hooks/use-async';
-import { formatDate } from '@/lib/utils';
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface CourseAnalytics {
   id: string;
@@ -63,7 +70,7 @@ interface AnalyticsData {
 
 export default function InstructorAnalyticsPage() {
   const { profile: _profile } = useAuth();
-  const [timeRange, setTimeRange] = useState('30d');
+  const [timeRange, setTimeRange] = useState("30d");
   const { data, loading, execute } = useAsync<AnalyticsData>();
 
   useEffect(() => {
@@ -98,9 +105,9 @@ export default function InstructorAnalyticsPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount / 100);
   };
 
@@ -174,59 +181,36 @@ export default function InstructorAnalyticsPage() {
       </div>
 
       {/* Overview Stats */}
-      <div className="grid gap-4 md:grid-cols-4 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{overview.total_students}</div>
-            <p className="text-xs text-muted-foreground">
-              +{overview.new_enrollments_30d} this month
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(overview.total_revenue)}</div>
-            <p className="text-xs text-muted-foreground">
-              Lifetime earnings
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{overview.average_rating.toFixed(1)}</div>
-            <p className="text-xs text-muted-foreground">
-              Out of 5.0
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{overview.completion_rate}%</div>
-            <p className="text-xs text-muted-foreground">
-              Across all courses
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatsCardGrid columns={4} className="mb-8">
+        <StatsCard
+          title="Total Students"
+          value={overview.total_students}
+          description={`+${overview.new_enrollments_30d} this month`}
+          icon={<Users className="h-5 w-5" />}
+          accent="blue"
+        />
+        <StatsCard
+          title="Total Revenue"
+          value={formatCurrency(overview.total_revenue)}
+          description="Lifetime earnings"
+          icon={<DollarSign className="h-5 w-5" />}
+          accent="green"
+        />
+        <StatsCard
+          title="Average Rating"
+          value={overview.average_rating.toFixed(1)}
+          description="Out of 5.0"
+          icon={<Star className="h-5 w-5" />}
+          accent="amber"
+        />
+        <StatsCard
+          title="Completion Rate"
+          value={`${overview.completion_rate}%`}
+          description="Across all courses"
+          icon={<Award className="h-5 w-5" />}
+          accent="purple"
+        />
+      </StatsCardGrid>
 
       <div className="grid gap-6 md:grid-cols-2 mb-8">
         {/* Engagement Metrics */}
@@ -236,27 +220,46 @@ export default function InstructorAnalyticsPage() {
               <BarChart3 className="w-5 h-5" />
               Engagement Metrics
             </CardTitle>
-            <CardDescription>Student activity over the selected period</CardDescription>
+            <CardDescription>
+              Student activity over the selected period
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">Lessons Completed</span>
-                <span className="text-sm text-muted-foreground">{engagement.lessons_completed_30d}</span>
+                <span className="text-sm text-muted-foreground">
+                  {engagement.lessons_completed_30d}
+                </span>
               </div>
-              <Progress value={Math.min(engagement.lessons_completed_30d, 100)} className="h-2" />
+              <Progress
+                value={Math.min(engagement.lessons_completed_30d, 100)}
+                className="h-2"
+              />
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Avg. Time per Lesson</span>
-                <span className="text-sm text-muted-foreground">{engagement.average_time_per_lesson} min</span>
+                <span className="text-sm font-medium">
+                  Avg. Time per Lesson
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {engagement.average_time_per_lesson} min
+                </span>
               </div>
-              <Progress value={Math.min((engagement.average_time_per_lesson / 30) * 100, 100)} className="h-2" />
+              <Progress
+                value={Math.min(
+                  (engagement.average_time_per_lesson / 30) * 100,
+                  100
+                )}
+                className="h-2"
+              />
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">Quiz Pass Rate</span>
-                <span className="text-sm text-muted-foreground">{engagement.quiz_pass_rate}%</span>
+                <span className="text-sm text-muted-foreground">
+                  {engagement.quiz_pass_rate}%
+                </span>
               </div>
               <Progress value={engagement.quiz_pass_rate} className="h-2" />
             </div>
@@ -270,7 +273,9 @@ export default function InstructorAnalyticsPage() {
               <TrendingUp className="w-5 h-5" />
               Recent Enrollments
             </CardTitle>
-            <CardDescription>Latest students joining your courses</CardDescription>
+            <CardDescription>
+              Latest students joining your courses
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {recentEnrollments.length > 0 ? (
@@ -281,8 +286,12 @@ export default function InstructorAnalyticsPage() {
                       <Users className="w-4 h-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{enrollment.user_name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{enrollment.course_title}</p>
+                      <p className="text-sm font-medium truncate">
+                        {enrollment.user_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {enrollment.course_title}
+                      </p>
                     </div>
                     <div className="text-xs text-muted-foreground flex items-center gap-1">
                       <Clock className="w-3 h-3" />
@@ -308,7 +317,9 @@ export default function InstructorAnalyticsPage() {
             <BookOpen className="w-5 h-5" />
             Course Performance
           </CardTitle>
-          <CardDescription>Detailed metrics for each of your courses</CardDescription>
+          <CardDescription>
+            Detailed metrics for each of your courses
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {courses.length > 0 ? (
@@ -319,21 +330,33 @@ export default function InstructorAnalyticsPage() {
                     <h4 className="font-semibold">{course.title}</h4>
                     <div className="flex items-center gap-1 text-amber-500">
                       <Star className="w-4 h-4 fill-current" />
-                      <span className="text-sm font-medium">{course.average_rating.toFixed(1)}</span>
-                      <span className="text-xs text-muted-foreground">({course.total_reviews})</span>
+                      <span className="text-sm font-medium">
+                        {course.average_rating.toFixed(1)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        ({course.total_reviews})
+                      </span>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
-                      <p className="text-2xl font-bold">{course.student_count}</p>
+                      <p className="text-2xl font-bold">
+                        {course.student_count}
+                      </p>
                       <p className="text-xs text-muted-foreground">Students</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{course.completion_rate}%</p>
-                      <p className="text-xs text-muted-foreground">Completion</p>
+                      <p className="text-2xl font-bold">
+                        {course.completion_rate}%
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Completion
+                      </p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{formatCurrency(course.revenue)}</p>
+                      <p className="text-2xl font-bold">
+                        {formatCurrency(course.revenue)}
+                      </p>
                       <p className="text-xs text-muted-foreground">Revenue</p>
                     </div>
                   </div>
@@ -345,7 +368,9 @@ export default function InstructorAnalyticsPage() {
               <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>No courses yet. Create your first course to see analytics.</p>
               <Button asChild className="mt-4">
-                <Link href="/dashboard/instructor/courses/new">Create Course</Link>
+                <Link href="/dashboard/instructor/courses/new">
+                  Create Course
+                </Link>
               </Button>
             </div>
           )}

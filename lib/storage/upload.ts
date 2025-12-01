@@ -1,8 +1,15 @@
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logging';
 
+export type StorageBucket =
+  | 'avatars'
+  | 'resources'
+  | 'certificates'
+  | 'course-materials'
+  | 'images'; // For course thumbnails, blog images, etc.
+
 export interface UploadOptions {
-  bucket: 'avatars' | 'resources' | 'certificates' | 'course-materials';
+  bucket: StorageBucket;
   folder?: string;
   fileName?: string;
   allowedTypes?: string[];
@@ -49,6 +56,9 @@ export async function uploadFile(
     .from(options.bucket)
     .getPublicUrl(data.path);
 
+  // Log the URL for debugging
+  logger.info('Upload successful', { bucket: options.bucket, path: data.path, publicUrl: urlData.publicUrl });
+
   return {
     url: urlData.publicUrl,
     path: data.path,
@@ -56,7 +66,7 @@ export async function uploadFile(
 }
 
 export async function deleteFile(
-  bucket: UploadOptions['bucket'],
+  bucket: StorageBucket,
   path: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = createClient();
@@ -74,7 +84,7 @@ export async function deleteFile(
 }
 
 export async function getSignedUrl(
-  bucket: UploadOptions['bucket'],
+  bucket: StorageBucket,
   path: string,
   expiresIn = 3600
 ): Promise<{ url: string } | { error: string }> {

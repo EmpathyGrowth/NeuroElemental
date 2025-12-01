@@ -1,96 +1,106 @@
-import type { Metadata } from 'next';
-import { Footer } from '@/components/footer';
-import { HeroSection } from '@/components/landing/hero-section';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
-import { ElementIcon } from '@/components/icons/element-icon';
+import { Footer } from "@/components/footer";
+import { ElementIcon } from "@/components/icons/element-icon";
+import { HeroSection } from "@/components/landing/hero-section";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ArrowRight } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: 'The Six Elements - NeuroElemental™ Energy Patterns',
-  description: 'Explore the six core energy patterns: Electric, Fiery, Aquatic, Earthly, Airy, and Metallic. Discover which elements shape your personality and energy needs.',
-  keywords: ['six elements', 'energy patterns', 'personality types', 'electric', 'fiery', 'aquatic', 'earthly', 'airy', 'metallic'],
+  title: "The Six Elements - NeuroElemental™ Energy Patterns",
+  description:
+    "Explore the six core energy patterns: Electric, Fiery, Aquatic, Earthly, Airy, and Metallic. Discover which elements shape your personality and energy needs.",
+  keywords: [
+    "six elements",
+    "energy patterns",
+    "personality types",
+    "electric",
+    "fiery",
+    "aquatic",
+    "earthly",
+    "airy",
+    "metallic",
+  ],
 };
 
 export default function ElementsPage() {
   const elements = [
     {
-      slug: 'electric',
-      name: 'Electric',
-      energyType: 'Extroverted',
+      slug: "electric",
+      name: "Electric",
+      energyType: "Extroverted",
       description:
-        'Fast-paced, innovative, and driven by novel stimulation. Electric types thrive on spontaneity, social energy, and constant variety. They bring playfulness and adaptability to every situation.',
-      gradient: 'from-yellow-400 to-amber-500',
-      bgColor: 'bg-yellow-50',
-      borderColor: 'border-yellow-200',
-      glowColor: 'rgba(251, 191, 36, 0.4)',
+        "Fun-seeking, adventurous, and driven by novelty and exploration. Electric types are eternal youth seekers who want to live life to the fullest and resist serious responsibilities.",
+      gradient: "from-yellow-400 to-amber-500",
+      bgColor: "bg-yellow-50",
+      borderColor: "border-yellow-200",
+      glowColor: "rgba(251, 191, 36, 0.4)",
     },
     {
-      slug: 'fiery',
-      name: 'Fiery',
-      energyType: 'Extroverted',
+      slug: "fiery",
+      name: "Fiery",
+      energyType: "Extroverted",
       description:
-        'Passionate, intense, and fueled by meaningful action. Fiery types are natural leaders who thrive on challenges, competition, and making an impact. They turn vision into reality.',
-      gradient: 'from-red-400 to-pink-500',
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-200',
-      glowColor: 'rgba(239, 68, 68, 0.4)',
+        "Passionate, intense, and fueled by influence and respect. Fiery types thrive when trusted, admired, and making progress. They are drained by bureaucracy and inaction.",
+      gradient: "from-red-400 to-pink-500",
+      bgColor: "bg-red-50",
+      borderColor: "border-red-200",
+      glowColor: "rgba(239, 68, 68, 0.4)",
     },
     {
-      slug: 'aquatic',
-      name: 'Aquatic',
-      energyType: 'Ambiverted',
+      slug: "aquatic",
+      name: "Aquatic",
+      energyType: "Ambiverted",
       description:
-        'Deep, reflective, and energized by emotional connection. Aquatic types seek authenticity, loyalty, and meaningful relationships. They bring emotional depth and intuition.',
-      gradient: 'from-blue-400 to-cyan-500',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200',
-      glowColor: 'rgba(59, 130, 246, 0.4)',
+        "Deep, emotionally-driven, and seeking strong bonds. Aquatic types adapt to people they care about and excel at personal gestures. They are drained by feeling ignored or excluded, not conflict.",
+      gradient: "from-blue-400 to-cyan-500",
+      bgColor: "bg-blue-50",
+      borderColor: "border-blue-200",
+      glowColor: "rgba(59, 130, 246, 0.4)",
     },
     {
-      slug: 'earthly',
-      name: 'Earthly',
-      energyType: 'Ambiverted',
+      slug: "earthly",
+      name: "Earthly",
+      energyType: "Ambiverted",
       description:
-        'Grounded, steady, and restored by tangible results. Earthly types create harmony, offer support, and nurture growth in others. They bring stability and warmth to communities.',
-      gradient: 'from-green-400 to-emerald-500',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200',
-      glowColor: 'rgba(34, 197, 94, 0.4)',
+        "Grounded, diplomatic, and restored by harmony and wellbeing for all. Earthly types are natural pacifists who adapt to and support everyone. They are genuinely drained by conflict.",
+      gradient: "from-green-400 to-emerald-500",
+      bgColor: "bg-green-50",
+      borderColor: "border-green-200",
+      glowColor: "rgba(34, 197, 94, 0.4)",
     },
     {
-      slug: 'airy',
-      name: 'Airy',
-      energyType: 'Introverted',
+      slug: "airy",
+      name: "Airy",
+      energyType: "Introverted",
       description:
-        'Curious, adaptable, and recharged by ideas and variety. Airy types are analytical thinkers who thrive in calm, organized environments. They bring creativity and clarity.',
-      gradient: 'from-cyan-400 to-blue-500',
-      bgColor: 'bg-cyan-50',
-      borderColor: 'border-cyan-200',
-      glowColor: 'rgba(6, 182, 212, 0.4)',
+        "Curious, analytical, and motivated by understanding. Airy types see all shades of gray and need space to process. They are drained by conflict and emotional chaos.",
+      gradient: "from-cyan-400 to-blue-500",
+      bgColor: "bg-cyan-50",
+      borderColor: "border-cyan-200",
+      glowColor: "rgba(6, 182, 212, 0.4)",
     },
     {
-      slug: 'metallic',
-      name: 'Metallic',
-      energyType: 'Introverted',
+      slug: "metallic",
+      name: "Metallic",
+      energyType: "Introverted",
       description:
-        'Structured, refined, and sustained by precision and mastery. Metallic types value logic, independence, and systematic thinking. They bring reliability and excellence.',
-      gradient: 'from-gray-400 to-slate-500',
-      bgColor: 'bg-gray-50',
-      borderColor: 'border-gray-200',
-      glowColor: 'rgba(148, 163, 184, 0.4)',
+        "Logical, practical, and direct. Metallic types don't reinvent the wheel—they value proven methods, keep things simple, and prefer black-and-white over endless nuance.",
+      gradient: "from-gray-400 to-slate-500",
+      bgColor: "bg-gray-50",
+      borderColor: "border-gray-200",
+      glowColor: "rgba(148, 163, 184, 0.4)",
     },
   ];
 
   return (
     <div className="min-h-screen bg-background">
-
       <HeroSection
         badge="✨ Energy Patterns"
         title={
           <>
-            <span className="text-foreground">The</span>{' '}
+            <span className="text-foreground">The</span>{" "}
             <span className="gradient-text bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
               Six Elements
             </span>
@@ -109,7 +119,7 @@ export default function ElementsPage() {
                   className="p-8 glass-card border-2 transition-all duration-500 group hover:-translate-y-2 relative overflow-hidden"
                   style={{
                     animationDelay: `${index * 100}ms`,
-                    borderColor: `${element.glowColor.replace('0.4', '0.3')}`,
+                    borderColor: `${element.glowColor.replace("0.4", "0.3")}`,
                   }}
                 >
                   <div
@@ -183,9 +193,7 @@ export default function ElementsPage() {
                 className="bg-white text-[#667EEA] hover:bg-gray-50 text-lg px-12 py-7 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 font-bold min-h-[56px]"
                 asChild
               >
-                <Link href="/assessment">
-                  Start Free Assessment
-                </Link>
+                <Link href="/assessment">Start Free Assessment</Link>
               </Button>
             </div>
           </div>

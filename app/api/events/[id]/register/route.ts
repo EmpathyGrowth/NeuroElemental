@@ -1,32 +1,38 @@
-import { NextRequest } from 'next/server';
-import { RouteContext } from '@/lib/types/api';
-import { getSupabaseServer } from '@/lib/db';
-import { stripe } from '@/lib/stripe/config';
-import { badRequestError, conflictError, createAuthenticatedRoute, notFoundError, successResponse, validateRequest } from '@/lib/api';
-import { getCurrentTimestamp } from '@/lib/utils';
-import { logger } from '@/lib/logging';
-import { randomBytes } from 'crypto';
-import { eventRegistrationRequestSchema } from '@/lib/validation/schemas';
+import {
+  badRequestError,
+  conflictError,
+  createAuthenticatedRoute,
+  notFoundError,
+  successResponse,
+  validateRequest,
+} from "@/lib/api";
+import { getSupabaseServer } from "@/lib/db";
+import { logger } from "@/lib/logging";
+import { stripe } from "@/lib/stripe/config";
+import { RouteContext } from "@/lib/types/api";
+import { getCurrentTimestamp } from "@/lib/utils";
+import { eventRegistrationRequestSchema } from "@/lib/validation/schemas";
+import { randomBytes } from "crypto";
+import { NextRequest } from "next/server";
 
 /** Generate a unique ticket code */
 function generateTicketCode(): string {
-  return `TKT-${randomBytes(6).toString('hex').toUpperCase()}`;
+  return `TKT-${randomBytes(6).toString("hex").toUpperCase()}`;
 }
 
-/** Event record from database */
+/** Event record from database - matches actual DB schema */
 interface EventRecord {
   id: string;
   title: string;
   slug: string;
   description: string | null;
-  price: number | null;
-  max_attendees: number | null;
-  image_url: string | null;
-  start_date: string;
-  end_date: string | null;
-  location: string | null;
-  is_virtual: boolean;
-  status: string;
+  price_usd: number;
+  capacity: number | null;
+  thumbnail_url: string | null;
+  start_datetime: string;
+  end_datetime: string;
+  location_name: string | null;
+  is_published: boolean;
   created_at: string;
 }
 
@@ -73,41 +79,48 @@ export const POST = createAuthenticatedRoute<{ id: string }>(
     const supabase = await getSupabaseServer();
 
     // Get event details
-    const { data: event } = await supabase
-      .from('events')
-      .select('*')
-      .eq('id', id)
-      .single() as { data: EventRecord | null; error: unknown };
+    const { data: event } = (await supabase
+      .from("events")
+      .select("*")
+      .eq("id", id)
+      .single()) as { data: EventRecord | null; error: unknown };
 
     if (!event) {
-      throw notFoundError('Event not found');
+      throw notFoundError("Event not found");
     }
 
     // Check if already registered
-    const { data: existingRegistration } = await supabase
-      .from('event_registrations')
-      .select('id')
-      .eq('event_id', id)
-      .eq('user_id', user.id)
-      .single() as { data: RegistrationIdResult | null; error: unknown };
+    const { data: existingRegistration } = (await supabase
+      .from("event_registrations")
+      .select("id")
+      .eq("event_id", id)
+      .eq("user_id", user.id)
+      .single()) as { data: RegistrationIdResult | null; error: unknown };
 
     if (existingRegistration) {
-      throw conflictError('Already registered for this event');
+      throw conflictError("Already registered for this event");
     }
 
     // Check capacity
-    const { count: registrationCount } = await supabase
-      .from('event_registrations')
-      .select('*', { count: 'exact', head: true })
-      .eq('event_id', id)
-      .eq('status', 'confirmed') as { count: number | null; error: unknown };
+    const { count: registrationCount } = (await supabase
+      .from("event_registrations")
+      .select("*", { count: "exact", head: true })
+      .eq("event_id", id)
+      .eq("status", "confirmed")) as { count: number | null; error: unknown };
 
-    if (event.max_attendees && registrationCount && registrationCount >= event.max_attendees) {
-      throw badRequestError('Event is full');
+    if (
+      event.capacity &&
+      registrationCount &&
+      registrationCount >= event.capacity
+    ) {
+      throw badRequestError("Event is full");
     }
 
     // Validate request body
-    const validation = await validateRequest(request, eventRegistrationRequestSchema);
+    const validation = await validateRequest(
+      request,
+      eventRegistrationRequestSchema
+    );
     if (!validation.success) {
       throw validation.error;
     }
@@ -115,32 +128,32 @@ export const POST = createAuthenticatedRoute<{ id: string }>(
     const { attendee_info, payment_method } = validation.data;
 
     // Handle payment if event is paid
-    if (event.price && event.price > 0) {
-      if (payment_method === 'stripe') {
+    if (event.price_usd && event.price_usd > 0) {
+      if (payment_method === "stripe") {
         // Create Stripe checkout session
         const session = await stripe.checkout.sessions.create({
-          payment_method_types: ['card'],
+          payment_method_types: ["card"],
           line_items: [
             {
               price_data: {
-                currency: 'usd',
+                currency: "usd",
                 product_data: {
                   name: event.title,
                   description: event.description || undefined,
-                  images: event.image_url ? [event.image_url] : [],
+                  images: event.thumbnail_url ? [event.thumbnail_url] : [],
                 },
-                unit_amount: event.price,
+                unit_amount: Math.round(event.price_usd * 100), // Convert to cents
               },
               quantity: 1,
             },
           ],
-          mode: 'payment',
+          mode: "payment",
           success_url: `${process.env.NEXT_PUBLIC_APP_URL}/events/${event.slug}?registration=success`,
           cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/events/${event.slug}?registration=cancelled`,
           metadata: {
             event_id: event.id,
             user_id: user.id,
-            type: 'event_registration',
+            type: "event_registration",
           },
         });
 
@@ -149,23 +162,28 @@ export const POST = createAuthenticatedRoute<{ id: string }>(
           event_id: id,
           user_id: user.id,
           attendee_info,
-          status: 'pending',
-          payment_status: 'pending',
+          status: "pending",
+          payment_status: "pending",
           stripe_session_id: session.id,
           ticket_code: generateTicketCode(),
         };
-        const { data: registration } = await supabase
-          .from('event_registrations')
+        const { data: registration } = (await supabase
+          .from("event_registrations")
           .insert(insertData)
           .select()
-          .single() as { data: EventRegistrationRecord | null; error: unknown };
+          .single()) as {
+          data: EventRegistrationRecord | null;
+          error: unknown;
+        };
 
         return successResponse({
           registration,
           checkout_url: session.url,
         });
       } else {
-        throw badRequestError('Invalid payment method. Stripe is required for paid events.');
+        throw badRequestError(
+          "Invalid payment method. Stripe is required for paid events."
+        );
       }
     } else {
       // Free event - direct registration
@@ -173,15 +191,18 @@ export const POST = createAuthenticatedRoute<{ id: string }>(
         event_id: id,
         user_id: user.id,
         attendee_info,
-        status: 'confirmed',
-        payment_status: 'free',
+        status: "confirmed",
+        payment_status: "free",
         ticket_code: generateTicketCode(),
       };
-      const { data: registration, error } = await supabase
-        .from('event_registrations')
+      const { data: registration, error } = (await supabase
+        .from("event_registrations")
         .insert(freeInsertData)
         .select()
-        .single() as { data: EventRegistrationRecord | null; error: { message: string } | null };
+        .single()) as {
+        data: EventRegistrationRecord | null;
+        error: { message: string } | null;
+      };
 
       if (error) {
         throw badRequestError(error.message);
@@ -193,15 +214,13 @@ export const POST = createAuthenticatedRoute<{ id: string }>(
       }
 
       // Create notification
-      await supabase
-        .from('notifications')
-        .insert({
-          user_id: user.id,
-          title: 'Event Registration Confirmed',
-          message: `You're registered for ${event.title}`,
-          type: 'success',
-          action_url: `/events/${event.slug}`,
-        });
+      await supabase.from("notifications").insert({
+        user_id: user.id,
+        title: "Event Registration Confirmed",
+        message: `You're registered for ${event.title}`,
+        type: "success",
+        action_url: `/events/${event.slug}`,
+      });
 
       return successResponse({ registration }, 201);
     }
@@ -214,57 +233,63 @@ export const DELETE = createAuthenticatedRoute<{ id: string }>(
     const supabase = await getSupabaseServer();
 
     // Get registration
-    const { data: registration } = await supabase
-      .from('event_registrations')
-      .select('*')
-      .eq('event_id', id)
-      .eq('user_id', user.id)
-      .single() as { data: EventRegistrationRecord | null; error: unknown };
+    const { data: registration } = (await supabase
+      .from("event_registrations")
+      .select("*")
+      .eq("event_id", id)
+      .eq("user_id", user.id)
+      .single()) as { data: EventRegistrationRecord | null; error: unknown };
 
     if (!registration) {
-      throw notFoundError('Registration not found');
+      throw notFoundError("Registration not found");
     }
 
     // Check cancellation policy
-    const { data: event } = await supabase
-      .from('events')
-      .select('*')
-      .eq('id', id)
-      .single() as { data: EventRecord | null; error: unknown };
+    const { data: event } = (await supabase
+      .from("events")
+      .select("*")
+      .eq("id", id)
+      .single()) as { data: EventRecord | null; error: unknown };
 
     if (!event) {
-      throw notFoundError('Event not found');
+      throw notFoundError("Event not found");
     }
 
     const now = new Date();
-    const eventDate = new Date(event.start_date);
-    const hoursUntilEvent = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    const eventDate = new Date(event.start_datetime);
+    const hoursUntilEvent =
+      (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60);
 
     if (hoursUntilEvent < 24) {
-      throw badRequestError('Cannot cancel within 24 hours of event');
+      throw badRequestError("Cannot cancel within 24 hours of event");
     }
 
     // Process refund if paid
-    if (registration.payment_status === 'paid' && registration.stripe_payment_id) {
+    if (
+      registration.payment_status === "paid" &&
+      registration.stripe_payment_id
+    ) {
       try {
         await stripe.refunds.create({
           payment_intent: registration.stripe_payment_id,
         });
       } catch (error) {
-        logger.error('Error processing refund', undefined, { errorMsg: error instanceof Error ? error.message : String(error) });
+        logger.error("Error processing refund", undefined, {
+          errorMsg: error instanceof Error ? error.message : String(error),
+        });
       }
     }
 
     // Update registration status
     const cancelUpdate: RegistrationUpdate = {
-      status: 'cancelled',
+      status: "cancelled",
       cancelled_at: getCurrentTimestamp(),
     };
 
-    const { error } = await supabase
-      .from('event_registrations')
+    const { error } = (await supabase
+      .from("event_registrations")
       .update(cancelUpdate)
-      .eq('id', registration.id) as { error: { message: string } | null };
+      .eq("id", registration.id)) as { error: { message: string } | null };
 
     if (error) {
       throw badRequestError(error.message);
@@ -275,16 +300,23 @@ export const DELETE = createAuthenticatedRoute<{ id: string }>(
       await sendEventCancellationEmail(user.email, event);
     }
 
-    return successResponse({ success: true, message: 'Registration cancelled successfully' });
+    return successResponse({
+      success: true,
+      message: "Registration cancelled successfully",
+    });
   }
 );
 
-async function sendEventRegistrationEmail(email: string, _event: EventRecord, _registration: EventRegistrationRecord | null) {
+async function sendEventRegistrationEmail(
+  email: string,
+  _event: EventRecord,
+  _registration: EventRegistrationRecord | null
+) {
   // Implement email sending logic
-  logger.info('Sending registration email', { email });
+  logger.info("Sending registration email", { email });
 }
 
 async function sendEventCancellationEmail(email: string, _event: EventRecord) {
   // Implement email sending logic
-  logger.info('Sending cancellation email', { email });
+  logger.info("Sending cancellation email", { email });
 }

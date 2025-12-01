@@ -1,26 +1,10 @@
-'use client'
+"use client";
 
 /**
  * Organization Settings Page
  * Manage organization details and members (admin only)
  */
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Skeleton } from '@/components/ui/skeleton'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,219 +15,245 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Save,
-  Trash2,
-  UserMinus,
-  Crown,
-  Shield,
-  User,
-  Mail,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
   ArrowLeft,
-} from 'lucide-react'
-import { toast } from 'sonner'
+  Crown,
+  Mail,
+  Save,
+  Shield,
+  Trash2,
+  User,
+  UserMinus,
+} from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface Organization {
-  id: string
-  name: string
-  slug: string
-  credits: Record<string, number> | null
-  created_at: string
+  id: string;
+  name: string;
+  slug: string;
+  credits: Record<string, number> | null;
+  created_at: string;
 }
 
 interface Member {
-  user_id: string
-  role: string
-  joined_at: string
+  user_id: string;
+  role: string;
+  joined_at: string;
   user: {
-    email: string
-    full_name: string | null
-  }
+    email: string;
+    full_name: string | null;
+  };
 }
 
 export default function OrganizationSettingsPage() {
-  const params = useParams()
-  const router = useRouter()
-  const orgId = params.id as string
+  const params = useParams();
+  const router = useRouter();
+  const orgId = params.id as string;
 
-  const [organization, setOrganization] = useState<Organization | null>(null)
-  const [members, setMembers] = useState<Member[]>([])
-  const [userRole, setUserRole] = useState<string>('')
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [organization, setOrganization] = useState<Organization | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [userRole, setUserRole] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Form state
-  const [orgName, setOrgName] = useState('')
-  const [orgSlug, setOrgSlug] = useState('')
+  const [orgName, setOrgName] = useState("");
+  const [orgSlug, setOrgSlug] = useState("");
 
   useEffect(() => {
-    fetchOrganizationData()
-  }, [orgId])
+    fetchOrganizationData();
+  }, [orgId]);
 
   const fetchOrganizationData = async () => {
     try {
-      const orgRes = await fetch(`/api/organizations/${orgId}`)
-      if (!orgRes.ok) throw new Error('Failed to fetch organization')
-      const orgData = await orgRes.json()
+      const orgRes = await fetch(`/api/organizations/${orgId}`);
+      if (!orgRes.ok) throw new Error("Failed to fetch organization");
+      const orgData = await orgRes.json();
 
-      setOrganization(orgData.organization)
-      setUserRole(orgData.userRole)
-      setOrgName(orgData.organization.name)
-      setOrgSlug(orgData.organization.slug)
+      setOrganization(orgData.organization);
+      setUserRole(orgData.userRole);
+      setOrgName(orgData.organization.name);
+      setOrgSlug(orgData.organization.slug);
 
       // Check if user is admin
-      if (orgData.userRole !== 'owner' && orgData.userRole !== 'admin') {
-        router.push(`/dashboard/organizations/${orgId}`)
-        return
+      if (orgData.userRole !== "owner" && orgData.userRole !== "admin") {
+        router.push(`/dashboard/organizations/${orgId}`);
+        return;
       }
 
-      const membersRes = await fetch(`/api/organizations/${orgId}/members`)
+      const membersRes = await fetch(`/api/organizations/${orgId}/members`);
       if (membersRes.ok) {
-        const membersData = await membersRes.json()
-        setMembers(membersData.members || [])
+        const membersData = await membersRes.json();
+        setMembers(membersData.members || []);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleUpdateOrganization = async () => {
-    setSaving(true)
+    setSaving(true);
     try {
       const res = await fetch(`/api/organizations/${orgId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: orgName, slug: orgSlug }),
-      })
+      });
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to update organization')
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update organization");
       }
 
-      toast.success('Success', {
-        description: 'Organization updated successfully',
-      })
+      toast.success("Success", {
+        description: "Organization updated successfully",
+      });
 
-      fetchOrganizationData()
+      fetchOrganizationData();
     } catch (err) {
-      toast.error('Error', {
-        description: err instanceof Error ? err.message : 'Failed to update organization',
-      })
+      toast.error("Error", {
+        description:
+          err instanceof Error ? err.message : "Failed to update organization",
+      });
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleUpdateMemberRole = async (userId: string, newRole: string) => {
     try {
       const res = await fetch(`/api/organizations/${orgId}/members`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId, role: newRole }),
-      })
+      });
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to update role')
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update role");
       }
 
-      toast.success('Success', {
-        description: 'Member role updated successfully',
-      })
+      toast.success("Success", {
+        description: "Member role updated successfully",
+      });
 
-      fetchOrganizationData()
+      fetchOrganizationData();
     } catch (err) {
-      toast.error('Error', {
-        description: err instanceof Error ? err.message : 'Failed to update role',
-      })
+      toast.error("Error", {
+        description:
+          err instanceof Error ? err.message : "Failed to update role",
+      });
     }
-  }
+  };
 
   const handleRemoveMember = async (userId: string) => {
     try {
       const res = await fetch(
         `/api/organizations/${orgId}/members?user_id=${userId}`,
-        { method: 'DELETE' }
-      )
+        { method: "DELETE" }
+      );
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to remove member')
+        const data = await res.json();
+        throw new Error(data.error || "Failed to remove member");
       }
 
-      toast.success('Success', {
-        description: 'Member removed successfully',
-      })
+      toast.success("Success", {
+        description: "Member removed successfully",
+      });
 
-      fetchOrganizationData()
+      fetchOrganizationData();
     } catch (err) {
-      toast.error('Error', {
-        description: err instanceof Error ? err.message : 'Failed to remove member',
-      })
+      toast.error("Error", {
+        description:
+          err instanceof Error ? err.message : "Failed to remove member",
+      });
     }
-  }
+  };
 
   const handleDeleteOrganization = async () => {
     try {
       const res = await fetch(`/api/organizations/${orgId}`, {
-        method: 'DELETE',
-      })
+        method: "DELETE",
+      });
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to delete organization')
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete organization");
       }
 
-      toast.success('Success', {
-        description: 'Organization deleted successfully',
-      })
+      toast.success("Success", {
+        description: "Organization deleted successfully",
+      });
 
-      router.push('/dashboard/organizations')
+      router.push("/dashboard/organizations");
     } catch (err) {
-      toast.error('Error', {
-        description: err instanceof Error ? err.message : 'Failed to delete organization',
-      })
+      toast.error("Error", {
+        description:
+          err instanceof Error ? err.message : "Failed to delete organization",
+      });
     }
-  }
+  };
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'owner':
-        return <Crown className="h-4 w-4 text-yellow-500" />
-      case 'admin':
-        return <Shield className="h-4 w-4 text-blue-500" />
-      case 'member':
-        return <User className="h-4 w-4 text-gray-500" />
+      case "owner":
+        return <Crown className="h-4 w-4 text-yellow-500" />;
+      case "admin":
+        return <Shield className="h-4 w-4 text-blue-500" />;
+      case "member":
+        return <User className="h-4 w-4 text-gray-500" />;
       default:
-        return <User className="h-4 w-4" />
+        return <User className="h-4 w-4" />;
     }
-  }
+  };
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case 'owner':
-        return 'default'
-      case 'admin':
-        return 'secondary'
-      case 'member':
-        return 'outline'
+      case "owner":
+        return "default";
+      case "admin":
+        return "secondary";
+      case "member":
+        return "outline";
       default:
-        return 'outline'
+        return "outline";
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -253,7 +263,7 @@ export default function OrganizationSettingsPage() {
           <Skeleton className="h-96" />
         </div>
       </div>
-    )
+    );
   }
 
   if (error || !organization) {
@@ -262,12 +272,12 @@ export default function OrganizationSettingsPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-6 text-destructive">
-              {error || 'Organization not found'}
+              {error || "Organization not found"}
             </div>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -285,10 +295,10 @@ export default function OrganizationSettingsPage() {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
             </Button>
-            <h1 className="text-3xl font-bold tracking-tight">Organization Settings</h1>
-            <p className="text-muted-foreground">
-              Manage {organization.name}
-            </p>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Organization Settings
+            </h1>
+            <p className="text-muted-foreground">Manage {organization.name}</p>
           </div>
         </div>
 
@@ -335,7 +345,7 @@ export default function OrganizationSettingsPage() {
 
                 <Button onClick={handleUpdateOrganization} disabled={saving}>
                   <Save className="h-4 w-4 mr-2" />
-                  {saving ? 'Saving...' : 'Save Changes'}
+                  {saving ? "Saving..." : "Save Changes"}
                 </Button>
               </CardContent>
             </Card>
@@ -384,11 +394,15 @@ export default function OrganizationSettingsPage() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              {userRole === 'owner' && member.role !== 'owner' ? (
+                              {userRole === "owner" &&
+                              member.role !== "owner" ? (
                                 <Select
                                   value={member.role}
                                   onValueChange={(value) =>
-                                    handleUpdateMemberRole(member.user_id, value)
+                                    handleUpdateMemberRole(
+                                      member.user_id,
+                                      value
+                                    )
                                   }
                                 >
                                   <SelectTrigger className="w-32">
@@ -396,20 +410,24 @@ export default function OrganizationSettingsPage() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="admin">Admin</SelectItem>
-                                    <SelectItem value="member">Member</SelectItem>
+                                    <SelectItem value="member">
+                                      Member
+                                    </SelectItem>
                                   </SelectContent>
                                 </Select>
                               ) : (
                                 <div className="flex items-center gap-2">
                                   {getRoleIcon(member.role)}
-                                  <Badge variant={getRoleBadgeVariant(member.role)}>
+                                  <Badge
+                                    variant={getRoleBadgeVariant(member.role)}
+                                  >
                                     {member.role}
                                   </Badge>
                                 </div>
                               )}
                             </TableCell>
                             <TableCell className="text-right">
-                              {member.role !== 'owner' && (
+                              {member.role !== "owner" && (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button variant="ghost" size="sm">
@@ -418,17 +436,25 @@ export default function OrganizationSettingsPage() {
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
-                                      <AlertDialogTitle>Remove Member</AlertDialogTitle>
+                                      <AlertDialogTitle>
+                                        Remove Member
+                                      </AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        Are you sure you want to remove{' '}
-                                        {member.user.full_name || member.user.email} from
-                                        this organization? This action cannot be undone.
+                                        Are you sure you want to remove{" "}
+                                        {member.user.full_name ||
+                                          member.user.email}{" "}
+                                        from this organization? This action
+                                        cannot be undone.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogCancel>
+                                        Cancel
+                                      </AlertDialogCancel>
                                       <AlertDialogAction
-                                        onClick={() => handleRemoveMember(member.user_id)}
+                                        onClick={() =>
+                                          handleRemoveMember(member.user_id)
+                                        }
                                       >
                                         Remove
                                       </AlertDialogAction>
@@ -464,8 +490,8 @@ export default function OrganizationSettingsPage() {
                         Delete Organization
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Once you delete an organization, there is no going back. Please
-                        be certain.
+                        Once you delete an organization, there is no going back.
+                        Please be certain.
                       </p>
                     </div>
                     <AlertDialog>
@@ -477,11 +503,13 @@ export default function OrganizationSettingsPage() {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Organization</AlertDialogTitle>
+                          <AlertDialogTitle>
+                            Delete Organization
+                          </AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to delete {organization.name}? This
-                            action cannot be undone. All data associated with this
-                            organization will be permanently deleted.
+                            Are you sure you want to delete {organization.name}?
+                            This action cannot be undone. All data associated
+                            with this organization will be permanently deleted.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -503,5 +531,5 @@ export default function OrganizationSettingsPage() {
         </Tabs>
       </div>
     </div>
-  )
+  );
 }

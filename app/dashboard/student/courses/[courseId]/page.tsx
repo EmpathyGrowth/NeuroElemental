@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import DOMPurify from 'dompurify';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -401,7 +402,7 @@ export default function StudentCoursePage({ params }: { params: { courseId: stri
               {selectedLesson.content_type === 'text' && selectedLesson.content_text && (
                 <Card className="mb-6">
                   <CardContent className="pt-6 prose dark:prose-invert max-w-none">
-                    <div dangerouslySetInnerHTML={{ __html: selectedLesson.content_text }} />
+                    <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedLesson.content_text || '') }} />
                   </CardContent>
                 </Card>
               )}

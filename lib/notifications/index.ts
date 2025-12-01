@@ -5,6 +5,7 @@
 
 export {
   notificationManager,
-  useNotifications,
   type Notification,
-} from './realtime'
+} from './realtime';
+
+export { useNotifications } from '@/hooks/use-notifications';

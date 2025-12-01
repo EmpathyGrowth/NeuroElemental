@@ -46,6 +46,7 @@ import Link from 'next/link';
 import { logger } from '@/lib/logging';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { LazyWYSIWYG } from '@/components/editor/lazy-wysiwyg';
 
 const categories = [
   'Energy Management',
@@ -585,15 +586,15 @@ export default function InstructorEditCoursePage({ params }: { params: { id: str
 
               <div className="space-y-2">
                 <Label htmlFor="slug">URL Slug *</Label>
-                <div className="flex gap-2">
-                  <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md text-sm text-muted-foreground bg-muted">
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 h-10 border border-r-0 border-input rounded-l-md text-sm text-muted-foreground bg-muted dark:bg-muted/50 dark:border-input/50">
                     /courses/
                   </span>
                   <Input
                     id="slug"
                     value={slug}
                     onChange={(e) => setSlug(e.target.value)}
-                    className="rounded-l-none"
+                    className="rounded-l-none flex-1"
                   />
                 </div>
               </div>
@@ -619,11 +620,10 @@ export default function InstructorEditCoursePage({ params }: { params: { id: str
 
               <div className="space-y-2">
                 <Label htmlFor="longDescription">Full Description</Label>
-                <Textarea
-                  id="longDescription"
-                  value={longDescription}
-                  onChange={(e) => setLongDescription(e.target.value)}
-                  rows={6}
+                <LazyWYSIWYG
+                  content={longDescription}
+                  onChange={setLongDescription}
+                  placeholder="Write a detailed description for the course page..."
                 />
               </div>
             </CardContent>
@@ -639,8 +639,8 @@ export default function InstructorEditCoursePage({ params }: { params: { id: str
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="priceUsd">Price (USD)</Label>
-                  <div className="flex gap-2">
-                    <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md text-sm text-muted-foreground bg-muted">
+                  <div className="flex">
+                    <span className="inline-flex items-center px-3 h-10 border border-r-0 border-input rounded-l-md text-sm text-muted-foreground bg-muted dark:bg-muted/50 dark:border-input/50">
                       $
                     </span>
                     <Input
@@ -648,7 +648,7 @@ export default function InstructorEditCoursePage({ params }: { params: { id: str
                       type="number"
                       value={priceUsd}
                       onChange={(e) => setPriceUsd(e.target.value)}
-                      className="rounded-l-none"
+                      className="rounded-l-none flex-1"
                     />
                   </div>
                 </div>

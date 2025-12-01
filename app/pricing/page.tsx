@@ -52,10 +52,10 @@ const _tierIcons: Record<string, typeof Zap> = {
 };
 
 const tierColors: Record<string, string> = {
-  free: 'bg-slate-100 dark:bg-slate-800',
-  basic: 'bg-blue-50 dark:bg-blue-900/20',
-  professional: 'bg-purple-50 dark:bg-purple-900/20',
-  enterprise: 'bg-amber-50 dark:bg-amber-900/20',
+  free: 'bg-muted/50',
+  basic: 'bg-blue-500/10 dark:bg-blue-500/20',
+  professional: 'bg-purple-500/10 dark:bg-purple-500/20',
+  enterprise: 'bg-amber-500/10 dark:bg-amber-500/20',
 };
 
 export default function PricingPage() {
@@ -196,7 +196,7 @@ export default function PricingPage() {
                 {/* Professional Tier */}
                 <Card className="relative border-primary shadow-lg">
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="px-3">Most Popular</Badge>
+                    <Badge className="px-3 !bg-primary !text-white shadow-md">Most Popular</Badge>
                   </div>
                   <CardHeader className={tierColors.professional}>
                     <div className="flex items-center justify-between mb-2">
@@ -359,7 +359,7 @@ export default function PricingPage() {
                 {/* Business Plan */}
                 <Card className="relative border-primary shadow-lg">
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="px-3">Best Value</Badge>
+                    <Badge className="px-3 !bg-primary !text-white shadow-md">Best Value</Badge>
                   </div>
                   <CardHeader className={tierColors.professional}>
                     <div className="flex items-center justify-between mb-2">

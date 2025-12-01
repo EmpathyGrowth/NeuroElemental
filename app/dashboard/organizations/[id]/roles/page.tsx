@@ -1,34 +1,16 @@
-'use client'
+"use client";
 
 /**
  * Roles & Permissions Management Page
  * Manage custom roles and permissions for organization
  */
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,154 +20,172 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion'
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import {
   AlertTriangle,
   ArrowLeft,
   Crown,
+  Edit,
+  Eye,
+  Plus,
   Shield,
+  Trash2,
   User as UserIcon,
-} from 'lucide-react'
-import { toast } from 'sonner'
+} from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface Permission {
-  id: string
-  code: string
-  name: string
-  description?: string
-  category: string
-  is_dangerous: boolean
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  category: string;
+  is_dangerous: boolean;
 }
 
 interface Role {
-  id: string
-  organization_id: string
-  name: string
-  description?: string
-  color?: string
-  is_system: boolean
-  is_default: boolean
-  permissions: string[]
-  member_count: number
-  created_at: string
+  id: string;
+  organization_id: string;
+  name: string;
+  description?: string;
+  color?: string;
+  is_system: boolean;
+  is_default: boolean;
+  permissions: string[];
+  member_count: number;
+  created_at: string;
 }
 
 interface PermissionsByCategory {
-  [category: string]: Permission[]
+  [category: string]: Permission[];
 }
 
 // Color presets for role badges
 const COLOR_PRESETS = [
-  { name: 'Blue', value: '#3b82f6' },
-  { name: 'Green', value: '#22c55e' },
-  { name: 'Purple', value: '#a855f7' },
-  { name: 'Pink', value: '#ec4899' },
-  { name: 'Orange', value: '#f97316' },
-  { name: 'Red', value: '#ef4444' },
-  { name: 'Yellow', value: '#eab308' },
-  { name: 'Teal', value: '#14b8a6' },
-]
+  { name: "Blue", value: "#3b82f6" },
+  { name: "Green", value: "#22c55e" },
+  { name: "Purple", value: "#a855f7" },
+  { name: "Pink", value: "#ec4899" },
+  { name: "Orange", value: "#f97316" },
+  { name: "Red", value: "#ef4444" },
+  { name: "Yellow", value: "#eab308" },
+  { name: "Teal", value: "#14b8a6" },
+];
 
 export default function RolesPage() {
-  const params = useParams()
-  const router = useRouter()
-  const orgId = params.id as string
+  const params = useParams();
+  const router = useRouter();
+  const orgId = params.id as string;
 
-  const [roles, setRoles] = useState<Role[]>([])
-  const [permissions, setPermissions] = useState<PermissionsByCategory>({})
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [permissions, setPermissions] = useState<PermissionsByCategory>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Dialog states
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [viewDialogOpen, setViewDialogOpen] = useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null)
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
 
   // Form states
-  const [formName, setFormName] = useState('')
-  const [formDescription, setFormDescription] = useState('')
-  const [formColor, setFormColor] = useState(COLOR_PRESETS[0].value)
-  const [formIsDefault, setFormIsDefault] = useState(false)
-  const [formPermissions, setFormPermissions] = useState<string[]>([])
-  const [saving, setSaving] = useState(false)
+  const [formName, setFormName] = useState("");
+  const [formDescription, setFormDescription] = useState("");
+  const [formColor, setFormColor] = useState(COLOR_PRESETS[0].value);
+  const [formIsDefault, setFormIsDefault] = useState(false);
+  const [formPermissions, setFormPermissions] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetchData()
-  }, [orgId])
+    fetchData();
+  }, [orgId]);
 
   const fetchData = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
 
       // Fetch roles
-      const rolesRes = await fetch(`/api/organizations/${orgId}/roles`)
-      if (!rolesRes.ok) throw new Error('Failed to fetch roles')
-      const rolesData = await rolesRes.json()
-      setRoles(rolesData.roles || [])
+      const rolesRes = await fetch(`/api/organizations/${orgId}/roles`);
+      if (!rolesRes.ok) throw new Error("Failed to fetch roles");
+      const rolesData = await rolesRes.json();
+      setRoles(rolesData.roles || []);
 
       // Fetch available permissions
-      const permsRes = await fetch('/api/permissions')
-      if (!permsRes.ok) throw new Error('Failed to fetch permissions')
-      const permsData = await permsRes.json()
-      setPermissions(permsData.permissions || {})
+      const permsRes = await fetch("/api/permissions");
+      if (!permsRes.ok) throw new Error("Failed to fetch permissions");
+      const permsData = await permsRes.json();
+      setPermissions(permsData.permissions || {});
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
-      toast.error('Error', {
-        description: err instanceof Error ? err.message : 'Failed to load data',
-      })
+      setError(err instanceof Error ? err.message : "An error occurred");
+      toast.error("Error", {
+        description: err instanceof Error ? err.message : "Failed to load data",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const openCreateDialog = () => {
-    setFormName('')
-    setFormDescription('')
-    setFormColor(COLOR_PRESETS[0].value)
-    setFormIsDefault(false)
-    setFormPermissions([])
-    setCreateDialogOpen(true)
-  }
+    setFormName("");
+    setFormDescription("");
+    setFormColor(COLOR_PRESETS[0].value);
+    setFormIsDefault(false);
+    setFormPermissions([]);
+    setCreateDialogOpen(true);
+  };
 
   const openEditDialog = (role: Role) => {
-    setSelectedRole(role)
-    setFormName(role.name)
-    setFormDescription(role.description || '')
-    setFormColor(role.color || COLOR_PRESETS[0].value)
-    setFormIsDefault(role.is_default)
-    setFormPermissions(role.permissions)
-    setEditDialogOpen(true)
-  }
+    setSelectedRole(role);
+    setFormName(role.name);
+    setFormDescription(role.description || "");
+    setFormColor(role.color || COLOR_PRESETS[0].value);
+    setFormIsDefault(role.is_default);
+    setFormPermissions(role.permissions);
+    setEditDialogOpen(true);
+  };
 
   const openViewDialog = (role: Role) => {
-    setSelectedRole(role)
-    setViewDialogOpen(true)
-  }
+    setSelectedRole(role);
+    setViewDialogOpen(true);
+  };
 
   const openDeleteDialog = (role: Role) => {
-    setSelectedRole(role)
-    setDeleteDialogOpen(true)
-  }
+    setSelectedRole(role);
+    setDeleteDialogOpen(true);
+  };
 
   const handleCreateRole = async () => {
     try {
-      setSaving(true)
+      setSaving(true);
 
       const res = await fetch(`/api/organizations/${orgId}/roles`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formName,
           description: formDescription,
@@ -193,39 +193,40 @@ export default function RolesPage() {
           permissions: formPermissions,
           is_default: formIsDefault,
         }),
-      })
+      });
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to create role')
+        const data = await res.json();
+        throw new Error(data.error || "Failed to create role");
       }
 
-      toast.success('Role created', {
+      toast.success("Role created", {
         description: `${formName} has been created successfully.`,
-      })
+      });
 
-      setCreateDialogOpen(false)
-      await fetchData()
+      setCreateDialogOpen(false);
+      await fetchData();
     } catch (err) {
-      toast.error('Error', {
-        description: err instanceof Error ? err.message : 'Failed to create role',
-      })
+      toast.error("Error", {
+        description:
+          err instanceof Error ? err.message : "Failed to create role",
+      });
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleUpdateRole = async () => {
-    if (!selectedRole) return
+    if (!selectedRole) return;
 
     try {
-      setSaving(true)
+      setSaving(true);
 
       const res = await fetch(
         `/api/organizations/${orgId}/roles/${selectedRole.id}`,
         {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: formName,
             description: formDescription,
@@ -234,86 +235,88 @@ export default function RolesPage() {
             is_default: formIsDefault,
           }),
         }
-      )
+      );
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to update role')
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update role");
       }
 
-      toast.success('Role updated', {
+      toast.success("Role updated", {
         description: `${formName} has been updated successfully.`,
-      })
+      });
 
-      setEditDialogOpen(false)
-      await fetchData()
+      setEditDialogOpen(false);
+      await fetchData();
     } catch (err) {
-      toast.error('Error', {
-        description: err instanceof Error ? err.message : 'Failed to update role',
-      })
+      toast.error("Error", {
+        description:
+          err instanceof Error ? err.message : "Failed to update role",
+      });
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleDeleteRole = async () => {
-    if (!selectedRole) return
+    if (!selectedRole) return;
 
     try {
-      setSaving(true)
+      setSaving(true);
 
       const res = await fetch(
         `/api/organizations/${orgId}/roles/${selectedRole.id}`,
         {
-          method: 'DELETE',
+          method: "DELETE",
         }
-      )
+      );
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to delete role')
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete role");
       }
 
-      toast.success('Role deleted', {
+      toast.success("Role deleted", {
         description: `${selectedRole.name} has been deleted.`,
-      })
+      });
 
-      setDeleteDialogOpen(false)
-      await fetchData()
+      setDeleteDialogOpen(false);
+      await fetchData();
     } catch (err) {
-      toast.error('Error', {
-        description: err instanceof Error ? err.message : 'Failed to delete role',
-      })
+      toast.error("Error", {
+        description:
+          err instanceof Error ? err.message : "Failed to delete role",
+      });
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const togglePermission = (code: string) => {
     setFormPermissions((prev) =>
       prev.includes(code) ? prev.filter((p) => p !== code) : [...prev, code]
-    )
-  }
+    );
+  };
 
   const toggleCategoryPermissions = (category: string, checked: boolean) => {
-    const categoryPerms = permissions[category]?.map((p) => p.code) || []
+    const categoryPerms = permissions[category]?.map((p) => p.code) || [];
     if (checked) {
-      setFormPermissions((prev) => [...new Set([...prev, ...categoryPerms])])
+      setFormPermissions((prev) => [...new Set([...prev, ...categoryPerms])]);
     } else {
       setFormPermissions((prev) =>
         prev.filter((p) => !categoryPerms.includes(p))
-      )
+      );
     }
-  }
+  };
 
   const getRoleIcon = (role: Role) => {
-    if (role.name.toLowerCase().includes('owner')) {
-      return <Crown className="h-4 w-4 text-yellow-500" />
-    } else if (role.name.toLowerCase().includes('admin')) {
-      return <Shield className="h-4 w-4 text-blue-500" />
+    if (role.name.toLowerCase().includes("owner")) {
+      return <Crown className="h-4 w-4 text-yellow-500" />;
+    } else if (role.name.toLowerCase().includes("admin")) {
+      return <Shield className="h-4 w-4 text-blue-500" />;
     }
-    return <UserIcon className="h-4 w-4 text-gray-500" />
-  }
+    return <UserIcon className="h-4 w-4 text-gray-500" />;
+  };
 
   if (loading) {
     return (
@@ -327,7 +330,7 @@ export default function RolesPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -339,7 +342,7 @@ export default function RolesPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -377,7 +380,7 @@ export default function RolesPage() {
             <Card key={role.id} className="relative">
               <div
                 className="absolute top-0 left-0 right-0 h-1 rounded-t-lg"
-                style={{ backgroundColor: role.color || '#6b7280' }}
+                style={{ backgroundColor: role.color || "#6b7280" }}
               />
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -496,8 +499,8 @@ export default function RolesPage() {
                       type="button"
                       className={`w-8 h-8 rounded-full border-2 ${
                         formColor === preset.value
-                          ? 'border-foreground'
-                          : 'border-transparent'
+                          ? "border-foreground"
+                          : "border-transparent"
                       }`}
                       style={{ backgroundColor: preset.value }}
                       onClick={() => setFormColor(preset.value)}
@@ -525,13 +528,13 @@ export default function RolesPage() {
                 <Label>Permissions ({formPermissions.length})</Label>
                 <Accordion type="multiple" className="w-full">
                   {Object.entries(permissions).map(([category, perms]) => {
-                    const categoryPerms = perms.map((p) => p.code)
+                    const categoryPerms = perms.map((p) => p.code);
                     const allSelected = categoryPerms.every((p) =>
                       formPermissions.includes(p)
-                    )
+                    );
                     const someSelected = categoryPerms.some((p) =>
                       formPermissions.includes(p)
-                    )
+                    );
 
                     return (
                       <AccordionItem key={category} value={category}>
@@ -595,7 +598,7 @@ export default function RolesPage() {
                           </div>
                         </AccordionContent>
                       </AccordionItem>
-                    )
+                    );
                   })}
                 </Accordion>
               </div>
@@ -609,7 +612,7 @@ export default function RolesPage() {
                 Cancel
               </Button>
               <Button onClick={handleCreateRole} disabled={saving || !formName}>
-                {saving ? 'Creating...' : 'Create Role'}
+                {saving ? "Creating..." : "Create Role"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -653,8 +656,8 @@ export default function RolesPage() {
                       type="button"
                       className={`w-8 h-8 rounded-full border-2 ${
                         formColor === preset.value
-                          ? 'border-foreground'
-                          : 'border-transparent'
+                          ? "border-foreground"
+                          : "border-transparent"
                       }`}
                       style={{ backgroundColor: preset.value }}
                       onClick={() => setFormColor(preset.value)}
@@ -682,13 +685,13 @@ export default function RolesPage() {
                 <Label>Permissions ({formPermissions.length})</Label>
                 <Accordion type="multiple" className="w-full">
                   {Object.entries(permissions).map(([category, perms]) => {
-                    const categoryPerms = perms.map((p) => p.code)
+                    const categoryPerms = perms.map((p) => p.code);
                     const allSelected = categoryPerms.every((p) =>
                       formPermissions.includes(p)
-                    )
+                    );
                     const someSelected = categoryPerms.some((p) =>
                       formPermissions.includes(p)
-                    )
+                    );
 
                     return (
                       <AccordionItem key={category} value={category}>
@@ -752,7 +755,7 @@ export default function RolesPage() {
                           </div>
                         </AccordionContent>
                       </AccordionItem>
-                    )
+                    );
                   })}
                 </Accordion>
               </div>
@@ -766,7 +769,7 @@ export default function RolesPage() {
                 Cancel
               </Button>
               <Button onClick={handleUpdateRole} disabled={saving || !formName}>
-                {saving ? 'Updating...' : 'Update Role'}
+                {saving ? "Updating..." : "Update Role"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -815,8 +818,8 @@ export default function RolesPage() {
                     {Object.entries(permissions).map(([category, perms]) => {
                       const categoryPerms = perms.filter((p) =>
                         selectedRole.permissions.includes(p.code)
-                      )
-                      if (categoryPerms.length === 0) return null
+                      );
+                      if (categoryPerms.length === 0) return null;
 
                       return (
                         <div key={category} className="space-y-1">
@@ -838,7 +841,7 @@ export default function RolesPage() {
                             ))}
                           </div>
                         </div>
-                      )
+                      );
                     })}
                   </div>
                 </div>
@@ -859,9 +862,9 @@ export default function RolesPage() {
                 {selectedRole && selectedRole.member_count > 0 ? (
                   <div className="space-y-2">
                     <p>
-                      This role is currently assigned to{' '}
+                      This role is currently assigned to{" "}
                       <strong>{selectedRole.member_count}</strong> member
-                      {selectedRole.member_count !== 1 ? 's' : ''}.
+                      {selectedRole.member_count !== 1 ? "s" : ""}.
                     </p>
                     <p className="text-destructive font-semibold">
                       You must reassign these members to another role before
@@ -870,7 +873,7 @@ export default function RolesPage() {
                   </div>
                 ) : (
                   <p>
-                    Are you sure you want to delete{' '}
+                    Are you sure you want to delete{" "}
                     <strong>{selectedRole?.name}</strong>? This action cannot be
                     undone.
                   </p>
@@ -885,7 +888,7 @@ export default function RolesPage() {
                   disabled={saving}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  {saving ? 'Deleting...' : 'Delete Role'}
+                  {saving ? "Deleting..." : "Delete Role"}
                 </AlertDialogAction>
               )}
             </AlertDialogFooter>
@@ -893,5 +896,5 @@ export default function RolesPage() {
         </AlertDialog>
       </div>
     </div>
-  )
+  );
 }

@@ -1,158 +1,166 @@
-'use client'
+"use client";
 
 /**
  * Purchase Credits Page
  * Buy credits for organization
  */
 
-import { useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Badge } from '@/components/ui/badge'
-import { Coins, ArrowLeft, CheckCircle2, Package } from 'lucide-react'
-import { toast } from 'sonner'
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ArrowLeft, CheckCircle2, Coins, Package } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface CreditPackage {
-  id: string
-  name: string
-  credits: number
-  price: number
-  popular?: boolean
-  savings?: string
+  id: string;
+  name: string;
+  credits: number;
+  price: number;
+  popular?: boolean;
+  savings?: string;
 }
 
 const CREDIT_PACKAGES: CreditPackage[] = [
   {
-    id: 'starter',
-    name: 'Starter',
+    id: "starter",
+    name: "Starter",
     credits: 10,
     price: 99,
   },
   {
-    id: 'professional',
-    name: 'Professional',
+    id: "professional",
+    name: "Professional",
     credits: 50,
     price: 449,
     popular: true,
-    savings: 'Save 10%',
+    savings: "Save 10%",
   },
   {
-    id: 'enterprise',
-    name: 'Enterprise',
+    id: "enterprise",
+    name: "Enterprise",
     credits: 100,
     price: 799,
-    savings: 'Save 20%',
+    savings: "Save 20%",
   },
-]
+];
 
 export default function PurchaseCreditsPage() {
-  const params = useParams()
-  const router = useRouter()
-  const orgId = params.id as string
+  const params = useParams();
+  const router = useRouter();
+  const orgId = params.id as string;
 
-  const [selectedPackage, setSelectedPackage] = useState<string>('professional')
-  const [customAmount, setCustomAmount] = useState<string>('')
-  const [useCustomAmount, setUseCustomAmount] = useState(false)
-  const [processing, setProcessing] = useState(false)
-  const [couponCode, setCouponCode] = useState('')
-  const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
-  const [validatingCoupon, setValidatingCoupon] = useState(false)
+  const [selectedPackage, setSelectedPackage] =
+    useState<string>("professional");
+  const [customAmount, setCustomAmount] = useState<string>("");
+  const [useCustomAmount, setUseCustomAmount] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
-  const selectedPkg = CREDIT_PACKAGES.find((p) => p.id === selectedPackage)
-  const credits = useCustomAmount ? parseInt(customAmount) || 0 : selectedPkg?.credits || 0
+  const selectedPkg = CREDIT_PACKAGES.find((p) => p.id === selectedPackage);
+  const credits = useCustomAmount
+    ? parseInt(customAmount) || 0
+    : selectedPkg?.credits || 0;
   const basePrice = useCustomAmount
     ? (parseInt(customAmount) || 0) * 10 // $10 per credit
-    : selectedPkg?.price || 0
+    : selectedPkg?.price || 0;
 
-  let finalPrice = basePrice
+  let finalPrice = basePrice;
   if (appliedCoupon) {
-    if (appliedCoupon.discount_type === 'percentage') {
-      finalPrice = basePrice * (1 - appliedCoupon.discount_value / 100)
-    } else if (appliedCoupon.discount_type === 'fixed_amount') {
-      finalPrice = Math.max(0, basePrice - appliedCoupon.discount_value)
+    if (appliedCoupon.discount_type === "percentage") {
+      finalPrice = basePrice * (1 - appliedCoupon.discount_value / 100);
+    } else if (appliedCoupon.discount_type === "fixed_amount") {
+      finalPrice = Math.max(0, basePrice - appliedCoupon.discount_value);
     }
   }
 
   const handleValidateCoupon = async () => {
-    if (!couponCode) return
+    if (!couponCode) return;
 
-    setValidatingCoupon(true)
+    setValidatingCoupon(true);
     try {
-      const res = await fetch('/api/coupons/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code: couponCode,
           organization_id: orgId,
         }),
-      })
+      });
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Invalid coupon')
+        const data = await res.json();
+        throw new Error(data.error || "Invalid coupon");
       }
 
-      const data = await res.json()
-      setAppliedCoupon(data.coupon)
+      const data = await res.json();
+      setAppliedCoupon(data.coupon);
 
-      toast.success('Coupon Applied', {
+      toast.success("Coupon Applied", {
         description: `${couponCode} has been applied`,
-      })
+      });
     } catch (err) {
-      toast.error('Invalid Coupon', {
-        description: err instanceof Error ? err.message : 'Coupon not found',
-      })
+      toast.error("Invalid Coupon", {
+        description: err instanceof Error ? err.message : "Coupon not found",
+      });
     } finally {
-      setValidatingCoupon(false)
+      setValidatingCoupon(false);
     }
-  }
+  };
 
   const handlePurchase = async () => {
     if (credits === 0) {
-      toast.error('Error', {
-        description: 'Please select a credit package',
-      })
-      return
+      toast.error("Error", {
+        description: "Please select a credit package",
+      });
+      return;
     }
 
-    setProcessing(true)
+    setProcessing(true);
 
     try {
-      // Create Stripe checkout session
-      const res = await fetch('/api/stripe/credits/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      // In production, integrate with Stripe or your payment provider
+      const res = await fetch(`/api/organizations/${orgId}/credits/purchase`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          organizationId: orgId,
-          packageId: useCustomAmount ? 'custom' : selectedPackage,
-          customAmount: useCustomAmount ? parseInt(customAmount) : undefined,
-          couponCode: appliedCoupon?.code,
+          credits,
+          price: finalPrice,
+          coupon_code: appliedCoupon?.code,
         }),
-      })
+      });
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to create checkout session')
+        const data = await res.json();
+        throw new Error(data.error || "Failed to purchase credits");
       }
 
-      const { url } = await res.json()
+      toast.success("Success", {
+        description: `${credits} credits have been added to your organization`,
+      });
 
-      // Redirect to Stripe checkout
-      if (url) {
-        window.location.href = url
-      } else {
-        throw new Error('No checkout URL returned')
-      }
+      setTimeout(() => {
+        router.push(`/dashboard/organizations/${orgId}`);
+      }, 1500);
     } catch (err) {
-      toast.error('Error', {
-        description: err instanceof Error ? err.message : 'Failed to start checkout',
-      })
-      setProcessing(false)
+      toast.error("Error", {
+        description:
+          err instanceof Error ? err.message : "Failed to purchase credits",
+      });
+      setProcessing(false);
     }
-  }
+  };
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
@@ -168,7 +176,9 @@ export default function PurchaseCreditsPage() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Organization
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight">Purchase Credits</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Purchase Credits
+          </h1>
           <p className="text-muted-foreground">
             Add credits to your organization for course enrollments
           </p>
@@ -187,13 +197,13 @@ export default function PurchaseCreditsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <RadioGroup
-                  value={useCustomAmount ? 'custom' : selectedPackage}
+                  value={useCustomAmount ? "custom" : selectedPackage}
                   onValueChange={(value) => {
-                    if (value === 'custom') {
-                      setUseCustomAmount(true)
+                    if (value === "custom") {
+                      setUseCustomAmount(true);
                     } else {
-                      setUseCustomAmount(false)
-                      setSelectedPackage(value)
+                      setUseCustomAmount(false);
+                      setSelectedPackage(value);
                     }
                   }}
                 >
@@ -212,11 +222,15 @@ export default function PurchaseCreditsPage() {
                           htmlFor={pkg.id}
                           className={`flex flex-col items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                             selectedPackage === pkg.id && !useCustomAmount
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border hover:border-primary/50'
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/50"
                           }`}
                         >
-                          <RadioGroupItem value={pkg.id} id={pkg.id} className="sr-only" />
+                          <RadioGroupItem
+                            value={pkg.id}
+                            id={pkg.id}
+                            className="sr-only"
+                          />
                           <Package className="h-8 w-8 text-primary" />
                           <div className="text-center">
                             <div className="font-semibold">{pkg.name}</div>
@@ -246,8 +260,8 @@ export default function PurchaseCreditsPage() {
                       htmlFor="custom"
                       className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                         useCustomAmount
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/50'
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
                       }`}
                     >
                       <RadioGroupItem value="custom" id="custom" />
@@ -286,7 +300,9 @@ export default function PurchaseCreditsPage() {
                   <Input
                     placeholder="Enter coupon code"
                     value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    onChange={(e) =>
+                      setCouponCode(e.target.value.toUpperCase())
+                    }
                     disabled={!!appliedCoupon}
                     className="font-mono"
                   />
@@ -294,8 +310,8 @@ export default function PurchaseCreditsPage() {
                     <Button
                       variant="outline"
                       onClick={() => {
-                        setAppliedCoupon(null)
-                        setCouponCode('')
+                        setAppliedCoupon(null);
+                        setCouponCode("");
                       }}
                     >
                       Remove
@@ -305,7 +321,7 @@ export default function PurchaseCreditsPage() {
                       onClick={handleValidateCoupon}
                       disabled={!couponCode || validatingCoupon}
                     >
-                      {validatingCoupon ? 'Validating...' : 'Apply'}
+                      {validatingCoupon ? "Validating..." : "Apply"}
                     </Button>
                   )}
                 </div>
@@ -313,8 +329,8 @@ export default function PurchaseCreditsPage() {
                   <div className="mt-3 flex items-center gap-2 text-sm text-green-600">
                     <CheckCircle2 className="h-4 w-4" />
                     <span>
-                      Coupon applied:{' '}
-                      {appliedCoupon.discount_type === 'percentage'
+                      Coupon applied:{" "}
+                      {appliedCoupon.discount_type === "percentage"
                         ? `${appliedCoupon.discount_value}% off`
                         : `$${appliedCoupon.discount_value} off`}
                     </span>
@@ -337,9 +353,14 @@ export default function PurchaseCreditsPage() {
                     <span className="font-medium">{credits}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Price per credit</span>
+                    <span className="text-muted-foreground">
+                      Price per credit
+                    </span>
                     <span className="font-medium">
-                      ${useCustomAmount ? '10.00' : (basePrice / credits).toFixed(2)}
+                      $
+                      {useCustomAmount
+                        ? "10.00"
+                        : (basePrice / credits).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -357,7 +378,9 @@ export default function PurchaseCreditsPage() {
                   <div className="border-t pt-2 mt-2">
                     <div className="flex justify-between">
                       <span className="font-semibold">Total</span>
-                      <span className="text-2xl font-bold">${finalPrice.toFixed(2)}</span>
+                      <span className="text-2xl font-bold">
+                        ${finalPrice.toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -369,7 +392,7 @@ export default function PurchaseCreditsPage() {
                   size="lg"
                 >
                   <Coins className="h-4 w-4 mr-2" />
-                  {processing ? 'Processing...' : `Purchase ${credits} Credits`}
+                  {processing ? "Processing..." : `Purchase ${credits} Credits`}
                 </Button>
 
                 <div className="text-xs text-muted-foreground text-center">
@@ -412,5 +435,5 @@ export default function PurchaseCreditsPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

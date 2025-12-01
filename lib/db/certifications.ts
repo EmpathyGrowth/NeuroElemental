@@ -7,8 +7,8 @@
  * need to be regenerated after migration is applied.
  */
 
-import { logger } from '@/lib/logging';
 import { internalError } from '@/lib/api';
+import { logger } from '@/lib/logging';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -75,10 +75,10 @@ export interface CertificationApplicationInsert {
 export class CertificationRepository {
   // Using generic SupabaseClient because certification_applications table
   // types need to be regenerated after migration is applied
-   
+
   private supabase: SupabaseClient<any>;
 
-   
+
   constructor(supabase?: SupabaseClient<any>) {
     if (supabase) {
       this.supabase = supabase;
@@ -412,6 +412,23 @@ export class CertificationRepository {
 
     const { data } = await query.maybeSingle();
     return !!data;
+  }
+
+  /**
+   * Get application count for a user
+   */
+  async getUserApplicationCount(userId: string): Promise<number> {
+    const { count, error } = await this.supabase
+      .from('certification_applications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    if (error) {
+      logger.error('Error counting user applications', error);
+      return 0;
+    }
+
+    return count || 0;
   }
 }
 

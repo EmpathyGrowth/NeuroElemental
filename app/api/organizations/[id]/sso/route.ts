@@ -91,7 +91,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(
       oauth_userinfo_url: data.oauth_userinfo_url,
       oauth_scopes: data.oauth_scopes || (data.provider_type === 'oidc' ? ['openid', 'profile', 'email'] : []),
       attribute_mapping: data.attribute_mapping,
-      metadata: data.metadata as import('@/lib/types/supabase').Json,
+      metadata: data.metadata,
     })
 
     if (!result.success || !result.provider) {

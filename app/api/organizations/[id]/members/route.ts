@@ -4,7 +4,7 @@
  */
 
 import { badRequestError, conflictError, createAuthenticatedRoute, forbiddenError, internalError, requireOrganizationAccess, successResponse, validateRequest } from '@/lib/api'
-import { getUserOrgRole, getOrganizationMembers, updateMemberRole, removeOrganizationMember, createOrganizationInvite, isEmailAlreadyMember, getSupabaseServer } from '@/lib/db'
+import { createOrganizationInvite, getOrganizationMembers, getUserOrgRole, isEmailAlreadyMember, organizationRepository, removeOrganizationMember, updateMemberRole, userRepository } from '@/lib/db'
 import { sendOrganizationInvitation } from '@/lib/email'
 import { logger } from '@/lib/logging'
 import { organizationMemberInviteSchema, organizationMemberUpdateSchema } from '@/lib/validation/schemas'
@@ -49,15 +49,13 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
   if (alreadyMember) throw conflictError('User is already a member')
 
   // Get organization name and inviter name for the email
-  const supabase = getSupabaseServer()
-
-  const [orgResult, profileResult] = await Promise.all([
-    supabase.from('organizations').select('name').eq('id', id).single(),
-    supabase.from('profiles').select('full_name').eq('id', user.id).single(),
+  const [org, profile] = await Promise.all([
+    organizationRepository.findById(id),
+    userRepository.findById(user.id),
   ])
 
-  const organizationName = (orgResult.data as { name: string } | null)?.name || 'Organization'
-  const inviterName = (profileResult.data as { full_name: string | null } | null)?.full_name || user.email || 'A team member'
+  const organizationName = org?.name || 'Organization'
+  const inviterName = profile?.full_name || user.email || 'A team member'
 
   // Create invitation
   const { data: invitation, error } = await createOrganizationInvite({

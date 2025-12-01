@@ -1,4 +1,4 @@
-import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { Facebook } from 'lucide-react';
 
 export function Footer() {
   const links = {
@@ -16,11 +16,12 @@ export function Footer() {
     ],
   };
 
-  const socialLinks = [
-    { icon: Facebook, href: '#', label: 'Facebook' },
-    { icon: Twitter, href: '#', label: 'Twitter' },
-    { icon: Instagram, href: '#', label: 'Instagram' },
-    { icon: Linkedin, href: '#', label: 'LinkedIn' },
+  // Social media links - add URLs when social accounts are created
+  const socialLinks: { icon: typeof Facebook; href: string; label: string }[] = [
+    // { icon: Facebook, href: 'https://facebook.com/neuroelemental', label: 'Facebook' },
+    // { icon: Twitter, href: 'https://twitter.com/neuroelemental', label: 'Twitter' },
+    // { icon: Instagram, href: 'https://instagram.com/neuroelemental', label: 'Instagram' },
+    // { icon: Linkedin, href: 'https://linkedin.com/company/neuroelemental', label: 'LinkedIn' },
   ];
 
   return (
@@ -43,21 +44,25 @@ export function Footer() {
               ))}
             </div>
 
-            <div className="flex space-x-4">
-              {socialLinks.map((social) => {
-                const Icon = social.icon;
-                return (
-                  <a
-                    key={social.label}
-                    href={social.href}
-                    aria-label={social.label}
-                    className="p-2 rounded-lg bg-primary/5 hover:bg-primary/10 text-primary transition-all hover:scale-110"
-                  >
-                    <Icon className="w-5 h-5" />
-                  </a>
-                );
-              })}
-            </div>
+            {socialLinks.length > 0 && (
+              <div className="flex space-x-4">
+                {socialLinks.map((social) => {
+                  const Icon = social.icon;
+                  return (
+                    <a
+                      key={social.label}
+                      href={social.href}
+                      aria-label={social.label}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded-lg bg-primary/5 hover:bg-primary/10 text-primary transition-all hover:scale-110"
+                    >
+                      <Icon className="w-5 h-5" />
+                    </a>
+                  );
+                })}
+              </div>
+            )}
 
             <div className="text-center space-y-4">
               <div className="flex flex-wrap justify-center gap-4">

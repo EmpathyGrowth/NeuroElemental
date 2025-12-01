@@ -71,8 +71,8 @@ class Logger {
         message: entry.message,
         timestamp: entry.timestamp,
         user_id: entry.user_id ?? null,
-        context: entry.context ?? null,
-        error: entry.error ? { name: entry.error.name, message: entry.error.message, stack: entry.stack } : null,
+        context: (entry.context ?? null) as unknown,
+        error: entry.error ? { name: entry.error.name, message: entry.error.message, stack: entry.stack } as unknown : null,
         stack: entry.stack ?? null,
         session_id: entry.session_id ?? null,
         browser: entry.browser ?? null,
@@ -81,7 +81,8 @@ class Logger {
       }));
       await this.supabase
         .from('logs')
-        .insert(dbBatch);
+         
+        .insert(dbBatch as any);
 
       // Also send critical errors to external service (e.g., Sentry)
       const criticalErrors = batch.filter(log => log.level === 'error' || log.level === 'fatal');
