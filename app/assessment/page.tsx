@@ -383,9 +383,10 @@ export default function AssessmentPage() {
 
                 <p>
                   Welcome to the NeuroElemental Assessment. This isn't just a
-                  personality test—it helps you identify your **Natural Wiring**
-                  (your neural 'Hardware'). Understanding your fixed energy
-                  pattern is the first step to finding your flow.
+                  personality test—it helps you identify your{" "}
+                  <strong className="text-primary">Natural Wiring</strong> (your
+                  neural 'Hardware'). Understanding your core energy baseline is
+                  the first step to finding your flow.
                 </p>
 
                 <p>
