@@ -373,7 +373,15 @@ export default function AssessmentPage() {
         );
       }
 
-      router.push(`/results?${queryParams.toString()}`);
+      const resultsUrl = `/results?${queryParams.toString()}`;
+
+      // Try router.push first, fallback to window.location
+      try {
+        router.push(resultsUrl);
+      } catch (navError) {
+        console.warn("Router push failed, using window.location:", navError);
+        window.location.href = resultsUrl;
+      }
     } catch (error) {
       console.error("Error submitting assessment:", error);
       logger.error("Error submitting assessment:", error as Error);

@@ -34,10 +34,13 @@ const assessmentSubmitSchema = z.object({
 
 export const POST = createOptionalAuthRoute(async (request, _context, user) => {
   const ip = request.headers.get("x-forwarded-for") || "unknown";
-  const { success } = rateLimit(ip, { limit: 5, windowMs: 60 * 1000 });
+  const { success } = rateLimit(ip, { limit: 20, windowMs: 60 * 1000 });
 
   if (!success) {
-    throw badRequestError("Too many requests. Please try again later.");
+    logger.warn("Assessment rate limit hit", { ip });
+    throw badRequestError(
+      "Too many requests. Please wait a minute and try again."
+    );
   }
 
   // Validate input
