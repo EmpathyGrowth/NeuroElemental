@@ -26,7 +26,6 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 /** Delay in ms before auto-advancing to next question */
@@ -69,10 +68,8 @@ const ELEMENT_EMOJIS: Record<ElementType, string> = {
 };
 
 export default function AssessmentPage() {
-  const router = useRouter();
   const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const hasAttemptedAutoFinish = useRef(false);
-  const latestAnswersRef = useRef<Record<number, number>>({});
+  const isSubmittingRef = useRef(false); // Prevent double submission
   const [showIntro, setShowIntro] = useState(true);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -132,7 +129,6 @@ export default function AssessmentPage() {
           );
 
           setAnswers(filteredAnswers);
-          latestAnswersRef.current = filteredAnswers; // Keep ref in sync
           setCurrentSectionIndex(validSectionIndex);
           setCurrentQuestionIndex(validQuestionIndex);
           setShowIntro(false);
@@ -147,12 +143,9 @@ export default function AssessmentPage() {
     }
   }, [validQuestionIds]);
 
-  // Keep ref in sync with state and save progress whenever answers change
+  // Save progress whenever answers change
   useEffect(() => {
     if (Object.keys(answers).length > 0) {
-      // Keep ref in sync with state
-      latestAnswersRef.current = answers;
-
       localStorage.setItem(
         "neuro_assessment_progress_v2",
         JSON.stringify({
@@ -178,19 +171,6 @@ export default function AssessmentPage() {
     answeredCount + 1,
     TOTAL_ALL_QUESTIONS
   );
-
-  // Auto-finish if all questions answered but somehow stuck (only try once)
-  useEffect(() => {
-    if (
-      answeredCount >= TOTAL_ALL_QUESTIONS &&
-      !isCalculating &&
-      !showIntro &&
-      !hasAttemptedAutoFinish.current
-    ) {
-      hasAttemptedAutoFinish.current = true;
-      finishAssessment();
-    }
-  }, [answeredCount, isCalculating, showIntro]);
 
   // Calculate current element balance for visual feedback (main questions only)
   const elementProgress = useMemo(() => {
@@ -231,10 +211,10 @@ export default function AssessmentPage() {
   const [emailCaptured, setEmailCaptured] = useState(false);
 
   const handleRating = (rating: number) => {
-    // Save the answer - update both state and ref
+    if (!currentQuestion) return;
+
     const newAnswers = { ...answers, [currentQuestion.id]: rating };
     setAnswers(newAnswers);
-    latestAnswersRef.current = newAnswers; // Keep ref in sync for immediate access
 
     // Check if we've reached 50% (18 main questions) and haven't captured email yet
     const mainAnswersCount = Object.keys(newAnswers).filter(
@@ -245,10 +225,22 @@ export default function AssessmentPage() {
       return; // Don't auto-advance, let them interact with modal
     }
 
-    // Auto-advance to next question
-    autoAdvanceTimeoutRef.current = setTimeout(() => {
-      moveToNextQuestion();
-    }, AUTO_ADVANCE_DELAY);
+    // Check if this is the last question - finish directly with new answers
+    const isLastQuestionInSection =
+      currentQuestionIndex >= currentSection.questions.length - 1;
+    const isLastSection = currentSectionIndex >= ALL_SECTIONS.length - 1;
+
+    if (isLastQuestionInSection && isLastSection) {
+      // Last question - submit directly with newAnswers (not relying on state)
+      autoAdvanceTimeoutRef.current = setTimeout(() => {
+        finishAssessment(newAnswers);
+      }, AUTO_ADVANCE_DELAY);
+    } else {
+      // Auto-advance to next question
+      autoAdvanceTimeoutRef.current = setTimeout(() => {
+        moveToNextQuestion();
+      }, AUTO_ADVANCE_DELAY);
+    }
   };
 
   const handleEmailSaved = (_email: string) => {
@@ -287,23 +279,23 @@ export default function AssessmentPage() {
     }
   };
 
-  const finishAssessment = async () => {
+  const finishAssessment = async (
+    answersToSubmit: Record<number, number> = answers
+  ) => {
+    // Prevent double submission
+    if (isSubmittingRef.current || isCalculating) return;
+    isSubmittingRef.current = true;
     setIsCalculating(true);
 
-    // Use ref for latest answers, fallback to state if ref is empty
-    const answersToSubmit =
-      Object.keys(latestAnswersRef.current).length > 0
-        ? latestAnswersRef.current
-        : answers;
-
     // Validate we have enough answers
-    if (Object.keys(answersToSubmit).length < 30) {
-      console.error(
-        "Not enough answers to submit:",
-        Object.keys(answersToSubmit).length
-      );
+    const answerCount = Object.keys(answersToSubmit).length;
+    if (answerCount < 30) {
+      console.error("Not enough answers to submit:", answerCount);
       setIsCalculating(false);
-      alert("Please answer all questions before submitting.");
+      isSubmittingRef.current = false;
+      alert(
+        `Please answer all questions before submitting. (${answerCount}/42)`
+      );
       return;
     }
 
@@ -375,18 +367,13 @@ export default function AssessmentPage() {
 
       const resultsUrl = `/results?${queryParams.toString()}`;
 
-      // Try router.push first, fallback to window.location
-      try {
-        router.push(resultsUrl);
-      } catch (navError) {
-        console.warn("Router push failed, using window.location:", navError);
-        window.location.href = resultsUrl;
-      }
+      // Navigate - use window.location for reliability
+      window.location.href = resultsUrl;
     } catch (error) {
       console.error("Error submitting assessment:", error);
       logger.error("Error submitting assessment:", error as Error);
       setIsCalculating(false);
-      // Show user-friendly error
+      isSubmittingRef.current = false;
       alert("Failed to submit assessment. Please try again.");
     }
   };
@@ -652,7 +639,7 @@ export default function AssessmentPage() {
 
                   {currentAnswer && (
                     <Button onClick={moveToNextQuestion} className="group">
-                      {currentSectionIndex === ASSESSMENT_SECTIONS.length - 1 &&
+                      {currentSectionIndex === ALL_SECTIONS.length - 1 &&
                       currentQuestionIndex ===
                         currentSection.questions.length - 1
                         ? "Finish"
@@ -730,7 +717,16 @@ export default function AssessmentPage() {
       {/* Email Capture Modal at 50% */}
       <EmailCaptureModal
         open={showEmailCapture}
-        onOpenChange={setShowEmailCapture}
+        onOpenChange={(open) => {
+          setShowEmailCapture(open);
+          // If modal closed without saving, still allow progress
+          if (!open && !emailCaptured) {
+            setEmailCaptured(true); // Mark as handled (skipped)
+            autoAdvanceTimeoutRef.current = setTimeout(() => {
+              moveToNextQuestion();
+            }, AUTO_ADVANCE_DELAY);
+          }
+        }}
         onEmailSaved={handleEmailSaved}
         answeredCount={
           Object.keys(answers).filter((id) => parseInt(id) <= 100).length
