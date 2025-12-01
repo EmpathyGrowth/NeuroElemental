@@ -72,6 +72,7 @@ export default function AssessmentPage() {
   const router = useRouter();
   const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasAttemptedAutoFinish = useRef(false);
+  const latestAnswersRef = useRef<Record<number, number>>({});
   const [showIntro, setShowIntro] = useState(true);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -131,6 +132,7 @@ export default function AssessmentPage() {
           );
 
           setAnswers(filteredAnswers);
+          latestAnswersRef.current = filteredAnswers; // Keep ref in sync
           setCurrentSectionIndex(validSectionIndex);
           setCurrentQuestionIndex(validQuestionIndex);
           setShowIntro(false);
@@ -226,9 +228,10 @@ export default function AssessmentPage() {
   const [emailCaptured, setEmailCaptured] = useState(false);
 
   const handleRating = (rating: number) => {
-    // Save the answer
+    // Save the answer - update both state and ref
     const newAnswers = { ...answers, [currentQuestion.id]: rating };
     setAnswers(newAnswers);
+    latestAnswersRef.current = newAnswers; // Keep ref in sync for immediate access
 
     // Check if we've reached 50% (18 main questions) and haven't captured email yet
     const mainAnswersCount = Object.keys(newAnswers).filter(
@@ -284,19 +287,27 @@ export default function AssessmentPage() {
   const finishAssessment = async () => {
     setIsCalculating(true);
 
+    // Use ref for latest answers (state might not have updated yet)
+    const answersToSubmit = latestAnswersRef.current;
+
     try {
       const response = await fetch("/api/assessment/submit", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ answers }),
+        body: JSON.stringify({ answers: answersToSubmit }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("Assessment submit failed:", data);
+        console.error(
+          "Assessment submit failed:",
+          data,
+          "Answer count:",
+          Object.keys(answersToSubmit).length
+        );
         throw new Error(data.error || "Failed to submit assessment");
       }
 
