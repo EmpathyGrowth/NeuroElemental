@@ -31,7 +31,7 @@ export default function ElementsPage() {
       name: "Electric",
       energyType: "Extroverted",
       description:
-        "Fun-seeking, adventurous, and driven by novelty and exploration. Electric types are eternal youth seekers who want to live life to the fullest and resist serious responsibilities.",
+        "Fun-seeking, adventurous, and driven by novelty and exploration. Electric types are eternally youthful adventure seekers who want to live life to the fullest and resist serious responsibilities.",
       gradient: "from-yellow-400 to-amber-500",
       bgColor: "bg-yellow-50",
       borderColor: "border-yellow-200",

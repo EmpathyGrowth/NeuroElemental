@@ -84,7 +84,7 @@ export default function FrameworkPage() {
       bgColor: "from-yellow-500/20 to-amber-500/20",
       borderColor: "border-yellow-500/30",
       description:
-        "Fun-seeking, adventurous energy. Electric types are eternal youth seekers who want to live life to the fullest, exploring the world and resisting serious responsibilities.",
+        "Fun-seeking, adventurous energy. Electric types are eternally youthful adventure seekers who want to live life to the fullest, exploring the world and resisting serious responsibilities.",
       motivation: "Fun, novelty, exploration, and living life to the fullest.",
       drain: "Monotony, serious responsibilities, and feeling trapped.",
       regeneration:

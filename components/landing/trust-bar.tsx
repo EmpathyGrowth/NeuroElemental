@@ -1,49 +1,51 @@
-"use client"
+"use client";
 
-import React, { useEffect, useState } from 'react'
-import { Shield, Users, Clock, TrendingUp, Award } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from "@/lib/utils";
+import { Award, Clock, Shield, TrendingUp, Users } from "lucide-react";
+import React, { useEffect, useState } from "react";
 
 interface TrustMetric {
-  icon: React.ComponentType<{ className?: string }>
-  value: string | number
-  label: string
-  isAnimated?: boolean
-  suffix?: string
+  icon: React.ComponentType<{ className?: string }>;
+  value: string | number;
+  label: string;
+  isAnimated?: boolean;
+  suffix?: string;
 }
 
 const TrustBar = ({ className }: { className?: string }) => {
   const metrics: TrustMetric[] = [
     {
       icon: Award,
-      value: "10",
+      value: "10+",
       label: "Years of Research",
-      suffix: " years"
+      suffix: "",
     },
     {
       icon: Users,
       value: "1000s",
-      label: "People Helped"
+      label: "People Helped",
     },
     {
       icon: Clock,
       value: 5,
       label: "Minutes to Complete",
-      suffix: " min"
+      suffix: " min",
     },
     {
       icon: Shield,
       value: "100%",
-      label: "Private & Secure"
-    }
-  ]
+      label: "Private & Secure",
+    },
+  ];
 
   return (
-    <div className={cn(
-      "w-full bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20",
-      "border-y border-purple-100 dark:border-purple-900/50",
-      className
-    )}>
+    <div
+      className={cn(
+        "w-full bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20",
+        "border-y border-purple-100 dark:border-purple-900/50",
+        className
+      )}
+    >
       <div className="container mx-auto px-4 py-4">
         <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
           {metrics.map((metric) => (
@@ -52,15 +54,15 @@ const TrustBar = ({ className }: { className?: string }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 const TrustMetricItem = ({
   icon: Icon,
   value,
   label,
   isAnimated,
-  suffix
+  suffix,
 }: TrustMetric) => {
   return (
     <div className="flex items-center gap-3 group">
@@ -70,10 +72,12 @@ const TrustMetricItem = ({
       </div>
       <div className="flex flex-col">
         <div className="flex items-baseline gap-1">
-          <span className={cn(
-            "text-2xl font-bold text-gray-900 dark:text-white",
-            isAnimated && "transition-all duration-500"
-          )}>
+          <span
+            className={cn(
+              "text-2xl font-bold text-gray-900 dark:text-white",
+              isAnimated && "transition-all duration-500"
+            )}
+          >
             {value}
           </span>
           {suffix && (
@@ -87,41 +91,45 @@ const TrustMetricItem = ({
         </span>
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Inline trust indicators for CTAs
-export const InlineTrust = ({ metric }: { metric: 'users' | 'time' | 'free' }) => {
+export const InlineTrust = ({
+  metric,
+}: {
+  metric: "users" | "time" | "free";
+}) => {
   const metrics = {
     users: { icon: Users, text: "1000s of users" },
     time: { icon: Clock, text: "5 minutes" },
-    free: { icon: Shield, text: "100% free" }
-  }
+    free: { icon: Shield, text: "100% free" },
+  };
 
-  const { icon: Icon, text } = metrics[metric]
+  const { icon: Icon, text } = metrics[metric];
 
   return (
     <span className="inline-flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
       <Icon className="w-4 h-4" />
       {text}
     </span>
-  )
-}
+  );
+};
 
 // Floating trust badge for sticky positioning
 export const FloatingTrustBadge = () => {
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsVisible(window.scrollY > 500)
-    }
+      setIsVisible(window.scrollY > 500);
+    };
 
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-  if (!isVisible) return null
+  if (!isVisible) return null;
 
   return (
     <div className="fixed bottom-4 left-4 z-40 animate-in slide-in-from-left-5 duration-300">
@@ -137,8 +145,8 @@ export const FloatingTrustBadge = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Trust section for landing page
 export const TrustSection = () => {
@@ -151,7 +159,8 @@ export const TrustSection = () => {
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             From neurodivergent individuals to mental health professionals,
-            thousands trust NeuroElemental to understand their unique energy patterns.
+            thousands trust NeuroElemental to understand their unique energy
+            patterns.
           </p>
         </div>
 
@@ -181,27 +190,29 @@ export const TrustSection = () => {
         <TrustBar />
       </div>
     </section>
-  )
-}
+  );
+};
 
 const TrustCard = ({
   icon: Icon,
   title,
-  description
+  description,
 }: {
-  icon: React.ComponentType<{ className?: string }>
-  title: string
-  description: string
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
 }) => {
   return (
     <div className="text-center group">
       <div className="inline-flex p-3 rounded-full bg-purple-100 dark:bg-purple-900/50 mb-4 group-hover:scale-110 transition-transform">
         <Icon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
       </div>
-      <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{title}</h3>
+      <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+        {title}
+      </h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
     </div>
-  )
-}
+  );
+};
 
-export default TrustBar
+export default TrustBar;

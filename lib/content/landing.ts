@@ -32,7 +32,7 @@ export const LANDING_CONTENT = {
     trust: ["100% Free Forever", "No Credit Card", "12,000+ Profiles Created"],
   },
   symptoms: {
-    title: "Sound Familiar?",
+    title: "Sound",
     highlight: "Familiar?",
     description:
       'Ever felt exhausted despite getting "enough" sleep? Like traditional advice just makes you feel worse? You\'re not broken—you might just be wired differently.',
@@ -48,7 +48,7 @@ export const LANDING_CONTENT = {
         icon: BrainIcon,
         title: "One-Size-Fits-All",
         description:
-          "Not designed for neurodivergent minds, ADHD, Autism, or diverse thinking styles.",
+          "Not designed for neurodivergent minds (i.e., ADHD, Autism, HSP) or diverse thinking styles.",
         gradient: "from-purple-500/20 to-indigo-500/20",
       },
       {
@@ -86,7 +86,7 @@ export const LANDING_CONTENT = {
         icon: BrainIcon,
         title: "Ignores Your State",
         description:
-          "Assumes you're always at your best, ignoring stress and burnout",
+          "Assumes you're always at your best, ignoring stress, overwhelm, and burnout",
       },
       {
         icon: FileQuestionIcon,

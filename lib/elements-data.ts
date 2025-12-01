@@ -78,7 +78,7 @@ export const elementsData: Record<string, ElementData> = {
     bgColor: "bg-yellow-50",
     glowColor: "rgba(251, 191, 36, 0.4)",
     overview: [
-      "Electric types are eternal youth seekers who want to live life to the fullest. They thrive on fun, novelty, thrilling experiences, and exploring the world.",
+      "Electric types are eternally youthful adventure seekers who want to live life to the fullest. They thrive on fun, novelty, thrilling experiences, and exploring the world.",
       "Characterized by quick thinking, playfulness, and an insatiable appetite for new adventures. They resist feeling trapped by serious responsibilities.",
       "When regenerated, Electric types bring contagious energy and optimism. When drained by monotony or heavy seriousness, they can become scattered or avoidant.",
     ],
