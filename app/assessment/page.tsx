@@ -308,6 +308,14 @@ export default function AssessmentPage() {
       return;
     }
 
+    console.warn(
+      "[Assessment Debug] Submitting",
+      answerCount,
+      "answers (cleaned from",
+      Object.keys(answersToSubmit).length,
+      ")"
+    );
+
     try {
       const response = await fetch("/api/assessment/submit", {
         method: "POST",
@@ -317,16 +325,26 @@ export default function AssessmentPage() {
         body: JSON.stringify({ answers: cleanedAnswers }),
       });
 
-      const data = await response.json();
+      // Handle non-JSON responses (like Vercel's WAF 403)
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType?.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.error(
+          "Non-JSON response:",
+          response.status,
+          text.substring(0, 200)
+        );
+        throw new Error(
+          `Server error (${response.status}). Please try again or contact support.`
+        );
+      }
 
       if (!response.ok) {
-        console.error(
-          "Assessment submit failed:",
-          data,
-          "Answer count:",
-          answerCount
-        );
-        throw new Error(data.error || "Failed to submit assessment");
+        console.error("Assessment submit failed:", response.status, data);
+        throw new Error(data.error || `Failed to submit (${response.status})`);
       }
 
       const { scores, patterns, validity } = data;
