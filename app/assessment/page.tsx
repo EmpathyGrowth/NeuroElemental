@@ -308,13 +308,18 @@ export default function AssessmentPage() {
       return;
     }
 
-    console.warn(
-      "[Assessment Debug] Submitting",
-      answerCount,
-      "answers (cleaned from",
-      Object.keys(answersToSubmit).length,
-      ")"
-    );
+    // Debug: show what IDs are being filtered
+    const inputIds = Object.keys(answersToSubmit)
+      .map(Number)
+      .sort((a, b) => a - b);
+    const removedIds = inputIds.filter((id) => !validQuestionIds.has(id));
+    console.warn("[Assessment Debug]", {
+      inputCount: inputIds.length,
+      outputCount: answerCount,
+      removedIds,
+      inputIds,
+      validIdsCount: validQuestionIds.size,
+    });
 
     try {
       const response = await fetch("/api/assessment/submit", {
