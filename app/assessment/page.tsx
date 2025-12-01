@@ -147,9 +147,12 @@ export default function AssessmentPage() {
     }
   }, [validQuestionIds]);
 
-  // Save progress whenever answers change
+  // Keep ref in sync with state and save progress whenever answers change
   useEffect(() => {
     if (Object.keys(answers).length > 0) {
+      // Keep ref in sync with state
+      latestAnswersRef.current = answers;
+
       localStorage.setItem(
         "neuro_assessment_progress_v2",
         JSON.stringify({
@@ -287,8 +290,22 @@ export default function AssessmentPage() {
   const finishAssessment = async () => {
     setIsCalculating(true);
 
-    // Use ref for latest answers (state might not have updated yet)
-    const answersToSubmit = latestAnswersRef.current;
+    // Use ref for latest answers, fallback to state if ref is empty
+    const answersToSubmit =
+      Object.keys(latestAnswersRef.current).length > 0
+        ? latestAnswersRef.current
+        : answers;
+
+    // Validate we have enough answers
+    if (Object.keys(answersToSubmit).length < 30) {
+      console.error(
+        "Not enough answers to submit:",
+        Object.keys(answersToSubmit).length
+      );
+      setIsCalculating(false);
+      alert("Please answer all questions before submitting.");
+      return;
+    }
 
     try {
       const response = await fetch("/api/assessment/submit", {
