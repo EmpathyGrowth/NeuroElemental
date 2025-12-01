@@ -1,27 +1,41 @@
-import { logger } from '@/lib/logging';
-import { Resend } from 'resend';
+import { logger } from "@/lib/logging";
+import type { Database, Json } from "@/lib/types/supabase";
+import type { JSXElementConstructor, ReactElement } from "react";
+import { Resend } from "resend";
 import type {
   CourseCompletionProps,
   PasswordResetProps,
   PaymentConfirmationProps,
   SessionReminderProps,
-  WelcomeEmailProps
-} from './templates';
+  WelcomeEmailProps,
+} from "./templates";
 import {
   CourseCompletionEmail,
   PasswordResetEmail,
   PaymentConfirmationEmail,
   SessionReminderEmail,
-  WelcomeEmail
-} from './templates';
-import type { Database, Json } from '@/lib/types/supabase';
-import type { ReactElement, JSXElementConstructor } from 'react';
+  WelcomeEmail,
+} from "./templates";
 
-type EmailComponent = ReactElement<unknown, string | JSXElementConstructor<unknown>>;
+type EmailComponent = ReactElement<
+  unknown,
+  string | JSXElementConstructor<unknown>
+>;
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy-initialized Resend client to avoid build-time errors
+let _resend: Resend | null = null;
 
-type ScheduledEmail = Database['public']['Tables']['scheduled_emails']['Row'];
+function getResend(): Resend {
+  if (!_resend) {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY is not defined in environment variables");
+    }
+    _resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return _resend;
+}
+
+type ScheduledEmail = Database["public"]["Tables"]["scheduled_emails"]["Row"];
 
 interface EmailResult {
   success: boolean;
@@ -30,8 +44,9 @@ interface EmailResult {
 }
 
 class EmailService {
-  private from = process.env.EMAIL_FROM || 'NeuroElemental <noreply@neuroelemental.com>';
-  private replyTo = process.env.EMAIL_REPLY_TO || 'support@neuroelemental.com';
+  private from =
+    process.env.EMAIL_FROM || "NeuroElemental <noreply@neuroelemental.com>";
+  private replyTo = process.env.EMAIL_REPLY_TO || "support@neuroelemental.com";
 
   private async sendEmail(
     to: string | string[],
@@ -40,7 +55,7 @@ class EmailService {
   ): Promise<EmailResult> {
     try {
       // Resend handles React components directly
-      const { data, error } = await resend.emails.send({
+      const { data, error } = await getResend().emails.send({
         from: this.from,
         to,
         subject,
@@ -49,22 +64,25 @@ class EmailService {
       });
 
       if (error) {
-        logger.error('Email send error:', error as Error);
+        logger.error("Email send error:", error as Error);
         return { success: false, error };
       }
 
-      logger.info('Email sent successfully:', data as unknown as Record<string, unknown>);
+      logger.info(
+        "Email sent successfully:",
+        data as unknown as Record<string, unknown>
+      );
       return { success: true, data };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      logger.error('Email service error:', err);
+      logger.error("Email service error:", err);
       return { success: false, error: err.message };
     }
   }
 
   async sendWelcomeEmail(
     email: string,
-    props: Omit<WelcomeEmailProps, 'email'>
+    props: Omit<WelcomeEmailProps, "email">
   ): Promise<EmailResult> {
     return this.sendEmail(
       email,
@@ -88,9 +106,9 @@ class EmailService {
     email: string,
     props: SessionReminderProps
   ): Promise<EmailResult> {
-    const timeStr = props.scheduledAt.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit'
+    const timeStr = props.scheduledAt.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
     });
     return this.sendEmail(
       email,
@@ -105,7 +123,7 @@ class EmailService {
   ): Promise<EmailResult> {
     return this.sendEmail(
       email,
-      'Reset Your NeuroElemental Password',
+      "Reset Your NeuroElemental Password",
       PasswordResetEmail(props) as EmailComponent
     );
   }
@@ -131,7 +149,7 @@ class EmailService {
       nextRetryDate?: Date;
     }
   ): Promise<EmailResult> {
-    const subject = 'Payment Failed - Action Required';
+    const subject = "Payment Failed - Action Required";
 
     // Create a simple HTML email for payment failure
     const html = `
@@ -142,9 +160,13 @@ class EmailService {
         <p>Invoice ID: ${props.invoiceId}</p>
         <p>Attempt: ${props.attemptCount}</p>
 
-        ${props.nextRetryDate ? `
+        ${
+          props.nextRetryDate
+            ? `
           <p>We will automatically retry on: <strong>${props.nextRetryDate.toLocaleDateString()}</strong></p>
-        ` : ''}
+        `
+            : ""
+        }
 
         <div style="margin: 30px 0;">
           <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing"
@@ -160,7 +182,7 @@ class EmailService {
     `;
 
     try {
-      const { data, error } = await resend.emails.send({
+      const { data, error } = await getResend().emails.send({
         from: this.from,
         to: email,
         subject,
@@ -169,14 +191,14 @@ class EmailService {
       });
 
       if (error) {
-        logger.error('Payment failed email error:', error as Error);
+        logger.error("Payment failed email error:", error as Error);
         return { success: false, error };
       }
 
       return { success: true, data };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      logger.error('Email service error:', err);
+      logger.error("Email service error:", err);
       return { success: false, error: err.message };
     }
   }
@@ -185,31 +207,42 @@ class EmailService {
   async sendBatchEmails(
     emails: Array<{
       to: string;
-      type: 'welcome' | 'payment' | 'session' | 'reset' | 'completion';
-      props: WelcomeEmailProps | PaymentConfirmationProps | SessionReminderProps | PasswordResetProps | CourseCompletionProps;
+      type: "welcome" | "payment" | "session" | "reset" | "completion";
+      props:
+        | WelcomeEmailProps
+        | PaymentConfirmationProps
+        | SessionReminderProps
+        | PasswordResetProps
+        | CourseCompletionProps;
     }>
   ): Promise<Array<EmailResult>> {
     const results = await Promise.allSettled(
       emails.map(({ to, type, props }) => {
         switch (type) {
-          case 'welcome':
+          case "welcome":
             return this.sendWelcomeEmail(to, props as WelcomeEmailProps);
-          case 'payment':
-            return this.sendPaymentConfirmation(to, props as PaymentConfirmationProps);
-          case 'session':
+          case "payment":
+            return this.sendPaymentConfirmation(
+              to,
+              props as PaymentConfirmationProps
+            );
+          case "session":
             return this.sendSessionReminder(to, props as SessionReminderProps);
-          case 'reset':
+          case "reset":
             return this.sendPasswordReset(to, props as PasswordResetProps);
-          case 'completion':
-            return this.sendCourseCompletion(to, props as CourseCompletionProps);
+          case "completion":
+            return this.sendCourseCompletion(
+              to,
+              props as CourseCompletionProps
+            );
           default:
             return Promise.reject(new Error(`Unknown email type: ${type}`));
         }
       })
     );
 
-    return results.map(result => {
-      if (result.status === 'fulfilled') {
+    return results.map((result) => {
+      if (result.status === "fulfilled") {
         return result.value;
       } else {
         return { success: false, error: result.reason };
@@ -227,20 +260,21 @@ class EmailService {
     try {
       // In production, this would integrate with a queue service
       // For now, we'll store in database and process with a cron job
-      const { createAdminClient } = await import('@/lib/supabase/admin');
+      const { createAdminClient } = await import("@/lib/supabase/admin");
       const supabase = createAdminClient();
 
-      type ScheduledEmailInsert = Database['public']['Tables']['scheduled_emails']['Insert'];
+      type ScheduledEmailInsert =
+        Database["public"]["Tables"]["scheduled_emails"]["Insert"];
       const insertData: ScheduledEmailInsert = {
         to,
         type,
         props,
         scheduled_for: scheduledFor.toISOString(),
-        status: 'pending'
+        status: "pending",
       };
 
       const { data, error } = await supabase
-        .from('scheduled_emails')
+        .from("scheduled_emails")
         .insert(insertData)
         .select()
         .single();
@@ -259,19 +293,22 @@ class EmailService {
   // Process scheduled emails (called by cron job)
   async processScheduledEmails(): Promise<void> {
     try {
-      const { createAdminClient } = await import('@/lib/supabase/admin');
+      const { createAdminClient } = await import("@/lib/supabase/admin");
       const supabase = createAdminClient();
 
       // Get pending emails scheduled for now or past
       const { data: emails, error } = await supabase
-        .from('scheduled_emails')
-        .select('*')
-        .eq('status', 'pending')
-        .lte('scheduled_for', new Date().toISOString())
+        .from("scheduled_emails")
+        .select("*")
+        .eq("status", "pending")
+        .lte("scheduled_for", new Date().toISOString())
         .limit(50);
 
       if (error) {
-        logger.error('Error fetching scheduled emails:', new Error(error.message));
+        logger.error(
+          "Error fetching scheduled emails:",
+          new Error(error.message)
+        );
         return;
       }
 
@@ -279,8 +316,10 @@ class EmailService {
         return;
       }
 
-      type ScheduledEmailRow = Database['public']['Tables']['scheduled_emails']['Row'];
-      type ScheduledEmailUpdate = Database['public']['Tables']['scheduled_emails']['Update'];
+      type ScheduledEmailRow =
+        Database["public"]["Tables"]["scheduled_emails"]["Row"];
+      type ScheduledEmailUpdate =
+        Database["public"]["Tables"]["scheduled_emails"]["Update"];
 
       // Process each email
       for (const email of emails as ScheduledEmailRow[]) {
@@ -289,52 +328,73 @@ class EmailService {
           const props = email.props as Record<string, unknown>;
 
           switch (email.type) {
-            case 'welcome':
-              result = await this.sendWelcomeEmail(email.to, props as unknown as Omit<WelcomeEmailProps, 'email'>);
+            case "welcome":
+              result = await this.sendWelcomeEmail(
+                email.to,
+                props as unknown as Omit<WelcomeEmailProps, "email">
+              );
               break;
-            case 'payment':
-              result = await this.sendPaymentConfirmation(email.to, props as unknown as PaymentConfirmationProps);
+            case "payment":
+              result = await this.sendPaymentConfirmation(
+                email.to,
+                props as unknown as PaymentConfirmationProps
+              );
               break;
-            case 'session':
-              result = await this.sendSessionReminder(email.to, props as unknown as SessionReminderProps);
+            case "session":
+              result = await this.sendSessionReminder(
+                email.to,
+                props as unknown as SessionReminderProps
+              );
               break;
-            case 'reset':
-              result = await this.sendPasswordReset(email.to, props as unknown as PasswordResetProps);
+            case "reset":
+              result = await this.sendPasswordReset(
+                email.to,
+                props as unknown as PasswordResetProps
+              );
               break;
-            case 'completion':
-              result = await this.sendCourseCompletion(email.to, props as unknown as CourseCompletionProps);
+            case "completion":
+              result = await this.sendCourseCompletion(
+                email.to,
+                props as unknown as CourseCompletionProps
+              );
               break;
             default:
-              result = { success: false, error: `Unknown email type: ${email.type}` };
+              result = {
+                success: false,
+                error: `Unknown email type: ${email.type}`,
+              };
           }
 
           // Update email status
           const updateData: ScheduledEmailUpdate = {
-            status: result.success ? 'sent' : 'failed',
+            status: result.success ? "sent" : "failed",
             sent_at: result.success ? new Date().toISOString() : null,
-            error: typeof result.error === 'string' ? result.error : (result.error?.message || null)
+            error:
+              typeof result.error === "string"
+                ? result.error
+                : result.error?.message || null,
           };
           await supabase
-            .from('scheduled_emails')
+            .from("scheduled_emails")
             .update(updateData)
-            .eq('id', email.id);
+            .eq("id", email.id);
         } catch (error) {
           const err = error instanceof Error ? error : new Error(String(error));
           logger.error(`Error processing email ${email.id}:`, err);
 
           const failedUpdate: ScheduledEmailUpdate = {
-            status: 'failed',
-            error: err.message
+            status: "failed",
+            error: err.message,
           };
           await supabase
-            .from('scheduled_emails')
+            .from("scheduled_emails")
             .update(failedUpdate)
-            .eq('id', email.id);
+            .eq("id", email.id);
         }
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      logger.error('Error in processScheduledEmails:', err);
+      logger.error("Error in processScheduledEmails:", err);
     }
   }
 
@@ -349,18 +409,19 @@ class EmailService {
     }
   ): Promise<EmailResult> {
     try {
-      const { createAdminClient } = await import('@/lib/supabase/admin');
+      const { createAdminClient } = await import("@/lib/supabase/admin");
       const supabase = createAdminClient();
 
-      type EmailPrefsInsert = Database['public']['Tables']['email_preferences']['Insert'];
+      type EmailPrefsInsert =
+        Database["public"]["Tables"]["email_preferences"]["Insert"];
       const insertData: EmailPrefsInsert = {
         user_id: userId,
         ...preferences,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       const { data, error } = await supabase
-        .from('email_preferences')
+        .from("email_preferences")
         .upsert(insertData)
         .select()
         .single();
@@ -378,24 +439,29 @@ class EmailService {
 
   async checkEmailPreferences(
     userId: string,
-    emailType: 'marketing' | 'course_updates' | 'session_reminders' | 'payment_receipts'
+    emailType:
+      | "marketing"
+      | "course_updates"
+      | "session_reminders"
+      | "payment_receipts"
   ): Promise<boolean> {
     try {
-      const { createAdminClient } = await import('@/lib/supabase/admin');
+      const { createAdminClient } = await import("@/lib/supabase/admin");
       const supabase = createAdminClient();
 
-      type EmailPrefsRow = Database['public']['Tables']['email_preferences']['Row'];
+      type EmailPrefsRow =
+        Database["public"]["Tables"]["email_preferences"]["Row"];
       const { data } = await supabase
-        .from('email_preferences')
+        .from("email_preferences")
         .select(emailType)
-        .eq('user_id', userId)
+        .eq("user_id", userId)
         .maybeSingle();
 
       const row = data as EmailPrefsRow | null;
       return row?.[emailType] !== false; // Default to true if not found
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      logger.error('Error checking email preferences:', err);
+      logger.error("Error checking email preferences:", err);
       return true; // Default to sending if error
     }
   }
@@ -406,9 +472,10 @@ export const emailService = new EmailService();
 
 // Export types
 export type {
-  CourseCompletionProps, EmailResult, PasswordResetProps, PaymentConfirmationProps,
-  SessionReminderProps, WelcomeEmailProps
+  CourseCompletionProps,
+  EmailResult,
+  PasswordResetProps,
+  PaymentConfirmationProps,
+  SessionReminderProps,
+  WelcomeEmailProps,
 };
-
-
-
