@@ -7,6 +7,7 @@
  * to better reflect its purpose as a network boundary layer
  */
 
+import { createServerClient } from "@supabase/ssr";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
@@ -290,6 +291,38 @@ async function checkMaintenanceMode(
 }
 
 /**
+ * Refresh Supabase auth session
+ * This ensures auth tokens are refreshed on every request
+ */
+async function refreshSupabaseSession(
+  request: NextRequest,
+  response: NextResponse
+) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value);
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+
+  // This refreshes the session if expired
+  await supabase.auth.getUser();
+
+  return response;
+}
+
+/**
  * Next.js 16 Proxy function (renamed from middleware)
  * Handles request interception at the network boundary
  */
@@ -361,7 +394,14 @@ export async function proxy(request: NextRequest) {
   }
 
   // Add rate limit headers to response
-  const response = NextResponse.next();
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
+  // Refresh Supabase auth session
+  response = await refreshSupabaseSession(request, response);
 
   // Add security headers
   response.headers.set(
