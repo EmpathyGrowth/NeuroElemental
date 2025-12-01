@@ -287,8 +287,17 @@ export default function AssessmentPage() {
     isSubmittingRef.current = true;
     setIsCalculating(true);
 
+    // Filter to only valid question IDs (remove stale data from old versions)
+    const cleanedAnswers: Record<number, number> = {};
+    Object.entries(answersToSubmit).forEach(([id, value]) => {
+      const numId = parseInt(id);
+      if (validQuestionIds.has(numId)) {
+        cleanedAnswers[numId] = value as number;
+      }
+    });
+
     // Validate we have enough answers
-    const answerCount = Object.keys(answersToSubmit).length;
+    const answerCount = Object.keys(cleanedAnswers).length;
     if (answerCount < 30) {
       console.error("Not enough answers to submit:", answerCount);
       setIsCalculating(false);
@@ -305,7 +314,7 @@ export default function AssessmentPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ answers: answersToSubmit }),
+        body: JSON.stringify({ answers: cleanedAnswers }),
       });
 
       const data = await response.json();
@@ -315,7 +324,7 @@ export default function AssessmentPage() {
           "Assessment submit failed:",
           data,
           "Answer count:",
-          Object.keys(answersToSubmit).length
+          answerCount
         );
         throw new Error(data.error || "Failed to submit assessment");
       }
