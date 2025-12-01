@@ -153,7 +153,9 @@ function validateCsrf(request: NextRequest): boolean {
     pathname.includes("/webhook") ||
     pathname.startsWith("/api/stripe/webhook") ||
     pathname.startsWith("/api/billing/webhook") ||
-    pathname.startsWith("/api/cron/")
+    pathname.startsWith("/api/cron/") ||
+    pathname.startsWith("/api/assessment/") ||
+    pathname.startsWith("/api/waitlist")
   ) {
     return true;
   }
