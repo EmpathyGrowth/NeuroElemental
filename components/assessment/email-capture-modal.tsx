@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Mail, Sparkles, CheckCircle, X } from 'lucide-react';
-import { logger } from '@/lib/logging';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { logger } from "@/lib/logging";
+import { Mail, X } from "lucide-react";
+import { useState } from "react";
 
 interface EmailCaptureModalProps {
   open: boolean;
@@ -33,7 +33,7 @@ export function EmailCaptureModal({
   answeredCount,
   totalCount,
 }: EmailCaptureModalProps) {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,9 +43,9 @@ export function EmailCaptureModal({
     setSaving(true);
     try {
       // Save email for results delivery
-      const response = await fetch('/api/assessment/save-progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/assessment/save-progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
 
@@ -54,7 +54,7 @@ export function EmailCaptureModal({
         onOpenChange(false);
       }
     } catch (error) {
-      logger.error('Failed to save email:', error as Error);
+      logger.error("Failed to save email:", error as Error);
     } finally {
       setSaving(false);
     }
@@ -79,47 +79,22 @@ export function EmailCaptureModal({
 
         <DialogHeader>
           <div className="flex items-center justify-center mb-4">
-            <div className="relative">
-              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center">
-                <Sparkles className="h-8 w-8 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1 bg-green-500 rounded-full px-2 py-0.5 text-xs font-bold text-white">
-                {progress}%
-              </div>
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Mail className="h-6 w-6 text-primary" />
             </div>
           </div>
-          <DialogTitle className="text-center text-2xl">You're Halfway There! 🎉</DialogTitle>
-          <DialogDescription className="text-center">
-            Save your progress and get your complete Energy Profile emailed to you
+          <DialogTitle className="text-center text-xl">
+            Want a copy of your results?
+          </DialogTitle>
+          <DialogDescription className="text-center text-base">
+            Enter your email to receive your full profile when you finish.
+            <span className="block mt-1 text-muted-foreground/80">
+              (You're {progress}% done - this is optional)
+            </span>
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Benefits */}
-          <div className="space-y-2 bg-primary/5 p-4 rounded-lg border border-primary/20">
-            <p className="text-sm font-semibold text-foreground mb-2">
-              What you'll get:
-            </p>
-            <div className="space-y-1.5">
-              <div className="flex items-start gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                <span>Full Element Profile PDF (worth $27)</span>
-              </div>
-              <div className="flex items-start gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                <span>7-day Energy Mastery email course</span>
-              </div>
-              <div className="flex items-start gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                <span>Personalized regeneration strategies</span>
-              </div>
-              <div className="flex items-start gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                <span>Save progress (resume anytime)</span>
-              </div>
-            </div>
-          </div>
-
           {/* Email Form */}
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-2">
@@ -140,7 +115,7 @@ export function EmailCaptureModal({
             </div>
 
             <Button type="submit" className="w-full" disabled={saving}>
-              {saving ? 'Saving...' : 'Save Progress & Continue'}
+              {saving ? "Saving..." : "Send me my results"}
             </Button>
           </form>
 
@@ -150,12 +125,12 @@ export function EmailCaptureModal({
             onClick={handleSkip}
             className="w-full text-muted-foreground hover:text-foreground"
           >
-            Continue without email (you can still see results)
+            Skip for now
           </Button>
 
           {/* Trust */}
           <p className="text-xs text-muted-foreground text-center">
-            🔒 Zero spam. 14,000+ subscribers. Unsubscribe anytime.
+            🔒 No spam, unsubscribe anytime
           </p>
         </div>
       </DialogContent>
