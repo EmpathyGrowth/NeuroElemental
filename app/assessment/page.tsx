@@ -293,12 +293,19 @@ export default function AssessmentPage() {
         body: JSON.stringify({ answers }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to submit assessment");
+        console.error("Assessment submit failed:", data);
+        throw new Error(data.error || "Failed to submit assessment");
       }
 
-      const data = await response.json();
       const { scores, patterns, validity } = data;
+
+      if (!scores) {
+        console.error("No scores in response:", data);
+        throw new Error("Invalid response from server");
+      }
 
       // Clear saved progress on successful completion
       localStorage.removeItem("neuro_assessment_progress_v2");
@@ -324,18 +331,27 @@ export default function AssessmentPage() {
         queryParams.append("validityWarning", "true");
       }
 
-      // Celebrate assessment completion with confetti
-      const { celebrateAssessmentComplete, celebrateWithMotionCheck } =
-        await import("@/lib/utils/celebrations");
-      celebrateWithMotionCheck(celebrateAssessmentComplete);
-
-      // Small delay to show confetti before navigation
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      // Celebrate assessment completion with confetti (wrapped in try-catch)
+      try {
+        const { celebrateAssessmentComplete, celebrateWithMotionCheck } =
+          await import("@/lib/utils/celebrations");
+        celebrateWithMotionCheck(celebrateAssessmentComplete);
+        // Small delay to show confetti before navigation
+        await new Promise((resolve) => setTimeout(resolve, 800));
+      } catch (confettiError) {
+        console.warn(
+          "Confetti failed, continuing with redirect:",
+          confettiError
+        );
+      }
 
       router.push(`/results?${queryParams.toString()}`);
     } catch (error) {
+      console.error("Error submitting assessment:", error);
       logger.error("Error submitting assessment:", error as Error);
       setIsCalculating(false);
+      // Show user-friendly error
+      alert("Failed to submit assessment. Please try again.");
     }
   };
 
