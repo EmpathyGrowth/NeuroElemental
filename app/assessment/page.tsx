@@ -86,6 +86,15 @@ export default function AssessmentPage() {
     };
   }, []);
 
+  // Valid question IDs (main: 1-36, validity: 101-106)
+  const validQuestionIds = useMemo(() => {
+    const ids = new Set<number>();
+    ALL_SECTIONS.forEach((section) => {
+      section.questions.forEach((q) => ids.add(q.id));
+    });
+    return ids;
+  }, []);
+
   // Load saved progress on mount
   useEffect(() => {
     const saved = localStorage.getItem("neuro_assessment_progress_v2");
@@ -101,9 +110,28 @@ export default function AssessmentPage() {
         const daysSinceLastSave =
           (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
         if (daysSinceLastSave < 7) {
-          setAnswers(savedAnswers);
-          setCurrentSectionIndex(sectionIndex);
-          setCurrentQuestionIndex(questionIndex);
+          // Filter out invalid answer IDs from old progress
+          const filteredAnswers: Record<number, number> = {};
+          Object.entries(savedAnswers).forEach(([id, value]) => {
+            const numId = parseInt(id);
+            if (validQuestionIds.has(numId)) {
+              filteredAnswers[numId] = value as number;
+            }
+          });
+
+          // Validate section/question indices
+          const validSectionIndex = Math.min(
+            sectionIndex,
+            ALL_SECTIONS.length - 1
+          );
+          const validQuestionIndex = Math.min(
+            questionIndex,
+            ALL_SECTIONS[validSectionIndex]?.questions.length - 1 || 0
+          );
+
+          setAnswers(filteredAnswers);
+          setCurrentSectionIndex(validSectionIndex);
+          setCurrentQuestionIndex(validQuestionIndex);
           setShowIntro(false);
         } else {
           localStorage.removeItem("neuro_assessment_progress_v2");
@@ -111,9 +139,10 @@ export default function AssessmentPage() {
       } catch (e: unknown) {
         const err = e instanceof Error ? e : new Error(String(e));
         logger.error("Failed to restore progress:", err);
+        localStorage.removeItem("neuro_assessment_progress_v2");
       }
     }
-  }, []);
+  }, [validQuestionIds]);
 
   // Save progress whenever answers change
   useEffect(() => {
@@ -135,8 +164,21 @@ export default function AssessmentPage() {
 
   // Calculate overall progress (using all questions including validity)
   const answeredCount = Object.keys(answers).length;
-  const progress = (answeredCount / TOTAL_ALL_QUESTIONS) * 100;
+  const progress = Math.min(100, (answeredCount / TOTAL_ALL_QUESTIONS) * 100);
   const isValiditySection = currentSectionIndex === ALL_SECTIONS.length - 1;
+
+  // Current question number for display (capped at total)
+  const displayQuestionNumber = Math.min(
+    answeredCount + 1,
+    TOTAL_ALL_QUESTIONS
+  );
+
+  // Auto-finish if all questions answered but somehow stuck
+  useEffect(() => {
+    if (answeredCount >= TOTAL_ALL_QUESTIONS && !isCalculating && !showIntro) {
+      finishAssessment();
+    }
+  }, [answeredCount, isCalculating, showIntro]);
 
   // Calculate current element balance for visual feedback (main questions only)
   const elementProgress = useMemo(() => {
@@ -454,7 +496,7 @@ export default function AssessmentPage() {
               <Progress value={progress} className="h-2" />
               <div className="flex justify-between items-center">
                 <p className="text-xs text-muted-foreground">
-                  Question {answeredCount + 1} of {TOTAL_ALL_QUESTIONS}
+                  Question {displayQuestionNumber} of {TOTAL_ALL_QUESTIONS}
                 </p>
                 {topEmergingElement &&
                   answeredCount >= 6 &&
