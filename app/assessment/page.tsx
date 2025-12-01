@@ -71,6 +71,7 @@ const ELEMENT_EMOJIS: Record<ElementType, string> = {
 export default function AssessmentPage() {
   const router = useRouter();
   const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasAttemptedAutoFinish = useRef(false);
   const [showIntro, setShowIntro] = useState(true);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -173,9 +174,15 @@ export default function AssessmentPage() {
     TOTAL_ALL_QUESTIONS
   );
 
-  // Auto-finish if all questions answered but somehow stuck
+  // Auto-finish if all questions answered but somehow stuck (only try once)
   useEffect(() => {
-    if (answeredCount >= TOTAL_ALL_QUESTIONS && !isCalculating && !showIntro) {
+    if (
+      answeredCount >= TOTAL_ALL_QUESTIONS &&
+      !isCalculating &&
+      !showIntro &&
+      !hasAttemptedAutoFinish.current
+    ) {
+      hasAttemptedAutoFinish.current = true;
       finishAssessment();
     }
   }, [answeredCount, isCalculating, showIntro]);

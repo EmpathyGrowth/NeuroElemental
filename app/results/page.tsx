@@ -658,9 +658,23 @@ function getBurnoutRisk(
   return "low";
 }
 
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-r from-primary to-purple-500 animate-pulse" />
+        <h2 className="text-xl font-semibold text-foreground">
+          Loading Your Results...
+        </h2>
+        <p className="text-muted-foreground">Preparing your energy profile</p>
+      </div>
+    </div>
+  );
+}
+
 export default function ResultsPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<LoadingFallback />}>
       <ResultsContent />
     </Suspense>
   );
