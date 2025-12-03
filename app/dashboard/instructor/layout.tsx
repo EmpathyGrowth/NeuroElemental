@@ -2,9 +2,9 @@
 
 import { DashboardTopbar } from "@/components/dashboard/dashboard-topbar";
 import {
-  InstructorSidebar,
-  MobileInstructorSidebar,
-} from "@/components/dashboard/instructor-sidebar";
+  SharedDashboardSidebar,
+  MobileSharedSidebar,
+} from "@/components/dashboard/shared-sidebar";
 import { useState } from "react";
 
 export default function InstructorLayout({
@@ -16,12 +16,13 @@ export default function InstructorLayout({
 
   return (
     <div className="flex min-h-screen">
-      <InstructorSidebar />
+      <SharedDashboardSidebar role="instructor" />
       <div className="flex-1 flex flex-col min-w-0">
         <DashboardTopbar onMenuClick={() => setMobileMenuOpen(true)} />
         <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
       </div>
-      <MobileInstructorSidebar
+      <MobileSharedSidebar
+        role="instructor"
         open={mobileMenuOpen}
         onOpenChange={setMobileMenuOpen}
       />

@@ -25,6 +25,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { logger } from "@/lib/logging";
 import { Loader2, Navigation, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { DragDropList, DragHandle, updateDisplayOrder } from "@/components/ui/drag-drop-list";
 
 interface NavMenu {
   id: string;
@@ -141,6 +142,38 @@ export default function NavigationPage() {
       fetchData();
     } catch {
       toast({ title: "Error", variant: "destructive" });
+    }
+  };
+
+  const handleReorderItems = async (menuId: string, reorderedItems: NavItem[]) => {
+    // Update local state immediately for responsive UI
+    const updatedItems = updateDisplayOrder(reorderedItems);
+    setItems((prev) => {
+      const otherItems = prev.filter((i) => i.menu_id !== menuId);
+      return [...otherItems, ...updatedItems];
+    });
+
+    // Persist to API
+    try {
+      await fetch("/api/admin/navigation/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: updatedItems.map((item) => ({
+            id: item.id,
+            display_order: item.display_order,
+          })),
+        }),
+      });
+      toast({ title: "Order updated" });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to save order",
+        variant: "destructive",
+      });
+      // Revert on error
+      fetchData();
     }
   };
 
@@ -303,36 +336,36 @@ export default function NavigationPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  {items
-                    .filter((i) => i.menu_id === menu.id)
-                    .map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between p-2 rounded bg-muted/50"
-                      >
-                        <span className="text-sm">{item.label}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">
-                            {item.url}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => handleDeleteItem(item.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
+                {items.filter((i) => i.menu_id === menu.id).length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No items in this menu
+                  </p>
+                ) : (
+                  <DragDropList
+                    items={items
+                      .filter((i) => i.menu_id === menu.id)
+                      .sort((a, b) => a.display_order - b.display_order)}
+                    keyField="id"
+                    onReorder={(reordered) => handleReorderItems(menu.id, reordered)}
+                    renderItem={({ item, dragHandleProps }) => (
+                      <div className="flex items-center gap-2 p-2 rounded bg-muted/50">
+                        <DragHandle {...dragHandleProps} />
+                        <span className="text-sm flex-1">{item.label}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {item.url}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => handleDeleteItem(item.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
-                    ))}
-                  {items.filter((i) => i.menu_id === menu.id).length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No items in this menu
-                    </p>
-                  )}
-                </div>
+                    )}
+                  />
+                )}
               </CardContent>
             </Card>
           ))}

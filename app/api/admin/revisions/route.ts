@@ -6,6 +6,7 @@
 import { badRequestError, createAdminRoute, successResponse } from "@/lib/api";
 import {
   contentRevisionsRepository,
+  getRevisions,
   RevisionContentType,
 } from "@/lib/db/content-revisions";
 
@@ -16,56 +17,60 @@ const VALID_CONTENT_TYPES = [
   "footer_content",
   "blog_post",
   "navigation",
+  "course",
+  "testimonial",
 ];
 
 /**
  * GET /api/admin/revisions
  * Get revisions for specific content or recent revisions
+ * Supports both legacy (contentType/contentId) and new (entityType/entityId) params
  */
 export const GET = createAdminRoute(async (request) => {
   const url = new URL(request.url);
-  const contentType = url.searchParams.get(
-    "contentType"
-  ) as RevisionContentType;
+  
+  // Support both legacy and new parameter names
+  const contentType = url.searchParams.get("contentType") as RevisionContentType;
   const contentId = url.searchParams.get("contentId");
+  const entityType = url.searchParams.get("entityType");
+  const entityId = url.searchParams.get("entityId");
   const version = url.searchParams.get("version");
   const limit = parseInt(url.searchParams.get("limit") || "50", 10);
 
+  // Use new params if provided, fall back to legacy
+  const type = entityType || contentType;
+  const id = entityId || contentId;
+
   // Get recent revisions across all content
-  if (!contentType && !contentId) {
-    const revisions =
-      await contentRevisionsRepository.getRecentRevisions(limit);
+  if (!type && !id) {
+    const revisions = await contentRevisionsRepository.getRecentRevisions(limit);
     return successResponse({ revisions });
   }
 
   // Validate content type
-  if (!contentType || !VALID_CONTENT_TYPES.includes(contentType)) {
-    throw badRequestError("Invalid contentType");
+  if (!type || !VALID_CONTENT_TYPES.includes(type)) {
+    throw badRequestError("Invalid contentType or entityType");
   }
 
-  // Get specific version
-  if (contentId && version) {
+  // Get specific version (legacy support)
+  if (id && version) {
     const revision = await contentRevisionsRepository.getRevision(
-      contentType,
-      contentId,
+      type as RevisionContentType,
+      id,
       parseInt(version, 10)
     );
     return successResponse({ revision });
   }
 
   // Get all revisions for content
-  if (contentId) {
-    const revisions = await contentRevisionsRepository.getRevisions(
-      contentType,
-      contentId,
-      limit
-    );
+  if (id) {
+    const revisions = await getRevisions(type, id, limit);
     const count = await contentRevisionsRepository.getRevisionCount(
-      contentType,
-      contentId
+      type as RevisionContentType,
+      id
     );
     return successResponse({ revisions, count });
   }
 
-  throw badRequestError("contentId required");
+  throw badRequestError("contentId or entityId required");
 });

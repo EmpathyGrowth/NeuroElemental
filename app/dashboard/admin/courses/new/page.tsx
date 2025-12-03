@@ -22,7 +22,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logging';
 import { LazyWYSIWYG } from '@/components/editor/lazy-wysiwyg';
-import { ImageUpload } from '@/components/forms/image-upload';
+import { BaseFileUpload } from '@/components/forms/base-file-upload';
 
 const categories = [
   'Energy Management',
@@ -304,11 +304,14 @@ export default function NewCoursePage() {
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label>Thumbnail Image</Label>
-              <ImageUpload
+              <BaseFileUpload
+                config={{
+                  type: "image",
+                  aspectRatio: "16:9",
+                  onUpload: (url) => setThumbnailUrl(url || ''),
+                }}
                 value={thumbnailUrl}
-                onChange={(url) => setThumbnailUrl(url || '')}
                 category="courses"
-                aspectRatio="video"
                 placeholder="Upload course thumbnail"
               />
               <p className="text-xs text-muted-foreground">

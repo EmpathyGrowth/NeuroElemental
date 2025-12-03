@@ -77,19 +77,24 @@ export function StreakDisplay({ className, variant = 'card' }: StreakDisplayProp
   const currentStreak = streak.current_streak || 0;
   const longestStreak = streak.longest_streak || 0;
   const isOnStreak = currentStreak > 0;
+  // Requirements 9.2: Show prominently when streak >= 3
+  const isProminentStreak = currentStreak >= 3;
 
   // Inline variant for compact display
+  // Requirements 9.2: Show flame icon prominently when streak >= 3
   if (variant === 'inline') {
     return (
       <div className={cn('flex items-center gap-2', className)}>
         <div className={cn(
           'flex items-center gap-1.5 px-2.5 py-1 rounded-full',
-          isOnStreak
+          isProminentStreak
             ? 'bg-gradient-to-r from-orange-500/10 to-red-500/10 text-orange-500'
+            : isOnStreak
+            ? 'bg-muted/50 text-muted-foreground'
             : 'bg-muted text-muted-foreground'
         )}>
-          <Flame className={cn('w-4 h-4', isOnStreak && 'animate-pulse')} />
-          <span className="text-sm font-semibold">{currentStreak}</span>
+          <Flame className={cn('w-4 h-4', isProminentStreak && 'animate-pulse')} />
+          <span className={cn('text-sm', isProminentStreak ? 'font-bold' : 'font-semibold')}>{currentStreak}</span>
           <span className="text-xs">day{currentStreak !== 1 && 's'}</span>
         </div>
       </div>
@@ -97,27 +102,32 @@ export function StreakDisplay({ className, variant = 'card' }: StreakDisplayProp
   }
 
   // Compact variant for smaller cards
+  // Requirements 9.2: Show flame icon prominently when streak >= 3
   if (variant === 'compact') {
     return (
       <div className={cn(
         'flex items-center justify-between p-4 rounded-lg border',
-        isOnStreak
+        isProminentStreak
           ? 'bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20'
+          : isOnStreak
+          ? 'bg-muted/50 border-border'
           : 'bg-muted border-border',
         className
       )}>
         <div className="flex items-center gap-3">
           <div className={cn(
             'p-2.5 rounded-full',
-            isOnStreak
+            isProminentStreak
               ? 'bg-gradient-to-br from-orange-500 to-red-500 text-white'
+              : isOnStreak
+              ? 'bg-muted-foreground/30 text-muted-foreground'
               : 'bg-muted-foreground/20 text-muted-foreground'
           )}>
-            <Flame className={cn('w-5 h-5', isOnStreak && 'animate-pulse')} />
+            <Flame className={cn('w-5 h-5', isProminentStreak && 'animate-pulse')} />
           </div>
           <div>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold">{currentStreak}</span>
+              <span className={cn('text-2xl', isProminentStreak ? 'font-bold' : 'font-semibold')}>{currentStreak}</span>
               <span className="text-sm text-muted-foreground">day{currentStreak !== 1 && 's'}</span>
             </div>
             <p className="text-xs text-muted-foreground">Current streak</p>
@@ -134,15 +144,18 @@ export function StreakDisplay({ className, variant = 'card' }: StreakDisplayProp
   }
 
   // Full card variant
+  // Requirements 9.2: Show flame icon prominently when streak >= 3
   return (
     <Card className={cn('glass-card', className)}>
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
-          <Flame className={cn('w-5 h-5', isOnStreak && 'text-orange-500 animate-pulse')} />
+          <Flame className={cn('w-5 h-5', isProminentStreak && 'text-orange-500 animate-pulse')} />
           Learning Streak
         </CardTitle>
         <CardDescription>
-          {isOnStreak
+          {isProminentStreak
+            ? 'Amazing! Keep it up to maintain your streak.'
+            : isOnStreak
             ? 'Keep it up! Complete a lesson today to maintain your streak.'
             : 'Start learning today to begin a streak.'}
         </CardDescription>
@@ -152,21 +165,25 @@ export function StreakDisplay({ className, variant = 'card' }: StreakDisplayProp
           {/* Current Streak */}
           <div className={cn(
             'p-6 rounded-lg flex flex-col items-center justify-center',
-            isOnStreak
+            isProminentStreak
               ? 'bg-gradient-to-br from-orange-500/10 to-red-500/10'
+              : isOnStreak
+              ? 'bg-muted/50'
               : 'bg-muted'
           )}>
             <div className={cn(
               'mb-2 p-3 rounded-full',
-              isOnStreak
+              isProminentStreak
                 ? 'bg-gradient-to-br from-orange-500 to-red-500 text-white'
+                : isOnStreak
+                ? 'bg-muted-foreground/30 text-muted-foreground'
                 : 'bg-muted-foreground/20 text-muted-foreground'
             )}>
-              <Flame className="w-8 h-8" />
+              <Flame className={cn('w-8 h-8', isProminentStreak && 'animate-pulse')} />
             </div>
             <div className="text-center">
               <div className="flex items-baseline justify-center gap-2 mb-1">
-                <span className="text-4xl font-bold">{currentStreak}</span>
+                <span className={cn('text-4xl', isProminentStreak ? 'font-bold' : 'font-semibold')}>{currentStreak}</span>
                 <span className="text-lg text-muted-foreground">day{currentStreak !== 1 && 's'}</span>
               </div>
               <p className="text-sm text-muted-foreground">Current streak</p>
@@ -235,6 +252,7 @@ export function StreakDisplay({ className, variant = 'card' }: StreakDisplayProp
 
 /**
  * Simple streak badge for display in headers or nav
+ * Requirements 9.2: Show flame icon prominently when streak >= 3
  */
 export function StreakBadge({ className }: { className?: string }) {
   const [currentStreak, setCurrentStreak] = useState<number>(0);
@@ -259,20 +277,33 @@ export function StreakBadge({ className }: { className?: string }) {
     fetchStreak();
   }, []);
 
+  // Don't show badge if loading or no streak
   if (loading || currentStreak === 0) {
     return null;
   }
 
+  // Requirements 9.2: Show prominently when streak >= 3
+  const isProminentStreak = currentStreak >= 3;
+
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20',
+        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border',
+        isProminentStreak
+          ? 'bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/20'
+          : 'bg-muted/50 border-border',
         className
       )}
       title={`${currentStreak} day learning streak`}
     >
-      <Flame className="w-3.5 h-3.5 text-orange-500 animate-pulse" />
-      <span className="text-xs font-semibold text-orange-500">{currentStreak}</span>
+      <Flame className={cn(
+        'w-3.5 h-3.5',
+        isProminentStreak ? 'text-orange-500 animate-pulse' : 'text-muted-foreground'
+      )} />
+      <span className={cn(
+        'text-xs font-semibold',
+        isProminentStreak ? 'text-orange-500' : 'text-muted-foreground'
+      )}>{currentStreak}</span>
     </div>
   );
 }

@@ -23,7 +23,9 @@ import { toast } from 'sonner';
 import { useAsync } from '@/hooks/use-async';
 import { logger } from '@/lib/logging';
 import { ConfirmDialog, useConfirmDialog } from '@/components/ui/confirm-dialog';
-import { ImageUpload } from '@/components/forms/image-upload';
+import { BaseFileUpload } from '@/components/forms/base-file-upload';
+import { ContentRevisionHistory } from '@/components/cms/content-revision-history';
+import { SEOFieldsSection, SEOFieldsData } from '@/components/cms/seo-fields-section';
 
 const categories = [
   'Energy Management',
@@ -44,6 +46,9 @@ interface BlogPost {
   tags: string[];
   featured_image_url: string | null;
   is_published: boolean;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  og_image_url?: string | null;
 }
 
 interface EditBlogPostPageProps {
@@ -64,6 +69,11 @@ export default function EditBlogPostPage({ params }: EditBlogPostPageProps) {
   const [tags, setTags] = useState('');
   const [featuredImage, setFeaturedImage] = useState('');
   const [isPublished, setIsPublished] = useState(false);
+  const [seoData, setSeoData] = useState<SEOFieldsData>({
+    meta_title: '',
+    meta_description: '',
+    social_image: '',
+  });
 
   useEffect(() => {
     fetchPost();
@@ -86,6 +96,11 @@ export default function EditBlogPostPage({ params }: EditBlogPostPageProps) {
       setTags((post.tags || []).join(', '));
       setFeaturedImage(post.featured_image_url || '');
       setIsPublished(post.is_published);
+      setSeoData({
+        meta_title: post.meta_title || '',
+        meta_description: post.meta_description || '',
+        social_image: post.og_image_url || '',
+      });
     }
     return null;
   });
@@ -109,6 +124,9 @@ export default function EditBlogPostPage({ params }: EditBlogPostPageProps) {
           featured_image_url: featuredImage || null,
           is_published: publishStatus,
           published_at: publishStatus && !isPublished ? new Date().toISOString() : undefined,
+          meta_title: seoData.meta_title || null,
+          meta_description: seoData.meta_description || null,
+          og_image_url: seoData.social_image || null,
         }),
       });
 
@@ -270,11 +288,14 @@ export default function EditBlogPostPage({ params }: EditBlogPostPageProps) {
 
             <div className="space-y-2">
               <Label>Featured Image</Label>
-              <ImageUpload
+              <BaseFileUpload
+                config={{
+                  type: "image",
+                  aspectRatio: "16:9",
+                  onUpload: (url) => setFeaturedImage(url || ''),
+                }}
                 value={featuredImage}
-                onChange={(url) => setFeaturedImage(url || '')}
                 category="blogs"
-                aspectRatio="video"
                 placeholder="Upload featured image"
               />
               <p className="text-xs text-muted-foreground">
@@ -299,6 +320,23 @@ export default function EditBlogPostPage({ params }: EditBlogPostPageProps) {
           </CardContent>
         </Card>
 
+        {/* SEO Settings */}
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle>SEO Settings</CardTitle>
+            <CardDescription>Optimize your post for search engines and social sharing</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SEOFieldsSection
+              data={seoData}
+              onChange={setSeoData}
+              contentTitle={title}
+              contentExcerpt={excerpt}
+              showPreview={true}
+            />
+          </CardContent>
+        </Card>
+
         {/* Publishing Options */}
         <Card className="glass-card">
           <CardHeader>
@@ -319,6 +357,39 @@ export default function EditBlogPostPage({ params }: EditBlogPostPageProps) {
                 onCheckedChange={setIsPublished}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Revision History */}
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle>Revision History</CardTitle>
+            <CardDescription>View and restore previous versions of this post</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ContentRevisionHistory
+              entityType="blog_post"
+              entityId={id}
+              onRestore={(restoredContent) => {
+                // Apply restored content to form fields
+                const content = restoredContent as Record<string, unknown>;
+                if (content.title) setTitle(content.title as string);
+                if (content.slug) setSlug(content.slug as string);
+                if (content.excerpt !== undefined) setExcerpt((content.excerpt as string) || '');
+                if (content.content !== undefined) setContent((content.content as string) || '');
+                if (content.category !== undefined) setCategory((content.category as string) || '');
+                if (content.tags) setTags((content.tags as string[]).join(', '));
+                if (content.featured_image_url !== undefined) setFeaturedImage((content.featured_image_url as string) || '');
+                if (content.is_published !== undefined) setIsPublished(content.is_published as boolean);
+                // Restore SEO fields
+                setSeoData({
+                  meta_title: (content.meta_title as string) || '',
+                  meta_description: (content.meta_description as string) || '',
+                  social_image: (content.og_image_url as string) || '',
+                });
+                toast.success('Content restored from revision');
+              }}
+            />
           </CardContent>
         </Card>
 

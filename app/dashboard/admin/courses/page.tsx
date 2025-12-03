@@ -137,29 +137,23 @@ export default function AdminCoursesPage() {
 
   const handleDuplicate = async (course: Course) => {
     try {
-      const response = await fetch("/api/courses", {
+      const response = await fetch(`/api/courses/${course.id}/duplicate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: `${course.title} (Copy)`,
-          description: course.description,
-          category: course.category,
-          difficulty_level: course.difficulty_level,
-          price_usd: course.price_usd,
-          is_published: false,
-        }),
       });
 
       if (response.ok) {
         const result = await response.json();
         toast.success("Course duplicated", {
-          description: "The course has been duplicated as a draft.",
+          description: `Created "${result.data?.course?.title || "copy"}" with ${result.data?.modulesCount || 0} modules and ${result.data?.lessonsCount || 0} lessons`,
         });
-        router.push(
-          `/dashboard/admin/courses/${result.course?.id || result.id}/edit`
-        );
+        if (result.data?.course?.id) {
+          router.push(`/dashboard/admin/courses/${result.data.course.id}/edit`);
+        } else {
+          fetchCourses();
+        }
       } else {
-        throw new Error("Failed to duplicate course");
+        const error = await response.json();
+        throw new Error(error.error || "Failed to duplicate course");
       }
     } catch (error) {
       logger.error("Error duplicating course:", error as Error);

@@ -1,25 +1,32 @@
 /**
- * Audit Log Export Barrel Export
- * Centralizes audit export functionality
+ * Comprehensive Platform Audit
+ * 
+ * Barrel export for all audit types, utilities, and evaluators.
  */
 
+// Types
+export * from './types';
+
+// Base evaluator
+export { BaseAuditEvaluator, runEvaluator } from './base-evaluator';
+export type { EvaluationResult } from './base-evaluator';
+
+// Scanners
+export * from './scanners';
+
+// Evaluators
+export * from './evaluators';
+
+// MCP Clients
+export * from './mcp';
+
+// Report Generator
+export * from './report-generator';
+
+// Audit Runner
 export {
-  createAuditExportJob,
-  getAuditExportJobs,
-  getAuditExportJob,
-  updateAuditExportJobStatus,
-  getAuditLogRecords,
-  generateAuditCSV,
-  generateAuditJSON,
-  logExportAccess,
-  getExportAccessLogs,
-  createExportSchedule,
-  getExportSchedules,
-  updateExportSchedule,
-  deleteExportSchedule,
-  getDueExportSchedules,
-  markScheduleExecuted,
-  type AuditExportJob,
-  type AuditExportSchedule,
-  type AuditLogRecord,
-} from './export'
+  runAudit,
+  runAuditAndSaveReport,
+  runQuickAudit,
+  createDefaultConfig,
+} from './audit-runner';

@@ -341,5 +341,47 @@ export {
   type ThemeTypography,
 } from "./theme-settings";
 
+// Tools repositories
+export {
+  EnergyBudgetRepository,
+  energyBudgetRepository,
+  type EnergyActivity,
+  type EnergyBudget,
+} from "./energy-budgets";
+
+export {
+  ShadowSessionRepository,
+  shadowSessionRepository,
+  type ShadowSession,
+  type ElementType as ShadowElementType,
+  type SessionStatus,
+} from "./shadow-sessions";
+
+export {
+  StrategyRatingRepository,
+  strategyRatingRepository,
+  type StrategyRating,
+  type ElementType as StrategyElementType,
+} from "./strategy-ratings";
+
+export {
+  ToolAnalyticsRepository,
+  toolAnalyticsRepository,
+  type ToolInteraction,
+  type ToolStats,
+  type ToolAction,
+  type ToolName,
+  type DateRange,
+} from "./tool-analytics";
+
+export {
+  QuickQuizRepository,
+  quickQuizRepository,
+  type QuickQuizResult,
+  type ElementScores,
+  type QuizAssessmentComparison,
+  type ElementType as QuizElementType,
+} from "./quick-quiz-results";
+
 // Base repository (for extension)
 export { BaseRepository, createRepository } from "./base-repository";

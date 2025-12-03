@@ -13,7 +13,7 @@ interface Achievement {
   name: string;
   description: string;
   icon_url?: string;
-  category: 'learning' | 'social' | 'milestone' | 'course' | 'engagement';
+  category: 'learning' | 'social' | 'milestone' | 'course' | 'engagement' | 'tools' | 'streak' | 'mastery';
   points: number;
   criteria: Record<string, unknown>;
   unlocked: boolean;
@@ -30,20 +30,44 @@ interface AchievementsResponse {
   };
 }
 
+// Icons for each achievement category
+// Requirements: 18.5 - Display earned achievements on user profile
 const categoryIcons: Record<string, React.ReactNode> = {
   learning: <BookOpen className="h-5 w-5" />,
   social: <Users className="h-5 w-5" />,
   milestone: <Target className="h-5 w-5" />,
   course: <Trophy className="h-5 w-5" />,
   engagement: <Flame className="h-5 w-5" />,
+  // New tool-related categories
+  tools: <Star className="h-5 w-5" />,
+  streak: <Flame className="h-5 w-5" />,
+  mastery: <Trophy className="h-5 w-5" />,
 };
 
+// Colors for each achievement category
+// Requirements: 18.5 - Display earned achievements on user profile
 const categoryColors: Record<string, string> = {
   learning: 'text-blue-500 bg-blue-500/10',
   social: 'text-pink-500 bg-pink-500/10',
   milestone: 'text-amber-500 bg-amber-500/10',
   course: 'text-purple-500 bg-purple-500/10',
   engagement: 'text-orange-500 bg-orange-500/10',
+  // New tool-related categories
+  tools: 'text-teal-500 bg-teal-500/10',
+  streak: 'text-orange-500 bg-orange-500/10',
+  mastery: 'text-yellow-500 bg-yellow-500/10',
+};
+
+// Category display names
+const categoryNames: Record<string, string> = {
+  learning: 'Learning',
+  social: 'Social',
+  milestone: 'Milestone',
+  course: 'Course',
+  engagement: 'Engagement',
+  tools: 'Tools',
+  streak: 'Streaks',
+  mastery: 'Mastery',
 };
 
 export default function AchievementsPage() {
@@ -168,66 +192,80 @@ export default function AchievementsPage() {
             }`}
           >
             {categoryIcons[category]}
-            {category.charAt(0).toUpperCase() + category.slice(1)}
+            {categoryNames[category] || category.charAt(0).toUpperCase() + category.slice(1)}
           </button>
         ))}
       </div>
 
       {/* Achievements Grid */}
+      {/* Requirements: 18.5 - Display earned achievements on user profile */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredAchievements?.map((achievement) => (
-          <Card
-            key={achievement.id}
-            className={`transition-all ${
-              achievement.unlocked
-                ? 'glass-card border-primary/20'
-                : 'bg-card/50 opacity-75'
-            }`}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                    achievement.unlocked
-                      ? categoryColors[achievement.category]
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {achievement.unlocked ? (
-                    categoryIcons[achievement.category]
-                  ) : (
-                    <Lock className="h-5 w-5" />
-                  )}
+        {filteredAchievements?.map((achievement) => {
+          const isSpecial = (achievement.criteria as { is_special?: boolean })?.is_special;
+          
+          return (
+            <Card
+              key={achievement.id}
+              className={`transition-all ${
+                achievement.unlocked
+                  ? isSpecial
+                    ? 'glass-card border-amber-500/30 ring-1 ring-amber-500/20'
+                    : 'glass-card border-primary/20'
+                  : 'bg-card/50 opacity-75'
+              }`}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      achievement.unlocked
+                        ? isSpecial
+                          ? 'bg-gradient-to-br from-amber-500/20 to-yellow-500/20 text-amber-500 ring-2 ring-amber-400/30'
+                          : categoryColors[achievement.category]
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {achievement.unlocked ? (
+                      categoryIcons[achievement.category]
+                    ) : (
+                      <Lock className="h-5 w-5" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {achievement.unlocked && (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    )}
+                    {isSpecial && (
+                      <Badge className="text-xs bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30">
+                        Special
+                      </Badge>
+                    )}
+                    <Badge variant="outline" className="text-xs">
+                      +{achievement.points} pts
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {achievement.unlocked && (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  )}
-                  <Badge variant="outline" className="text-xs">
-                    +{achievement.points} pts
+                <CardTitle className="text-lg mt-3">{achievement.name}</CardTitle>
+                <CardDescription>{achievement.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between text-xs">
+                  <Badge
+                    variant="outline"
+                    className={achievement.unlocked ? categoryColors[achievement.category] : ''}
+                  >
+                    {categoryNames[achievement.category] || achievement.category}
                   </Badge>
+                  {achievement.unlocked && achievement.unlocked_at && (
+                    <span className="text-muted-foreground">
+                      Unlocked {formatDistanceToNow(new Date(achievement.unlocked_at), { addSuffix: true })}
+                    </span>
+                  )}
                 </div>
-              </div>
-              <CardTitle className="text-lg mt-3">{achievement.name}</CardTitle>
-              <CardDescription>{achievement.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between text-xs">
-                <Badge
-                  variant="outline"
-                  className={achievement.unlocked ? categoryColors[achievement.category] : ''}
-                >
-                  {achievement.category}
-                </Badge>
-                {achievement.unlocked && achievement.unlocked_at && (
-                  <span className="text-muted-foreground">
-                    Unlocked {formatDistanceToNow(new Date(achievement.unlocked_at), { addSuffix: true })}
-                  </span>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {filteredAchievements?.length === 0 && (

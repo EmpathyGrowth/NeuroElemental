@@ -2,7 +2,7 @@
 
 import { MediaPicker } from "@/components/forms/media-picker";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeHtml } from "@/lib/utils";
 import { Color } from "@tiptap/extension-color";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
@@ -32,7 +32,9 @@ import {
   Underline as UnderlineIcon,
   Undo,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, DragEvent } from "react";
+import { toast } from "sonner";
+import { Loader2, Upload } from "lucide-react";
 
 interface RichTextEditorProps {
   content: string;
@@ -52,6 +54,8 @@ export function RichTextEditor({
   className,
 }: RichTextEditorProps) {
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const editor = useEditor({
     immediatelyRender: false, // Fix SSR hydration issues
@@ -90,7 +94,11 @@ export function RichTextEditor({
       },
     },
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      // Sanitize HTML output to remove XSS vectors before passing to parent
+      // Requirements: 1.5 - RichTextEditor SHALL sanitize HTML output using DOMPurify before storage
+      const html = editor.getHTML();
+      const sanitized = sanitizeHtml(html);
+      onChange(sanitized);
     },
   });
 
@@ -129,6 +137,70 @@ export function RichTextEditor({
     }
   };
 
+  // Handle drag-drop file upload
+  const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (!editor) return;
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter((file) =>
+      ["image/jpeg", "image/png", "image/gif", "image/webp"].includes(file.type)
+    );
+
+    if (imageFiles.length === 0) {
+      toast.error("Please drop image files (JPEG, PNG, GIF, or WebP)");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      for (const file of imageFiles) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch("/api/upload/image?category=general", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Upload failed");
+        }
+
+        const { url } = await response.json();
+        editor.chain().focus().setImage({ src: url }).run();
+      }
+
+      toast.success(
+        imageFiles.length === 1
+          ? "Image uploaded successfully"
+          : `${imageFiles.length} images uploaded successfully`
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Upload failed";
+      toast.error(message);
+    } finally {
+      setIsUploading(false);
+    }
+  }, [editor]);
+
   if (!editor) {
     return null;
   }
@@ -147,10 +219,34 @@ export function RichTextEditor({
   return (
     <div
       className={cn(
-        "border rounded-lg overflow-hidden bg-background",
+        "border rounded-lg overflow-hidden bg-background relative",
+        isDragging && "ring-2 ring-primary ring-offset-2",
         className
       )}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
+      {/* Drag overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 bg-primary/10 z-50 flex items-center justify-center pointer-events-none">
+          <div className="bg-background border-2 border-dashed border-primary rounded-lg p-8 text-center">
+            <Upload className="h-12 w-12 mx-auto mb-2 text-primary" />
+            <p className="text-lg font-medium">Drop images here</p>
+            <p className="text-sm text-muted-foreground">JPEG, PNG, GIF, or WebP</p>
+          </div>
+        </div>
+      )}
+
+      {/* Upload loading overlay */}
+      {isUploading && (
+        <div className="absolute inset-0 bg-background/80 z-50 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
+            <p className="text-sm text-muted-foreground">Uploading...</p>
+          </div>
+        </div>
+      )}
       {/* Toolbar */}
       <div className="border-b bg-muted/30 p-2 flex flex-wrap gap-1">
         {/* Text Formatting */}
@@ -207,7 +303,7 @@ export function RichTextEditor({
 
         <div className="w-px h-6 bg-border mx-1" />
 
-        {/* Headings */}
+        {/* Headings - with accessibility guidance */}
         <Button
           type="button"
           variant="ghost"
@@ -218,7 +314,8 @@ export function RichTextEditor({
           className={cn(
             editor.isActive("heading", { level: 1 }) && "bg-accent"
           )}
-          title="Heading 1"
+          title="Heading 1 - Use for main page title (one per page recommended)"
+          aria-label="Heading level 1 - main page title"
         >
           <Heading1 className="h-4 w-4" />
         </Button>
@@ -232,7 +329,8 @@ export function RichTextEditor({
           className={cn(
             editor.isActive("heading", { level: 2 }) && "bg-accent"
           )}
-          title="Heading 2"
+          title="Heading 2 - Use for major sections (should follow H1)"
+          aria-label="Heading level 2 - major section heading"
         >
           <Heading2 className="h-4 w-4" />
         </Button>
@@ -246,7 +344,8 @@ export function RichTextEditor({
           className={cn(
             editor.isActive("heading", { level: 3 }) && "bg-accent"
           )}
-          title="Heading 3"
+          title="Heading 3 - Use for subsections (should follow H2)"
+          aria-label="Heading level 3 - subsection heading"
         >
           <Heading3 className="h-4 w-4" />
         </Button>

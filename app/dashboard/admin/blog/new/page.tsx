@@ -21,7 +21,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logging';
-import { ImageUpload } from '@/components/forms/image-upload';
+import { BaseFileUpload } from '@/components/forms/base-file-upload';
+import { SEOFieldsSection, SEOFieldsData } from '@/components/cms/seo-fields-section';
 
 const categories = [
   'Energy Management',
@@ -43,6 +44,11 @@ export default function NewBlogPostPage() {
   const [tags, setTags] = useState('');
   const [featuredImage, setFeaturedImage] = useState('');
   const [isPublished, setIsPublished] = useState(false);
+  const [seoData, setSeoData] = useState<SEOFieldsData>({
+    meta_title: '',
+    meta_description: '',
+    social_image: '',
+  });
 
   // Auto-generate slug from title
   const handleTitleChange = (value: string) => {
@@ -73,6 +79,9 @@ export default function NewBlogPostPage() {
           featured_image_url: featuredImage || null,
           is_published: publish,
           published_at: publish ? new Date().toISOString() : null,
+          meta_title: seoData.meta_title || null,
+          meta_description: seoData.meta_description || null,
+          og_image_url: seoData.social_image || null,
         }),
       });
 
@@ -200,11 +209,14 @@ export default function NewBlogPostPage() {
 
             <div className="space-y-2">
               <Label>Featured Image</Label>
-              <ImageUpload
+              <BaseFileUpload
+                config={{
+                  type: "image",
+                  aspectRatio: "16:9",
+                  onUpload: (url) => setFeaturedImage(url || ''),
+                }}
                 value={featuredImage}
-                onChange={(url) => setFeaturedImage(url || '')}
                 category="blogs"
-                aspectRatio="video"
                 placeholder="Upload featured image"
               />
               <p className="text-xs text-muted-foreground">
@@ -225,6 +237,23 @@ export default function NewBlogPostPage() {
               content={content}
               onChange={setContent}
               placeholder="Write your post content here..."
+            />
+          </CardContent>
+        </Card>
+
+        {/* SEO Settings */}
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle>SEO Settings</CardTitle>
+            <CardDescription>Optimize your post for search engines and social sharing</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SEOFieldsSection
+              data={seoData}
+              onChange={setSeoData}
+              contentTitle={title}
+              contentExcerpt={excerpt}
+              showPreview={true}
             />
           </CardContent>
         </Card>

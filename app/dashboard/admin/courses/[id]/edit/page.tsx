@@ -43,14 +43,18 @@ import {
   Pencil,
   ChevronUp,
   ChevronDown,
+  GripVertical,
+  Copy,
 } from 'lucide-react';
+import { DragDropList, DragHandle, updateDisplayOrder } from '@/components/ui/drag-drop-list';
 import Link from 'next/link';
 import { logger } from '@/lib/logging';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { LazyWYSIWYG } from '@/components/editor/lazy-wysiwyg';
-import { ImageUpload } from '@/components/forms/image-upload';
+import { BaseFileUpload } from '@/components/forms/base-file-upload';
+import { SEOFieldsSection, SEOFieldsData } from '@/components/cms/seo-fields-section';
 
 const categories = [
   'Energy Management',
@@ -124,6 +128,11 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [previewVideoUrl, setPreviewVideoUrl] = useState('');
   const [isPublished, setIsPublished] = useState(false);
+  const [seoData, setSeoData] = useState<SEOFieldsData>({
+    meta_title: '',
+    meta_description: '',
+    social_image: '',
+  });
 
   // Modules and lessons
   const [modules, setModules] = useState<Module[]>([]);
@@ -179,6 +188,11 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
         setThumbnailUrl(courseData.thumbnail_url || '');
         setPreviewVideoUrl(courseData.preview_video_url || '');
         setIsPublished(courseData.is_published || false);
+        setSeoData({
+          meta_title: courseData.meta_title || '',
+          meta_description: courseData.meta_description || '',
+          social_image: courseData.og_image_url || '',
+        });
       } catch (error) {
         logger.error('Error fetching course:', error instanceof Error ? error : new Error(String(error)));
         toast.error('Failed to load course');
@@ -234,6 +248,9 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
           thumbnail_url: thumbnailUrl || null,
           preview_video_url: previewVideoUrl || null,
           is_published: isPublished,
+          meta_title: seoData.meta_title || null,
+          meta_description: seoData.meta_description || null,
+          og_image_url: seoData.social_image || null,
         }),
       });
 
@@ -536,6 +553,118 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
     }
   };
 
+  // Drag-drop module reordering
+  const handleDragDropModules = async (reorderedModules: Module[]) => {
+    // Update with new order indices
+    const updated = reorderedModules.map((m, i) => ({ ...m, order_index: i }));
+    setModules(updated);
+
+    try {
+      const response = await fetch('/api/modules/reorder', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          modules: updated.map((m, i) => ({ id: m.id, order_index: i })),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to reorder modules');
+        fetchModules();
+      }
+    } catch (error) {
+      logger.error('Error reordering modules:', error instanceof Error ? error : new Error(String(error)));
+      toast.error('Failed to reorder modules');
+      fetchModules();
+    }
+  };
+
+  // Drag-drop lesson reordering within a module
+  const handleDragDropLessons = async (moduleId: string, reorderedLessons: Lesson[]) => {
+    // Update with new order indices
+    const updated = reorderedLessons.map((l, i) => ({ ...l, order_index: i }));
+    setModules(modules.map(m =>
+      m.id === moduleId ? { ...m, lessons: updated } : m
+    ));
+
+    try {
+      const response = await fetch('/api/lessons/reorder', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lessons: updated.map((l, i) => ({ id: l.id, order_index: i })),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to reorder lessons');
+        fetchModules();
+      }
+    } catch (error) {
+      logger.error('Error reordering lessons:', error instanceof Error ? error : new Error(String(error)));
+      toast.error('Failed to reorder lessons');
+      fetchModules();
+    }
+  };
+
+  // Duplicate module with all lessons
+  const handleDuplicateModule = async (moduleId: string) => {
+    const module = modules.find(m => m.id === moduleId);
+    if (!module) return;
+
+    try {
+      const response = await fetch(`/api/modules/${moduleId}/duplicate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          course_id: id,
+          order_index: modules.length,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Module duplicated');
+        fetchModules();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to duplicate module');
+      }
+    } catch (error) {
+      logger.error('Error duplicating module:', error instanceof Error ? error : new Error(String(error)));
+      toast.error('Failed to duplicate module');
+    }
+  };
+
+  // Duplicate lesson
+  const handleDuplicateLesson = async (moduleId: string, lessonId: string) => {
+    const module = modules.find(m => m.id === moduleId);
+    if (!module) return;
+
+    try {
+      const response = await fetch(`/api/lessons/${lessonId}/duplicate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          module_id: moduleId,
+          order_index: module.lessons.length,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Lesson duplicated');
+        fetchModules();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to duplicate lesson');
+      }
+    } catch (error) {
+      logger.error('Error duplicating lesson:', error instanceof Error ? error : new Error(String(error)));
+      toast.error('Failed to duplicate lesson');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -753,11 +882,14 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>Thumbnail Image</Label>
-                <ImageUpload
+                <BaseFileUpload
+                  config={{
+                    type: "image",
+                    aspectRatio: "16:9",
+                    onUpload: (url) => setThumbnailUrl(url || ''),
+                  }}
                   value={thumbnailUrl}
-                  onChange={(url) => setThumbnailUrl(url || '')}
                   category="courses"
-                  aspectRatio="video"
                   placeholder="Upload course thumbnail"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -860,7 +992,7 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
                       <AccordionContent>
                         <div className="pt-4 space-y-4">
                           {/* Module actions */}
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-wrap">
                             <Button
                               variant="outline"
                               size="sm"
@@ -876,6 +1008,14 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
                             >
                               <Plus className="w-4 h-4 mr-2" />
                               Add Lesson
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDuplicateModule(module.id)}
+                            >
+                              <Copy className="w-4 h-4 mr-2" />
+                              Duplicate
                             </Button>
                             <Button
                               variant="outline"
@@ -939,19 +1079,43 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
                                     </div>
                                   </div>
                                   <div className="flex gap-1">
+                                    <Link
+                                      href={`/courses/${slug}/learn?lesson=${lesson.id}&preview=true`}
+                                      target="_blank"
+                                    >
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        aria-label="Preview lesson"
+                                        title="Preview as student"
+                                      >
+                                        <Video className="w-4 h-4 text-primary" />
+                                      </Button>
+                                    </Link>
                                     <Button
                                       variant="ghost"
                                       size="icon"
                                       onClick={() => openLessonDialog(module.id, lesson)}
                                       aria-label="Edit lesson"
+                                      title="Edit lesson"
                                     >
                                       <Pencil className="w-4 h-4" />
                                     </Button>
                                     <Button
                                       variant="ghost"
                                       size="icon"
+                                      onClick={() => handleDuplicateLesson(module.id, lesson.id)}
+                                      aria-label="Duplicate lesson"
+                                      title="Duplicate lesson"
+                                    >
+                                      <Copy className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
                                       onClick={() => handleDeleteLesson(lesson.id)}
                                       aria-label="Delete lesson"
+                                      title="Delete lesson"
                                     >
                                       <Trash2 className="w-4 h-4 text-destructive" />
                                     </Button>
@@ -975,6 +1139,23 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
+          {/* SEO Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle>SEO Settings</CardTitle>
+              <CardDescription>Optimize your course for search engines and social sharing</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SEOFieldsSection
+                data={seoData}
+                onChange={setSeoData}
+                contentTitle={title}
+                contentExcerpt={description}
+                showPreview={true}
+              />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Publishing</CardTitle>

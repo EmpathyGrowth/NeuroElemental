@@ -28,8 +28,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  EmailTemplateEditor,
+  htmlToPlainText,
+} from "@/components/cms/email-template-editor";
 import { logger } from "@/lib/logging";
 import { Copy, Edit, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -168,24 +171,24 @@ export default function EmailTemplatesPage() {
 
   const handleDuplicate = async (template: EmailTemplate) => {
     try {
-      await fetch("/api/admin/email-templates", {
+      const res = await fetch(`/api/admin/email-templates/${template.id}/duplicate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: `${template.name} (Copy)`,
-          slug: `${template.slug}-copy-${Date.now()}`,
-          subject: template.subject,
-          html_content: template.html_content,
-          text_content: template.text_content,
-          variables: template.variables,
-          category: template.category,
-          is_active: false,
-        }),
       });
-      toast({ title: "Template duplicated" });
-      fetchTemplates();
-    } catch {
-      toast({ title: "Error", variant: "destructive" });
+
+      if (res.ok) {
+        const result = await res.json();
+        toast({
+          title: "Template duplicated",
+          description: `Created "${result.data?.name || "copy"}" as inactive`,
+        });
+        fetchTemplates();
+      } else {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to duplicate template");
+      }
+    } catch (error) {
+      logger.error("Error duplicating template", error instanceof Error ? error : new Error(String(error)));
+      toast({ title: "Error", description: "Failed to duplicate template", variant: "destructive" });
     }
   };
 
@@ -372,28 +375,44 @@ export default function EmailTemplatesPage() {
                   </div>
                 </div>
                 <div>
-                  <Label>HTML Content</Label>
-                  <Textarea
-                    value={formData.html_content}
-                    onChange={(e) =>
-                      setFormData({ ...formData, html_content: e.target.value })
+                  <Label>Email Content</Label>
+                  <EmailTemplateEditor
+                    template={{
+                      html_content: formData.html_content,
+                      variables: formData.variables
+                        .split(",")
+                        .map((v) => v.trim())
+                        .filter(Boolean),
+                    }}
+                    onChange={(t) => {
+                      setFormData({
+                        ...formData,
+                        html_content: t.html_content || "",
+                        // Auto-generate plain text when HTML changes
+                        text_content: t.html_content
+                          ? htmlToPlainText(t.html_content)
+                          : "",
+                      });
+                    }}
+                    onSendTest={
+                      editingId
+                        ? async (email) => {
+                            const res = await fetch(
+                              `/api/admin/email-templates/${editingId}`,
+                              {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  action: "send_test",
+                                  email,
+                                }),
+                              }
+                            );
+                            if (!res.ok) throw new Error("Failed to send test email");
+                            toast({ title: "Test email sent!" });
+                          }
+                        : undefined
                     }
-                    rows={10}
-                    className="font-mono text-sm"
-                    placeholder="<h1>Welcome, {{name}}!</h1>"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label>Plain Text Content (optional)</Label>
-                  <Textarea
-                    value={formData.text_content}
-                    onChange={(e) =>
-                      setFormData({ ...formData, text_content: e.target.value })
-                    }
-                    rows={4}
-                    className="font-mono text-sm"
-                    placeholder="Welcome, {{name}}!"
                   />
                 </div>
                 <div className="flex items-center gap-2">

@@ -66,6 +66,8 @@ export function MediaPicker({
   const [loading, setLoading] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const [selectedFolder, setSelectedFolder] = React.useState<string>("");
+  const [selectedType, setSelectedType] = React.useState<string>("image");
+  const [dateRange, setDateRange] = React.useState<string>("");
   const [selectedItem, setSelectedItem] = React.useState<MediaItem | null>(
     null
   );
@@ -79,7 +81,8 @@ export function MediaPicker({
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (selectedFolder) params.set("folder", selectedFolder);
-      params.set("type", "image"); // Only show images
+      if (selectedType) params.set("type", selectedType);
+      if (dateRange) params.set("dateRange", dateRange);
 
       const res = await fetch(`/api/admin/media?${params}`);
       if (res.ok) {
@@ -95,7 +98,7 @@ export function MediaPicker({
     } finally {
       setLoading(false);
     }
-  }, [search, selectedFolder]);
+  }, [search, selectedFolder, selectedType, dateRange]);
 
   React.useEffect(() => {
     if (open) {
@@ -177,28 +180,71 @@ export function MediaPicker({
             className="flex-1 flex flex-col min-h-0 mt-4"
           >
             {/* Search and Filters */}
-            <div className="flex gap-3 mb-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search media..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
-                />
+            <div className="flex flex-col gap-3 mb-4">
+              <div className="flex gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <select
+                  value={selectedFolder}
+                  onChange={(e) => setSelectedFolder(e.target.value)}
+                  className="px-3 py-2 rounded-md border bg-background text-sm min-w-[120px]"
+                >
+                  <option value="">All Folders</option>
+                  {folders.map((folder) => (
+                    <option key={folder} value={folder}>
+                      {folder}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <select
-                value={selectedFolder}
-                onChange={(e) => setSelectedFolder(e.target.value)}
-                className="px-3 py-2 rounded-md border bg-background text-sm"
-              >
-                <option value="">All Folders</option>
-                {folders.map((folder) => (
-                  <option key={folder} value={folder}>
-                    {folder}
-                  </option>
-                ))}
-              </select>
+              <div className="flex gap-3">
+                <select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  className="px-3 py-2 rounded-md border bg-background text-sm min-w-[120px]"
+                >
+                  <option value="">All Types</option>
+                  <option value="image">Images</option>
+                  <option value="image/jpeg">JPEG</option>
+                  <option value="image/png">PNG</option>
+                  <option value="image/gif">GIF</option>
+                  <option value="image/webp">WebP</option>
+                  <option value="image/svg+xml">SVG</option>
+                </select>
+                <select
+                  value={dateRange}
+                  onChange={(e) => setDateRange(e.target.value)}
+                  className="px-3 py-2 rounded-md border bg-background text-sm min-w-[140px]"
+                >
+                  <option value="">Any Time</option>
+                  <option value="today">Today</option>
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                  <option value="year">This Year</option>
+                </select>
+                {(search || selectedFolder || selectedType !== "image" || dateRange) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSearch("");
+                      setSelectedFolder("");
+                      setSelectedType("image");
+                      setDateRange("");
+                    }}
+                    className="text-muted-foreground"
+                  >
+                    Clear filters
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Media Grid */}

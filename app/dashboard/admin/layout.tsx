@@ -1,9 +1,9 @@
 "use client";
 
 import {
-  AdminSidebar,
-  MobileAdminSidebar,
-} from "@/components/dashboard/admin-sidebar";
+  SharedDashboardSidebar,
+  MobileSharedSidebar,
+} from "@/components/dashboard/shared-sidebar";
 import { DashboardTopbar } from "@/components/dashboard/dashboard-topbar";
 import { useState } from "react";
 
@@ -17,7 +17,7 @@ export default function AdminLayout({
   return (
     <div className="flex min-h-screen">
       {/* Desktop Sidebar */}
-      <AdminSidebar />
+      <SharedDashboardSidebar role="admin" />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
@@ -29,7 +29,8 @@ export default function AdminLayout({
       </div>
 
       {/* Mobile Sidebar */}
-      <MobileAdminSidebar
+      <MobileSharedSidebar
+        role="admin"
         open={mobileMenuOpen}
         onOpenChange={setMobileMenuOpen}
       />

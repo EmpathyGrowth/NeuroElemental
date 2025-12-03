@@ -3,7 +3,7 @@
 import { AdminPageHeader } from "@/components/dashboard/admin-page-header";
 import { AdminPageShell } from "@/components/dashboard/admin-page-shell";
 import { RichTextEditor } from "@/components/editor/rich-text-editor";
-import { ImageUpload } from "@/components/forms/image-upload";
+import { BaseFileUpload } from "@/components/forms/base-file-upload";
 import { Button } from "@/components/ui/button";
 import {
   Column,
@@ -267,13 +267,15 @@ export default function AnnouncementsPage() {
                 </div>
                 <div>
                   <Label>Featured Image</Label>
-                  <ImageUpload
+                  <BaseFileUpload
+                    config={{
+                      type: "image",
+                      aspectRatio: "16:9",
+                      onUpload: (url) =>
+                        setFormData({ ...formData, featured_image: url || "" }),
+                    }}
                     value={formData.featured_image}
-                    onChange={(url) =>
-                      setFormData({ ...formData, featured_image: url || "" })
-                    }
                     category="general"
-                    aspectRatio="banner"
                     placeholder="Upload banner image"
                   />
                 </div>

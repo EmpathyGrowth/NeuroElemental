@@ -26,4 +26,14 @@ export {
 } from "./instructor-sidebar";
 export { MobileStudentSidebar, StudentSidebar } from "./student-sidebar";
 
+// Shared sidebar component (recommended for new implementations)
+export {
+  SharedDashboardSidebar,
+  MobileSharedSidebar,
+  type SharedDashboardSidebarProps,
+  type MobileSharedSidebarProps,
+} from "./shared-sidebar";
+
 export { LearningStatsCard } from "./learning-stats-card";
+export { TodaysEnergyWidget } from "./todays-energy-widget";
+export { YourEnergyWidget } from "./your-energy-widget";

@@ -3,7 +3,8 @@
 import { AdminPageHeader } from "@/components/dashboard/admin-page-header";
 import { AdminPageShell } from "@/components/dashboard/admin-page-shell";
 import { LazyWYSIWYG } from "@/components/editor/lazy-wysiwyg";
-import { ImageUpload } from "@/components/forms/image-upload";
+import { BaseFileUpload } from "@/components/forms/base-file-upload";
+import { SEOFieldsSection, SEOFieldsData } from "@/components/cms/seo-fields-section";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import {
@@ -91,6 +92,11 @@ export default function EditEventPage() {
   const [onlineMeetingUrl, setOnlineMeetingUrl] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [isPublished, setIsPublished] = useState(false);
+  const [seoData, setSeoData] = useState<SEOFieldsData>({
+    meta_title: "",
+    meta_description: "",
+    social_image: "",
+  });
 
   useEffect(() => {
     if (eventId) {
@@ -121,6 +127,11 @@ export default function EditEventPage() {
       setOnlineMeetingUrl(event.online_meeting_url || "");
       setThumbnailUrl(event.thumbnail_url || "");
       setIsPublished(event.is_published || false);
+      setSeoData({
+        meta_title: (event as Record<string, unknown>).meta_title as string || "",
+        meta_description: (event as Record<string, unknown>).meta_description as string || "",
+        social_image: (event as Record<string, unknown>).og_image_url as string || "",
+      });
 
       // Parse datetime
       if (event.start_datetime) {
@@ -163,6 +174,9 @@ export default function EditEventPage() {
           online_meeting_url: onlineMeetingUrl || null,
           thumbnail_url: thumbnailUrl || null,
           is_published: isPublished,
+          meta_title: seoData.meta_title || null,
+          meta_description: seoData.meta_description || null,
+          og_image_url: seoData.social_image || null,
         }),
       });
 
@@ -551,17 +565,37 @@ export default function EditEventPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Thumbnail Image</Label>
-              <ImageUpload
+              <BaseFileUpload
+                config={{
+                  type: "image",
+                  aspectRatio: "16:9",
+                  onUpload: (url) => setThumbnailUrl(url || ""),
+                }}
                 value={thumbnailUrl}
-                onChange={(url) => setThumbnailUrl(url || "")}
                 category="events"
-                aspectRatio="video"
                 placeholder="Upload event thumbnail"
               />
               <p className="text-xs text-muted-foreground">
                 Recommended size: 1280x720 (16:9 aspect ratio)
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* SEO Settings */}
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle>SEO Settings</CardTitle>
+            <CardDescription>Optimize your event for search engines and social sharing</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SEOFieldsSection
+              data={seoData}
+              onChange={setSeoData}
+              contentTitle={title}
+              contentExcerpt={description}
+              showPreview={true}
+            />
           </CardContent>
         </Card>
 

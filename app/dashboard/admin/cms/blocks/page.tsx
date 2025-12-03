@@ -14,6 +14,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -28,8 +29,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  BlockContentEditor,
+  BlockType,
+} from "@/components/cms/block-content-editor";
 import { logger } from "@/lib/logging";
 import { Edit, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -71,8 +75,8 @@ export default function ContentBlocksPage() {
     name: "",
     slug: "",
     description: "",
-    block_type: "text",
-    content: "{}",
+    block_type: "text" as BlockType,
+    content: {} as Record<string, unknown>,
     is_global: false,
     is_active: true,
   });
@@ -120,36 +124,18 @@ export default function ContentBlocksPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      let content = {};
-      try {
-        content = JSON.parse(formData.content);
-      } catch {
-        toast({
-          title: "Invalid JSON",
-          description: "Content must be valid JSON",
-          variant: "destructive",
-        });
-        return;
-      }
-
       if (editingBlock) {
         await fetch(`/api/admin/blocks/${editingBlock.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...formData,
-            content,
-          }),
+          body: JSON.stringify(formData),
         });
         toast({ title: "Block updated" });
       } else {
         await fetch("/api/admin/blocks", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...formData,
-            content,
-          }),
+          body: JSON.stringify(formData),
         });
         toast({ title: "Block created" });
       }
@@ -160,7 +146,7 @@ export default function ContentBlocksPage() {
         slug: "",
         description: "",
         block_type: "text",
-        content: "{}",
+        content: {},
         is_global: false,
         is_active: true,
       });
@@ -191,8 +177,8 @@ export default function ContentBlocksPage() {
       name: block.name,
       slug: block.slug,
       description: block.description || "",
-      block_type: block.block_type,
-      content: JSON.stringify(block.content, null, 2),
+      block_type: block.block_type as BlockType,
+      content: block.content,
       is_global: block.is_global,
       is_active: block.is_active,
     });
@@ -284,11 +270,16 @@ export default function ContentBlocksPage() {
                 <Plus className="h-4 w-4 mr-2" /> Create Block
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingBlock ? "Edit Block" : "Create Content Block"}
                 </DialogTitle>
+                <DialogDescription>
+                  {editingBlock
+                    ? "Update the block settings and content below."
+                    : "Create a new reusable content block for your pages."}
+                </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
@@ -312,7 +303,7 @@ export default function ContentBlocksPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, slug: e.target.value })
                     }
-                    pattern="[a-z0-9-]+"
+                    pattern="^[a-z0-9\-]+$"
                     required
                   />
                 </div>
@@ -350,15 +341,13 @@ export default function ContentBlocksPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Content (JSON)</Label>
-                  <Textarea
-                    value={formData.content}
-                    onChange={(e) =>
-                      setFormData({ ...formData, content: e.target.value })
+                  <Label>Content</Label>
+                  <BlockContentEditor
+                    blockType={formData.block_type}
+                    content={formData.content}
+                    onChange={(content) =>
+                      setFormData({ ...formData, content })
                     }
-                    className="font-mono text-sm"
-                    rows={4}
-                    placeholder='{"title": "...", "description": "..."}'
                   />
                 </div>
                 <div className="flex items-center gap-4">

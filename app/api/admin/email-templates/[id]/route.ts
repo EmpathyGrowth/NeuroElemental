@@ -34,6 +34,11 @@ const previewSchema = z.object({
   sample_data: z.record(z.string()),
 });
 
+const testEmailSchema = z.object({
+  email: z.string().email(),
+  sample_data: z.record(z.string()).optional(),
+});
+
 /**
  * GET /api/admin/email-templates/[id]
  * Get template by ID
@@ -69,6 +74,42 @@ export const PATCH = createAdminRoute<{ id: string }>(
         parsed.data.sample_data
       );
       return successResponse({ preview });
+    }
+
+    // Send test email action
+    if (action === "send_test") {
+      const parsed = testEmailSchema.safeParse(body);
+      if (!parsed.success) {
+        throw badRequestError("Invalid test email data");
+      }
+      
+      const template = await emailTemplatesRepository.findById(id);
+      if (!template) {
+        throw badRequestError("Template not found");
+      }
+
+      // Get preview with sample data
+      const preview = await emailTemplatesRepository.preview(
+        id,
+        parsed.data.sample_data || {}
+      );
+
+      // Send test email using Resend
+      const { Resend } = await import("resend");
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM || "NeuroElemental <noreply@neuroelemental.com>",
+        to: parsed.data.email,
+        subject: `[TEST] ${preview.subject}`,
+        html: preview.html,
+        text: preview.text || undefined,
+      });
+
+      return successResponse({ 
+        success: true, 
+        message: `Test email sent to ${parsed.data.email}` 
+      });
     }
 
     // Duplicate action

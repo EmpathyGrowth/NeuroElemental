@@ -1,22 +1,30 @@
 "use client";
 
+import { useAuth } from "@/components/auth/auth-provider";
 import { Footer } from "@/components/footer";
 import { HeroSection } from "@/components/landing/hero-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
+import { useDebounce } from "@/hooks/use-debounce";
 import {
   ArrowRight,
   Battery,
   BatteryFull,
   BatteryLow,
   BatteryMedium,
+  Check,
+  Cloud,
+  CloudOff,
+  Loader2,
+  LogIn,
   RefreshCcw,
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Activity {
   id: string;
@@ -24,6 +32,19 @@ interface Activity {
   cost: number; // positive = drains, negative = regenerates
   category: "work" | "social" | "chore" | "regeneration";
 }
+
+interface EnergyBudget {
+  id: string;
+  user_id: string | null;
+  date: string;
+  total_budget: number;
+  activities: Activity[];
+  remaining_budget: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 const DRAIN_ACTIVITIES: Activity[] = [
   { id: "1", name: "Work Meeting (1hr)", cost: 15, category: "work" },
@@ -40,26 +61,29 @@ const REGENERATION_ACTIVITIES: Activity[] = [
   { id: "r1", name: "Power Nap (20min)", cost: -15, category: "regeneration" },
   { id: "r2", name: "Nature Walk", cost: -20, category: "regeneration" },
   { id: "r3", name: "Exercise", cost: -15, category: "regeneration" },
-  {
-    id: "r4",
-    name: "Deep Conversation (meaningful)",
-    cost: -10,
-    category: "regeneration",
-  },
+  { id: "r4", name: "Deep Conversation (meaningful)", cost: -10, category: "regeneration" },
   { id: "r5", name: "Creative Activity", cost: -15, category: "regeneration" },
   { id: "r6", name: "Quiet Alone Time", cost: -20, category: "regeneration" },
-  {
-    id: "r7",
-    name: "Fun/Playful Activity",
-    cost: -15,
-    category: "regeneration",
-  },
+  { id: "r7", name: "Fun/Playful Activity", cost: -15, category: "regeneration" },
   { id: "r8", name: "Organizing Space", cost: -10, category: "regeneration" },
 ];
 
+/**
+ * Get today's date in YYYY-MM-DD format
+ */
+function getTodayDate(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
 export default function EnergyBudgetPage() {
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [totalBudget, setTotalBudget] = useState(100);
   const [selectedActivities, setSelectedActivities] = useState<Activity[]>([]);
+  const [budgetId, setBudgetId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [showGuestModal, setShowGuestModal] = useState(false);
+  const isInitialLoad = useRef(true);
 
   const currentUsage = selectedActivities.reduce(
     (acc, curr) => acc + curr.cost,
@@ -67,6 +91,16 @@ export default function EnergyBudgetPage() {
   );
   const remainingBudget = totalBudget - currentUsage;
   const percentage = (remainingBudget / totalBudget) * 100;
+
+  // Create a state object for debouncing (Requirements 3.3)
+  const budgetState = {
+    totalBudget,
+    activities: selectedActivities,
+    remainingBudget,
+  };
+
+  // Debounce the budget state with 2 second delay (Requirements 3.3)
+  const debouncedBudgetState = useDebounce(budgetState, 2000);
 
   const getBatteryColor = () => {
     if (percentage > 60) return "text-green-500";
@@ -82,7 +116,86 @@ export default function EnergyBudgetPage() {
 
   const _BatteryIcon = getBatteryIcon();
 
+  // Load today's budget on mount (Requirements 3.2)
+  const loadTodaysBudget = useCallback(async () => {
+    if (!isAuthenticated) return;
+
+    setIsLoading(true);
+    try {
+      const today = getTodayDate();
+      const response = await fetch(`/api/tools/energy-budget?date=${today}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.budget) {
+          const budget: EnergyBudget = data.budget;
+          setBudgetId(budget.id);
+          setTotalBudget(budget.total_budget);
+          setSelectedActivities(budget.activities || []);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load energy budget:", error);
+    } finally {
+      setIsLoading(false);
+      isInitialLoad.current = false;
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      loadTodaysBudget();
+    }
+  }, [isAuthenticated, authLoading, loadTodaysBudget]);
+
+  // Auto-save on debounced changes (Requirements 3.3)
+  const saveBudget = useCallback(async () => {
+    if (!isAuthenticated || isInitialLoad.current) return;
+
+    setSaveStatus("saving");
+    try {
+      const today = getTodayDate();
+      const response = await fetch("/api/tools/energy-budget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: today,
+          total_budget: debouncedBudgetState.totalBudget,
+          activities: debouncedBudgetState.activities,
+          remaining_budget: debouncedBudgetState.remainingBudget,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.budget?.id) {
+          setBudgetId(data.budget.id);
+        }
+        setSaveStatus("saved");
+        // Reset to idle after 2 seconds
+        setTimeout(() => setSaveStatus("idle"), 2000);
+      } else {
+        setSaveStatus("error");
+      }
+    } catch (error) {
+      console.error("Failed to save energy budget:", error);
+      setSaveStatus("error");
+    }
+  }, [isAuthenticated, debouncedBudgetState]);
+
+  // Trigger save when debounced state changes
+  useEffect(() => {
+    if (!isInitialLoad.current && isAuthenticated) {
+      saveBudget();
+    }
+  }, [debouncedBudgetState, saveBudget, isAuthenticated]);
+
   const addActivity = (activity: Activity) => {
+    // Show guest modal for unauthenticated users on first interaction
+    if (!isAuthenticated && selectedActivities.length === 0) {
+      setShowGuestModal(true);
+    }
+    
     setSelectedActivities([
       ...selectedActivities,
       { ...activity, id: Math.random().toString() },
@@ -92,6 +205,97 @@ export default function EnergyBudgetPage() {
   const removeActivity = (id: string) => {
     setSelectedActivities(selectedActivities.filter((a) => a.id !== id));
   };
+
+  // Guest user modal component
+  const GuestUserModal = () => (
+    <Dialog open={showGuestModal} onOpenChange={setShowGuestModal}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <LogIn className="w-5 h-5" />
+            Sign In to Save Your Budget
+          </DialogTitle>
+          <DialogDescription>
+            Create a free account to save your energy budgets and track your patterns over time.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 pt-4">
+          <div className="p-4 rounded-lg bg-muted/50 space-y-2">
+            <h4 className="font-semibold text-sm">What you&apos;ll get:</h4>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• Save and load your daily energy budgets</li>
+              <li>• Track your energy patterns over time</li>
+              <li>• See your budget history</li>
+              <li>• Auto-save as you plan</li>
+            </ul>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Button asChild>
+              <Link href="/auth/signup?redirect=/tools/energy-budget">
+                Create Free Account
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/auth/login?redirect=/tools/energy-budget">
+                Sign In
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setShowGuestModal(false)}
+            >
+              Continue Without Saving
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+  // Save status indicator component (Requirements 3.3)
+  const SaveStatusIndicator = () => {
+    if (!isAuthenticated) return null;
+
+    return (
+      <div className="flex items-center gap-2 text-sm">
+        {saveStatus === "saving" && (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            <span className="text-muted-foreground">Saving...</span>
+          </>
+        )}
+        {saveStatus === "saved" && (
+          <>
+            <Check className="w-4 h-4 text-green-500" />
+            <span className="text-green-500">Saved</span>
+          </>
+        )}
+        {saveStatus === "error" && (
+          <>
+            <CloudOff className="w-4 h-4 text-red-500" />
+            <span className="text-red-500">Save failed</span>
+          </>
+        )}
+        {saveStatus === "idle" && budgetId && (
+          <>
+            <Cloud className="w-4 h-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Auto-save enabled</span>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading your energy budget...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,10 +314,13 @@ export default function EnergyBudgetPage() {
           {/* Left Column: Budget & Status */}
           <div className="lg:col-span-1 space-y-6">
             <Card className="p-6 glass-card border-primary/20 sticky top-24">
-              <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <Battery className="w-6 h-6 text-primary" />
-                Daily Capacity
-              </h3>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <Battery className="w-6 h-6 text-primary" />
+                  Daily Capacity
+                </h3>
+                <SaveStatusIndicator />
+              </div>
 
               <div className="mb-8 text-center">
                 <div className={`text-5xl font-bold mb-2 ${getBatteryColor()}`}>
@@ -160,7 +367,7 @@ export default function EnergyBudgetPage() {
 
                 {remainingBudget < 0 && (
                   <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-600 flex items-start gap-2">
-                    <BatteryLow className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <BatteryLow className="w-4 h-4 mt-0.5 shrink-0" />
                     <p>
                       You are in energy debt! Consider removing activities or
                       adding regeneration.
@@ -303,6 +510,7 @@ export default function EnergyBudgetPage() {
       </main>
 
       <Footer />
+      <GuestUserModal />
     </div>
   );
 }

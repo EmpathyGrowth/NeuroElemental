@@ -2,9 +2,12 @@
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { LearningStatsCard } from "@/components/dashboard/learning-stats-card";
+import { TodaysEnergyWidget } from "@/components/dashboard/todays-energy-widget";
+import { YourEnergyWidget } from "@/components/dashboard/your-energy-widget";
 import { DashboardQuickActions } from "@/components/dashboard/quick-actions";
 import { StreakDisplay } from "@/components/gamification/streak-display";
 import { ElementalIcons } from "@/components/icons/elemental-icons";
+import { ElementIcon } from "@/components/icons/element-icon";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -48,6 +51,14 @@ interface Certificate {
 export default function StudentDashboardPage() {
   const { profile, user } = useAuth();
 
+  interface AssessmentData {
+    id: string;
+    user_id: string;
+    created_at: string;
+    primary_element?: string;
+    element_scores?: Record<string, number>;
+  }
+
   interface DashboardData {
     enrollments: Enrollment[];
     certificates: Certificate[];
@@ -58,7 +69,7 @@ export default function StudentDashboardPage() {
       upcoming_events: number;
       learning_progress: number;
     };
-    assessment: unknown;
+    assessment: AssessmentData | null;
   }
 
   const { data, loading, execute } = useAsync<DashboardData>();
@@ -72,7 +83,13 @@ export default function StudentDashboardPage() {
     upcoming_events: 0,
     learning_progress: 0,
   };
-  const _assessment = data?.assessment || null;
+  const assessment = data?.assessment || null;
+  
+  // Get primary element from assessment (Requirements: 9.5)
+  const primaryElement = assessment?.primary_element || 
+    (assessment?.element_scores 
+      ? Object.entries(assessment.element_scores).sort(([,a], [,b]) => b - a)[0]?.[0]
+      : null);
 
   useEffect(() => {
     if (user) {
@@ -119,16 +136,26 @@ export default function StudentDashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="text-4xl font-bold mb-2">
-              Welcome back,{" "}
-              <span className="gradient-text">
-                {profile?.full_name || "Student"}
-              </span>
-              !
-            </h1>
-            <p className="text-xl text-muted-foreground font-light">
-              Ready to explore your energy today?
-            </p>
+            <div className="flex items-center gap-4">
+              {/* Element icon display when assessment completed (Requirements: 9.5) */}
+              {primaryElement && (
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-blue-500/20 flex items-center justify-center">
+                  <ElementIcon slug={primaryElement} size="2.5rem" />
+                </div>
+              )}
+              <div>
+                <h1 className="text-4xl font-bold mb-2">
+                  Welcome back,{" "}
+                  <span className="gradient-text">
+                    {profile?.full_name || "Student"}
+                  </span>
+                  !
+                </h1>
+                <p className="text-xl text-muted-foreground font-light">
+                  Ready to explore your energy today?
+                </p>
+              </div>
+            </div>
           </motion.div>
         </div>
 
@@ -200,19 +227,37 @@ export default function StudentDashboardPage() {
           ))}
         </div>
 
-        {/* Learning Streak and Stats */}
-        <div className="grid md:grid-cols-2 gap-6 mb-10">
+        {/* Your Energy, Streak, Budget, and Stats */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          {/* Your Energy Widget - Recent check-in data (Requirements: 9.1, 9.4) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
+            <YourEnergyWidget />
+          </motion.div>
+          {/* Streak Display (Requirements: 9.2) */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.33 }}
+          >
             <StreakDisplay variant="card" />
           </motion.div>
+          {/* Today's Energy Budget Widget */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.35 }}
+          >
+            <TodaysEnergyWidget />
+          </motion.div>
+          {/* Learning Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.37 }}
           >
             <LearningStatsCard />
           </motion.div>

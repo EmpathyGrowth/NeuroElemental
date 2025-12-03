@@ -1,3 +1,11 @@
+/**
+ * Supabase Database Types
+ * Auto-generated types for the NeuroElemental database schema
+ *
+ * Generated via Supabase MCP on 2025-11-26
+ * To regenerate: Use Supabase MCP generate_typescript_types
+ */
+
 export type Json =
   | string
   | number
@@ -7,44 +15,13 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
   public: {
     Tables: {
-      achievements: {
-        Row: {
-          category: string | null
-          created_at: string | null
-          criteria: Json | null
-          description: string | null
-          icon_url: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          points: number | null
-        }
-        Insert: {
-          category?: string | null
-          created_at?: string | null
-          criteria?: Json | null
-          description?: string | null
-          icon_url?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          points?: number | null
-        }
-        Update: {
-          category?: string | null
-          created_at?: string | null
-          criteria?: Json | null
-          description?: string | null
-          icon_url?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          points?: number | null
-        }
-        Relationships: []
-      }
       activity_logs: {
         Row: {
           action: string
@@ -52,7 +29,7 @@ export type Database = {
           entity_id: string | null
           entity_type: string | null
           id: string
-          ip_address: unknown
+          ip_address: string | null
           metadata: Json | null
           organization_id: string | null
           user_agent: string | null
@@ -64,7 +41,7 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
-          ip_address?: unknown
+          ip_address?: string | null
           metadata?: Json | null
           organization_id?: string | null
           user_agent?: string | null
@@ -76,7 +53,7 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
-          ip_address?: unknown
+          ip_address?: string | null
           metadata?: Json | null
           organization_id?: string | null
           user_agent?: string | null
@@ -129,51 +106,6 @@ export type Database = {
           rate_limit?: number
           scopes?: string[]
           updated_at?: string
-        }
-        Relationships: []
-      }
-      api_usage_log: {
-        Row: {
-          api_key_id: string | null
-          created_at: string
-          endpoint: string
-          id: string
-          ip_address: string | null
-          method: string
-          organization_id: string | null
-          request_size_bytes: number | null
-          response_size_bytes: number | null
-          response_time_ms: number | null
-          status_code: number | null
-          user_agent: string | null
-        }
-        Insert: {
-          api_key_id?: string | null
-          created_at?: string
-          endpoint: string
-          id?: string
-          ip_address?: string | null
-          method: string
-          organization_id?: string | null
-          request_size_bytes?: number | null
-          response_size_bytes?: number | null
-          response_time_ms?: number | null
-          status_code?: number | null
-          user_agent?: string | null
-        }
-        Update: {
-          api_key_id?: string | null
-          created_at?: string
-          endpoint?: string
-          id?: string
-          ip_address?: string | null
-          method?: string
-          organization_id?: string | null
-          request_size_bytes?: number | null
-          response_size_bytes?: number | null
-          response_time_ms?: number | null
-          status_code?: number | null
-          user_agent?: string | null
         }
         Relationships: []
       }
@@ -612,44 +544,6 @@ export type Database = {
         }
         Relationships: []
       }
-      course_announcements: {
-        Row: {
-          content: string
-          course_id: string
-          created_at: string | null
-          id: string
-          instructor_id: string | null
-          is_pinned: boolean | null
-          title: string
-        }
-        Insert: {
-          content: string
-          course_id: string
-          created_at?: string | null
-          id?: string
-          instructor_id?: string | null
-          is_pinned?: boolean | null
-          title: string
-        }
-        Update: {
-          content?: string
-          course_id?: string
-          created_at?: string | null
-          id?: string
-          instructor_id?: string | null
-          is_pinned?: boolean | null
-          title?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "course_announcements_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       course_enrollments: {
         Row: {
           amount_paid: number | null
@@ -687,22 +581,7 @@ export type Database = {
           stripe_session_id?: string | null
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "course_enrollments_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "course_enrollments_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          }
-        ]
+        Relationships: []
       }
       course_lessons: {
         Row: {
@@ -1025,195 +904,6 @@ export type Database = {
         }
         Relationships: []
       }
-      data_access_log: {
-        Row: {
-          access_type: string
-          accessed_by_user_id: string
-          accessed_user_id: string
-          created_at: string
-          id: string
-          ip_address: string | null
-          organization_id: string | null
-          reason: string | null
-          resource_id: string | null
-          resource_type: string
-          user_agent: string | null
-        }
-        Insert: {
-          access_type: string
-          accessed_by_user_id: string
-          accessed_user_id: string
-          created_at?: string
-          id?: string
-          ip_address?: string | null
-          organization_id?: string | null
-          reason?: string | null
-          resource_id?: string | null
-          resource_type: string
-          user_agent?: string | null
-        }
-        Update: {
-          access_type?: string
-          accessed_by_user_id?: string
-          accessed_user_id?: string
-          created_at?: string
-          id?: string
-          ip_address?: string | null
-          organization_id?: string | null
-          reason?: string | null
-          resource_id?: string | null
-          resource_type?: string
-          user_agent?: string | null
-        }
-        Relationships: []
-      }
-      data_deletion_requests: {
-        Row: {
-          completed_at: string | null
-          confirmation_expires_at: string | null
-          confirmation_token: string | null
-          confirmed_at: string | null
-          created_at: string
-          deletion_type: string
-          error_message: string | null
-          id: string
-          ip_address: string | null
-          items_to_delete: Json | null
-          organization_id: string | null
-          requested_reason: string | null
-          retention_reason: string | null
-          started_at: string | null
-          status: string
-          updated_at: string
-          user_agent: string | null
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string | null
-          confirmation_expires_at?: string | null
-          confirmation_token?: string | null
-          confirmed_at?: string | null
-          created_at?: string
-          deletion_type: string
-          error_message?: string | null
-          id?: string
-          ip_address?: string | null
-          items_to_delete?: Json | null
-          organization_id?: string | null
-          requested_reason?: string | null
-          retention_reason?: string | null
-          started_at?: string | null
-          status?: string
-          updated_at?: string
-          user_agent?: string | null
-          user_id: string
-        }
-        Update: {
-          completed_at?: string | null
-          confirmation_expires_at?: string | null
-          confirmation_token?: string | null
-          confirmed_at?: string | null
-          created_at?: string
-          deletion_type?: string
-          error_message?: string | null
-          id?: string
-          ip_address?: string | null
-          items_to_delete?: Json | null
-          organization_id?: string | null
-          requested_reason?: string | null
-          retention_reason?: string | null
-          started_at?: string | null
-          status?: string
-          updated_at?: string
-          user_agent?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      data_export_requests: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          error_message: string | null
-          expires_at: string | null
-          export_format: string
-          export_type: string
-          file_path: string | null
-          file_size_bytes: number | null
-          file_url: string | null
-          id: string
-          include_activity: boolean
-          include_api_keys: boolean
-          include_billing: boolean
-          include_content: boolean
-          include_memberships: boolean
-          include_profile: boolean
-          include_webhooks: boolean
-          ip_address: string | null
-          organization_id: string | null
-          requested_reason: string | null
-          started_at: string | null
-          status: string
-          updated_at: string
-          user_agent: string | null
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          error_message?: string | null
-          expires_at?: string | null
-          export_format?: string
-          export_type: string
-          file_path?: string | null
-          file_size_bytes?: number | null
-          file_url?: string | null
-          id?: string
-          include_activity?: boolean
-          include_api_keys?: boolean
-          include_billing?: boolean
-          include_content?: boolean
-          include_memberships?: boolean
-          include_profile?: boolean
-          include_webhooks?: boolean
-          ip_address?: string | null
-          organization_id?: string | null
-          requested_reason?: string | null
-          started_at?: string | null
-          status?: string
-          updated_at?: string
-          user_agent?: string | null
-          user_id: string
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          error_message?: string | null
-          expires_at?: string | null
-          export_format?: string
-          export_type?: string
-          file_path?: string | null
-          file_size_bytes?: number | null
-          file_url?: string | null
-          id?: string
-          include_activity?: boolean
-          include_api_keys?: boolean
-          include_billing?: boolean
-          include_content?: boolean
-          include_memberships?: boolean
-          include_profile?: boolean
-          include_webhooks?: boolean
-          ip_address?: string | null
-          organization_id?: string | null
-          requested_reason?: string | null
-          started_at?: string | null
-          status?: string
-          updated_at?: string
-          user_agent?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       diagnostic_results: {
         Row: {
           answers: Json
@@ -1315,6 +1005,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      energy_budgets: {
+        Row: {
+          activities: Json
+          created_at: string | null
+          date: string
+          id: string
+          remaining_budget: number
+          total_budget: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          activities?: Json
+          created_at?: string | null
+          date: string
+          id?: string
+          remaining_budget: number
+          total_budget?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          activities?: Json
+          created_at?: string | null
+          date?: string
+          id?: string
+          remaining_budget?: number
+          total_budget?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "energy_budgets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       enrollments: {
         Row: {
@@ -1451,57 +1182,6 @@ export type Database = {
         }
         Relationships: []
       }
-      instructor_applications: {
-        Row: {
-          background: string
-          created_at: string | null
-          experience_years: number
-          id: string
-          linkedin_url: string | null
-          motivation: string
-          rejection_reason: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          specializations: string[]
-          status: string
-          submitted_at: string | null
-          user_id: string
-          website_url: string | null
-        }
-        Insert: {
-          background: string
-          created_at?: string | null
-          experience_years: number
-          id?: string
-          linkedin_url?: string | null
-          motivation: string
-          rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          specializations?: string[]
-          status?: string
-          submitted_at?: string | null
-          user_id: string
-          website_url?: string | null
-        }
-        Update: {
-          background?: string
-          created_at?: string | null
-          experience_years?: number
-          id?: string
-          linkedin_url?: string | null
-          motivation?: string
-          rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          specializations?: string[]
-          status?: string
-          submitted_at?: string | null
-          user_id?: string
-          website_url?: string | null
-        }
-        Relationships: []
-      }
       instructor_profiles: {
         Row: {
           approved_at: string | null
@@ -1586,241 +1266,35 @@ export type Database = {
         }
         Relationships: []
       }
-      learning_preferences: {
-        Row: {
-          id: string
-          user_id: string
-          preferred_pace: string | null
-          preferred_format: string[] | null
-          preferred_session_length: number | null
-          difficulty_preference: string | null
-          topic_interests: string[] | null
-          enable_subtitles: boolean | null
-          enable_transcripts: boolean | null
-          playback_speed: number | null
-          daily_reminder_enabled: boolean | null
-          daily_reminder_time: string | null
-          weekly_goal_minutes: number | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          preferred_pace?: string | null
-          preferred_format?: string[] | null
-          preferred_session_length?: number | null
-          difficulty_preference?: string | null
-          topic_interests?: string[] | null
-          enable_subtitles?: boolean | null
-          enable_transcripts?: boolean | null
-          playback_speed?: number | null
-          daily_reminder_enabled?: boolean | null
-          daily_reminder_time?: string | null
-          weekly_goal_minutes?: number | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          preferred_pace?: string | null
-          preferred_format?: string[] | null
-          preferred_session_length?: number | null
-          difficulty_preference?: string | null
-          topic_interests?: string[] | null
-          enable_subtitles?: boolean | null
-          enable_transcripts?: boolean | null
-          playback_speed?: number | null
-          daily_reminder_enabled?: boolean | null
-          daily_reminder_time?: string | null
-          weekly_goal_minutes?: number | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      appearance_preferences: {
-        Row: {
-          id: string
-          user_id: string
-          theme: string | null
-          accent_color: string | null
-          font_size: string | null
-          enable_dyslexia_font: boolean | null
-          reduce_motion: boolean | null
-          high_contrast: boolean | null
-          compact_mode: boolean | null
-          show_sidebar: boolean | null
-          dashboard_layout: string | null
-          orb_animation_enabled: boolean | null
-          orb_size: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          theme?: string | null
-          accent_color?: string | null
-          font_size?: string | null
-          enable_dyslexia_font?: boolean | null
-          reduce_motion?: boolean | null
-          high_contrast?: boolean | null
-          compact_mode?: boolean | null
-          show_sidebar?: boolean | null
-          dashboard_layout?: string | null
-          orb_animation_enabled?: boolean | null
-          orb_size?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          theme?: string | null
-          accent_color?: string | null
-          font_size?: string | null
-          enable_dyslexia_font?: boolean | null
-          reduce_motion?: boolean | null
-          high_contrast?: boolean | null
-          compact_mode?: boolean | null
-          show_sidebar?: boolean | null
-          dashboard_layout?: string | null
-          orb_animation_enabled?: boolean | null
-          orb_size?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       invoices: {
         Row: {
-          amount_cents: number | null
           amount_paid: number | null
-          amount_paid_cents: number | null
           created_at: string | null
           currency: string | null
-          description: string | null
-          due_date: string | null
-          hosted_invoice_url: string | null
           id: string
-          invoice_date: string | null
-          invoice_number: string | null
-          invoice_pdf: string | null
-          organization_id: string | null
-          paid: boolean | null
           paid_at: string | null
-          status: string | null
           stripe_invoice_id: string | null
           stripe_subscription_id: string | null
-          subscription_id: string | null
         }
         Insert: {
-          amount_cents?: number | null
           amount_paid?: number | null
-          amount_paid_cents?: number | null
           created_at?: string | null
           currency?: string | null
-          description?: string | null
-          due_date?: string | null
-          hosted_invoice_url?: string | null
           id?: string
-          invoice_date?: string | null
-          invoice_number?: string | null
-          invoice_pdf?: string | null
-          organization_id?: string | null
-          paid?: boolean | null
           paid_at?: string | null
-          status?: string | null
           stripe_invoice_id?: string | null
           stripe_subscription_id?: string | null
-          subscription_id?: string | null
         }
         Update: {
-          amount_cents?: number | null
           amount_paid?: number | null
-          amount_paid_cents?: number | null
           created_at?: string | null
           currency?: string | null
-          description?: string | null
-          due_date?: string | null
-          hosted_invoice_url?: string | null
           id?: string
-          invoice_date?: string | null
-          invoice_number?: string | null
-          invoice_pdf?: string | null
-          organization_id?: string | null
-          paid?: boolean | null
           paid_at?: string | null
-          status?: string | null
           stripe_invoice_id?: string | null
           stripe_subscription_id?: string | null
-          subscription_id?: string | null
         }
         Relationships: []
-      }
-      learning_streaks: {
-        Row: {
-          current_streak: number | null
-          id: string
-          last_activity_date: string | null
-          longest_streak: number | null
-          streak_history: Json | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          current_streak?: number | null
-          id?: string
-          last_activity_date?: string | null
-          longest_streak?: number | null
-          streak_history?: Json | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          current_streak?: number | null
-          id?: string
-          last_activity_date?: string | null
-          longest_streak?: number | null
-          streak_history?: Json | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      lesson_bookmarks: {
-        Row: {
-          created_at: string | null
-          id: string
-          lesson_id: string
-          note: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          lesson_id: string
-          note?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          lesson_id?: string
-          note?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "lesson_bookmarks_lesson_id_fkey"
-            columns: ["lesson_id"]
-            isOneToOne: false
-            referencedRelation: "course_lessons"
-            referencedColumns: ["id"]
-          }
-        ]
       }
       lesson_completions: {
         Row: {
@@ -1842,41 +1316,6 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
-      }
-      lesson_notes: {
-        Row: {
-          content: string
-          created_at: string | null
-          id: string
-          lesson_id: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          id?: string
-          lesson_id: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          id?: string
-          lesson_id?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "lesson_notes_lesson_id_fkey"
-            columns: ["lesson_id"]
-            isOneToOne: false
-            referencedRelation: "course_lessons"
-            referencedColumns: ["id"]
-          }
-        ]
       }
       lesson_progress: {
         Row: {
@@ -2115,51 +1554,6 @@ export type Database = {
         }
         Relationships: []
       }
-      organization_activity_log: {
-        Row: {
-          action: string
-          created_at: string | null
-          entity_id: string | null
-          entity_type: string | null
-          id: string
-          ip_address: unknown
-          metadata: Json | null
-          organization_id: string
-          user_agent: string | null
-          user_email: string | null
-          user_id: string | null
-          user_name: string | null
-        }
-        Insert: {
-          action: string
-          created_at?: string | null
-          entity_id?: string | null
-          entity_type?: string | null
-          id?: string
-          ip_address?: unknown
-          metadata?: Json | null
-          organization_id: string
-          user_agent?: string | null
-          user_email?: string | null
-          user_id?: string | null
-          user_name?: string | null
-        }
-        Update: {
-          action?: string
-          created_at?: string | null
-          entity_id?: string | null
-          entity_type?: string | null
-          id?: string
-          ip_address?: unknown
-          metadata?: Json | null
-          organization_id?: string
-          user_agent?: string | null
-          user_email?: string | null
-          user_id?: string | null
-          user_name?: string | null
-        }
-        Relationships: []
-      }
       organization_roles: {
         Row: {
           color: string | null
@@ -2202,90 +1596,6 @@ export type Database = {
         }
         Relationships: []
       }
-      organization_subscriptions: {
-        Row: {
-          billing_cycle: string
-          cancel_at_period_end: boolean
-          canceled_at: string | null
-          created_at: string
-          current_period_end: string | null
-          current_period_start: string | null
-          id: string
-          organization_id: string
-          plan_id: string | null
-          status: string
-          stripe_customer_id: string | null
-          stripe_subscription_id: string | null
-          trial_end: string | null
-          updated_at: string
-        }
-        Insert: {
-          billing_cycle?: string
-          cancel_at_period_end?: boolean
-          canceled_at?: string | null
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          organization_id: string
-          plan_id?: string | null
-          status?: string
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
-          trial_end?: string | null
-          updated_at?: string
-        }
-        Update: {
-          billing_cycle?: string
-          cancel_at_period_end?: boolean
-          canceled_at?: string | null
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          organization_id?: string
-          plan_id?: string | null
-          status?: string
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
-          trial_end?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      organization_usage_metrics: {
-        Row: {
-          created_at: string
-          id: string
-          metric_name: string
-          metric_value: number
-          organization_id: string
-          period_end: string
-          period_start: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          metric_name: string
-          metric_value?: number
-          organization_id: string
-          period_end: string
-          period_start: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          metric_name?: string
-          metric_value?: number
-          organization_id?: string
-          period_end?: string
-          period_start?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       organizations: {
         Row: {
           address: Json | null
@@ -2322,66 +1632,6 @@ export type Database = {
           subscription_status?: string | null
           subscription_tier?: string | null
           type?: string
-        }
-        Relationships: []
-      }
-      payment_methods: {
-        Row: {
-          billing_email: string | null
-          billing_name: string | null
-          brand: string | null
-          card_brand: string | null
-          card_exp_month: number | null
-          card_exp_year: number | null
-          card_last4: string | null
-          created_at: string
-          exp_month: number | null
-          exp_year: number | null
-          id: string
-          is_default: boolean
-          last4: string | null
-          organization_id: string
-          stripe_payment_method_id: string
-          type: string
-          updated_at: string
-        }
-        Insert: {
-          billing_email?: string | null
-          billing_name?: string | null
-          brand?: string | null
-          card_brand?: string | null
-          card_exp_month?: number | null
-          card_exp_year?: number | null
-          card_last4?: string | null
-          created_at?: string
-          exp_month?: number | null
-          exp_year?: number | null
-          id?: string
-          is_default?: boolean
-          last4?: string | null
-          organization_id: string
-          stripe_payment_method_id: string
-          type: string
-          updated_at?: string
-        }
-        Update: {
-          billing_email?: string | null
-          billing_name?: string | null
-          brand?: string | null
-          card_brand?: string | null
-          card_exp_month?: number | null
-          card_exp_year?: number | null
-          card_last4?: string | null
-          created_at?: string
-          exp_month?: number | null
-          exp_year?: number | null
-          id?: string
-          is_default?: boolean
-          last4?: string | null
-          organization_id?: string
-          stripe_payment_method_id?: string
-          type?: string
-          updated_at?: string
         }
         Relationships: []
       }
@@ -2463,8 +1713,6 @@ export type Database = {
           id: string
           instructor_certified_at: string | null
           instructor_status: string | null
-          onboarding_completed_at: string | null
-          onboarding_current_step: string | null
           role: string
           stripe_customer_id: string | null
           updated_at: string | null
@@ -2477,8 +1725,6 @@ export type Database = {
           id: string
           instructor_certified_at?: string | null
           instructor_status?: string | null
-          onboarding_completed_at?: string | null
-          onboarding_current_step?: string | null
           role?: string
           stripe_customer_id?: string | null
           updated_at?: string | null
@@ -2491,8 +1737,6 @@ export type Database = {
           id?: string
           instructor_certified_at?: string | null
           instructor_status?: string | null
-          onboarding_completed_at?: string | null
-          onboarding_current_step?: string | null
           role?: string
           stripe_customer_id?: string | null
           updated_at?: string | null
@@ -2529,51 +1773,6 @@ export type Database = {
         }
         Relationships: []
       }
-      testimonials: {
-        Row: {
-          id: string
-          name: string
-          role: string | null
-          quote: string
-          element: string | null
-          gradient: string | null
-          avatar_url: string | null
-          is_published: boolean | null
-          is_verified: boolean | null
-          display_order: number | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          name: string
-          role?: string | null
-          quote: string
-          element?: string | null
-          gradient?: string | null
-          avatar_url?: string | null
-          is_published?: boolean | null
-          is_verified?: boolean | null
-          display_order?: number | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          name?: string
-          role?: string | null
-          quote?: string
-          element?: string | null
-          gradient?: string | null
-          avatar_url?: string | null
-          is_published?: boolean | null
-          is_verified?: boolean | null
-          display_order?: number | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       quizzes: {
         Row: {
           id: string
@@ -2598,182 +1797,37 @@ export type Database = {
         }
         Relationships: []
       }
-      rate_limit_configs: {
+      quick_quiz_results: {
         Row: {
-          burst_allowance: number
-          created_at: string
-          enforce_hard_limits: boolean
+          created_at: string | null
           id: string
-          max_concurrent_requests: number
-          organization_id: string
-          requests_per_day: number
-          requests_per_hour: number
-          requests_per_minute: number
-          tier: string
-          updated_at: string
-          webhooks_per_hour: number
-          webhooks_per_minute: number
-        }
-        Insert: {
-          burst_allowance?: number
-          created_at?: string
-          enforce_hard_limits?: boolean
-          id?: string
-          max_concurrent_requests?: number
-          organization_id: string
-          requests_per_day?: number
-          requests_per_hour?: number
-          requests_per_minute?: number
-          tier?: string
-          updated_at?: string
-          webhooks_per_hour?: number
-          webhooks_per_minute?: number
-        }
-        Update: {
-          burst_allowance?: number
-          created_at?: string
-          enforce_hard_limits?: boolean
-          id?: string
-          max_concurrent_requests?: number
-          organization_id?: string
-          requests_per_day?: number
-          requests_per_hour?: number
-          requests_per_minute?: number
-          tier?: string
-          updated_at?: string
-          webhooks_per_hour?: number
-          webhooks_per_minute?: number
-        }
-        Relationships: []
-      }
-      rate_limit_counters: {
-        Row: {
-          api_key_id: string | null
-          created_at: string
-          id: string
-          organization_id: string
-          request_count: number
-          updated_at: string
-          webhook_count: number
-          window_start: string
-          window_type: string
-        }
-        Insert: {
-          api_key_id?: string | null
-          created_at?: string
-          id?: string
-          organization_id: string
-          request_count?: number
-          updated_at?: string
-          webhook_count?: number
-          window_start: string
-          window_type: string
-        }
-        Update: {
-          api_key_id?: string | null
-          created_at?: string
-          id?: string
-          organization_id?: string
-          request_count?: number
-          updated_at?: string
-          webhook_count?: number
-          window_start?: string
-          window_type?: string
-        }
-        Relationships: []
-      }
-      rate_limit_tiers: {
-        Row: {
-          burst_allowance: number
-          created_at: string
-          id: string
-          max_concurrent_requests: number
-          requests_per_day: number
-          requests_per_hour: number
-          requests_per_minute: number
-          tier_name: string
-          updated_at: string
-          webhooks_per_hour: number
-          webhooks_per_minute: number
-        }
-        Insert: {
-          burst_allowance?: number
-          created_at?: string
-          id?: string
-          max_concurrent_requests?: number
-          requests_per_day?: number
-          requests_per_hour?: number
-          requests_per_minute?: number
-          tier_name: string
-          updated_at?: string
-          webhooks_per_hour?: number
-          webhooks_per_minute?: number
-        }
-        Update: {
-          burst_allowance?: number
-          created_at?: string
-          id?: string
-          max_concurrent_requests?: number
-          requests_per_day?: number
-          requests_per_hour?: number
-          requests_per_minute?: number
-          tier_name?: string
-          updated_at?: string
-          webhooks_per_hour?: number
-          webhooks_per_minute?: number
-        }
-        Relationships: []
-      }
-      rate_limit_violations: {
-        Row: {
-          api_key_id: string | null
-          created_at: string
-          current_count: number
-          endpoint: string
-          id: string
-          ip_address: string | null
-          limit_type: string
-          limit_value: number
-          method: string
-          organization_id: string
-          response_status: number | null
-          retry_after: number | null
-          user_agent: string | null
+          primary_element: string
+          scores: Json
           user_id: string | null
         }
         Insert: {
-          api_key_id?: string | null
-          created_at?: string
-          current_count: number
-          endpoint: string
+          created_at?: string | null
           id?: string
-          ip_address?: string | null
-          limit_type: string
-          limit_value: number
-          method: string
-          organization_id: string
-          response_status?: number | null
-          retry_after?: number | null
-          user_agent?: string | null
+          primary_element: string
+          scores: Json
           user_id?: string | null
         }
         Update: {
-          api_key_id?: string | null
-          created_at?: string
-          current_count?: number
-          endpoint?: string
+          created_at?: string | null
           id?: string
-          ip_address?: string | null
-          limit_type?: string
-          limit_value?: number
-          method?: string
-          organization_id?: string
-          response_status?: number | null
-          retry_after?: number | null
-          user_agent?: string | null
+          primary_element?: string
+          scores?: Json
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "quick_quiz_results_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       resource_downloads: {
         Row: {
@@ -2876,7 +1930,7 @@ export type Database = {
           props: Json
           scheduled_for: string
           sent_at: string | null
-          status: string | null
+          status: string
           to: string
           type: string
         }
@@ -2887,7 +1941,7 @@ export type Database = {
           props?: Json
           scheduled_for: string
           sent_at?: string | null
-          status?: string | null
+          status?: string
           to: string
           type: string
         }
@@ -2898,9 +1952,39 @@ export type Database = {
           props?: Json
           scheduled_for?: string
           sent_at?: string | null
-          status?: string | null
+          status?: string
           to?: string
           type?: string
+        }
+        Relationships: []
+      }
+      session_bookings: {
+        Row: {
+          booked_at: string
+          cancelled_at: string | null
+          created_at: string
+          id: string
+          session_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          booked_at?: string
+          cancelled_at?: string | null
+          created_at?: string
+          id?: string
+          session_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          booked_at?: string
+          cancelled_at?: string | null
+          created_at?: string
+          id?: string
+          session_id?: string
+          status?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2943,79 +2027,94 @@ export type Database = {
         }
         Relationships: []
       }
-      sso_auth_attempts: {
+      shadow_sessions: {
         Row: {
-          created_at: string
-          duration_ms: number | null
-          email: string
-          error_code: string | null
-          error_message: string | null
+          completed_at: string | null
+          current_step: number
+          element: string
           id: string
-          ip_address: string | null
-          oauth_state: string | null
-          organization_id: string | null
-          provider_id: string
-          saml_assertion: string | null
-          saml_request_id: string | null
+          reflections: Json
+          started_at: string | null
           status: string
-          user_agent: string | null
           user_id: string | null
         }
         Insert: {
-          created_at?: string
-          duration_ms?: number | null
-          email: string
-          error_code?: string | null
-          error_message?: string | null
+          completed_at?: string | null
+          current_step?: number
+          element: string
           id?: string
-          ip_address?: string | null
-          oauth_state?: string | null
-          organization_id?: string | null
-          provider_id: string
-          saml_assertion?: string | null
-          saml_request_id?: string | null
-          status: string
-          user_agent?: string | null
+          reflections?: Json
+          started_at?: string | null
+          status?: string
           user_id?: string | null
         }
         Update: {
+          completed_at?: string | null
+          current_step?: number
+          element?: string
+          id?: string
+          reflections?: Json
+          started_at?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shadow_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      sso_auth_attempts: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          ip_address: string | null
+          provider_id: string
+          redirect_url: string | null
+          state: string
+          status: string
+          user_agent: string | null
+        }
+        Insert: {
+          completed_at?: string | null
           created_at?: string
-          duration_ms?: number | null
-          email?: string
-          error_code?: string | null
           error_message?: string | null
           id?: string
           ip_address?: string | null
-          oauth_state?: string | null
-          organization_id?: string | null
-          provider_id?: string
-          saml_assertion?: string | null
-          saml_request_id?: string | null
+          provider_id: string
+          redirect_url?: string | null
+          state: string
           status?: string
           user_agent?: string | null
-          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          provider_id?: string
+          redirect_url?: string | null
+          state?: string
+          status?: string
+          user_agent?: string | null
         }
         Relationships: []
       }
       sso_providers: {
         Row: {
-          attribute_mapping: Json | null
-          auto_provision_users: boolean | null
           created_at: string
           created_by: string | null
-          default_role: string | null
           domains: string[]
-          enforce_sso: boolean | null
           id: string
           is_active: boolean
-          metadata: Json | null
           metadata_url: string | null
-          oauth_authorize_url: string | null
-          oauth_client_id: string | null
-          oauth_client_secret: string | null
-          oauth_scopes: string[] | null
-          oauth_token_url: string | null
-          oauth_userinfo_url: string | null
           oidc_client_id: string | null
           oidc_client_secret: string | null
           oidc_issuer_url: string | null
@@ -3024,28 +2123,16 @@ export type Database = {
           provider_type: string
           saml_certificate: string | null
           saml_entity_id: string | null
-          saml_sign_requests: boolean | null
           saml_sso_url: string | null
           updated_at: string
         }
         Insert: {
-          attribute_mapping?: Json | null
-          auto_provision_users?: boolean | null
           created_at?: string
           created_by?: string | null
-          default_role?: string | null
-          domains: string[]
-          enforce_sso?: boolean | null
+          domains?: string[]
           id?: string
           is_active?: boolean
-          metadata?: Json | null
           metadata_url?: string | null
-          oauth_authorize_url?: string | null
-          oauth_client_id?: string | null
-          oauth_client_secret?: string | null
-          oauth_scopes?: string[] | null
-          oauth_token_url?: string | null
-          oauth_userinfo_url?: string | null
           oidc_client_id?: string | null
           oidc_client_secret?: string | null
           oidc_issuer_url?: string | null
@@ -3054,28 +2141,16 @@ export type Database = {
           provider_type: string
           saml_certificate?: string | null
           saml_entity_id?: string | null
-          saml_sign_requests?: boolean | null
           saml_sso_url?: string | null
           updated_at?: string
         }
         Update: {
-          attribute_mapping?: Json | null
-          auto_provision_users?: boolean | null
           created_at?: string
           created_by?: string | null
-          default_role?: string | null
           domains?: string[]
-          enforce_sso?: boolean | null
           id?: string
           is_active?: boolean
-          metadata?: Json | null
           metadata_url?: string | null
-          oauth_authorize_url?: string | null
-          oauth_client_id?: string | null
-          oauth_client_secret?: string | null
-          oauth_scopes?: string[] | null
-          oauth_token_url?: string | null
-          oauth_userinfo_url?: string | null
           oidc_client_id?: string | null
           oidc_client_secret?: string | null
           oidc_issuer_url?: string | null
@@ -3084,7 +2159,6 @@ export type Database = {
           provider_type?: string
           saml_certificate?: string | null
           saml_entity_id?: string | null
-          saml_sign_requests?: boolean | null
           saml_sso_url?: string | null
           updated_at?: string
         }
@@ -3092,372 +2166,287 @@ export type Database = {
       }
       sso_sessions: {
         Row: {
+          attributes: Json | null
           created_at: string
           expires_at: string
           id: string
-          ip_address: string | null
-          logged_out_at: string | null
-          name_id: string
-          organization_id: string | null
+          name_id: string | null
           provider_id: string
           session_index: string | null
-          user_agent: string | null
           user_id: string
         }
         Insert: {
+          attributes?: Json | null
           created_at?: string
           expires_at: string
           id?: string
-          ip_address?: string | null
-          logged_out_at?: string | null
-          name_id: string
-          organization_id?: string | null
+          name_id?: string | null
           provider_id: string
           session_index?: string | null
-          user_agent?: string | null
           user_id: string
         }
         Update: {
+          attributes?: Json | null
           created_at?: string
           expires_at?: string
           id?: string
-          ip_address?: string | null
-          logged_out_at?: string | null
-          name_id?: string
-          organization_id?: string | null
+          name_id?: string | null
           provider_id?: string
           session_index?: string | null
-          user_agent?: string | null
           user_id?: string
         }
         Relationships: []
       }
-      sso_user_mappings: {
+      subscription_items: {
         Row: {
-          attributes: Json | null
           created_at: string
-          email: string
-          external_id: string
           id: string
-          last_login_at: string | null
-          provider_id: string
+          product_id: string
+          quantity: number
+          subscription_id: string
+          unit_price: number
           updated_at: string
-          user_id: string
         }
         Insert: {
-          attributes?: Json | null
           created_at?: string
-          email: string
-          external_id: string
           id?: string
-          last_login_at?: string | null
-          provider_id: string
+          product_id: string
+          quantity?: number
+          subscription_id: string
+          unit_price: number
           updated_at?: string
-          user_id: string
         }
         Update: {
-          attributes?: Json | null
           created_at?: string
-          email?: string
-          external_id?: string
           id?: string
-          last_login_at?: string | null
-          provider_id?: string
+          product_id?: string
+          quantity?: number
+          subscription_id?: string
+          unit_price?: number
           updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }
-      subscription_plans: {
+      strategy_ratings: {
         Row: {
-          created_at: string
-          description: string | null
-          features: Json
+          created_at: string | null
+          element: string
           id: string
-          is_active: boolean
-          is_public: boolean
-          limits: Json
-          name: string
-          price_monthly: number
-          price_yearly: number
-          slug: string
-          stripe_price_id_monthly: string | null
-          stripe_price_id_yearly: string | null
-          updated_at: string
+          note: string | null
+          rating: number
+          strategy_id: string
+          strategy_name: string
+          user_id: string | null
         }
         Insert: {
-          created_at?: string
-          description?: string | null
-          features?: Json
+          created_at?: string | null
+          element: string
           id?: string
-          is_active?: boolean
-          is_public?: boolean
-          limits?: Json
-          name: string
-          price_monthly?: number
-          price_yearly?: number
-          slug: string
-          stripe_price_id_monthly?: string | null
-          stripe_price_id_yearly?: string | null
-          updated_at?: string
+          note?: string | null
+          rating: number
+          strategy_id: string
+          strategy_name: string
+          user_id?: string | null
         }
         Update: {
-          created_at?: string
-          description?: string | null
-          features?: Json
+          created_at?: string | null
+          element?: string
           id?: string
-          is_active?: boolean
-          is_public?: boolean
-          limits?: Json
-          name?: string
-          price_monthly?: number
-          price_yearly?: number
-          slug?: string
-          stripe_price_id_monthly?: string | null
-          stripe_price_id_yearly?: string | null
-          updated_at?: string
+          note?: string | null
+          rating?: number
+          strategy_id?: string
+          strategy_name?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "strategy_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
+          canceled_at: string | null
           created_at: string | null
           current_period_end: string | null
           current_period_start: string | null
           id: string
-          price_id: string | null
-          status: string
+          status: string | null
+          stripe_customer_id: string | null
           stripe_subscription_id: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
           cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
           created_at?: string | null
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
-          price_id?: string | null
-          status?: string
+          status?: string | null
+          stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
           created_at?: string | null
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
-          price_id?: string | null
-          status?: string
+          status?: string | null
+          stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Relationships: []
       }
-      team_assessments: {
+      tool_analytics: {
         Row: {
+          action: string
           created_at: string | null
-          created_by: string | null
-          description: string | null
+          duration_seconds: number | null
           id: string
-          organization_id: string | null
-          status: string | null
-          team_name: string | null
-          title: string
-          updated_at: string | null
+          metadata: Json | null
+          tool_name: string
+          user_id: string | null
         }
         Insert: {
+          action: string
           created_at?: string | null
-          created_by?: string | null
-          description?: string | null
+          duration_seconds?: number | null
           id?: string
-          organization_id?: string | null
-          status?: string | null
-          team_name?: string | null
-          title: string
-          updated_at?: string | null
+          metadata?: Json | null
+          tool_name: string
+          user_id?: string | null
         }
         Update: {
+          action?: string
           created_at?: string | null
-          created_by?: string | null
-          description?: string | null
+          duration_seconds?: number | null
           id?: string
-          organization_id?: string | null
-          status?: string | null
-          team_name?: string | null
-          title?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      team_compositions: {
-        Row: {
-          element_percentages: Json
-          generated_at: string | null
-          id: string
-          insights: Json | null
-          recommendations: Json | null
-          team_id: string | null
-          total_participants: number
-        }
-        Insert: {
-          element_percentages: Json
-          generated_at?: string | null
-          id?: string
-          insights?: Json | null
-          recommendations?: Json | null
-          team_id?: string | null
-          total_participants: number
-        }
-        Update: {
-          element_percentages?: Json
-          generated_at?: string | null
-          id?: string
-          insights?: Json | null
-          recommendations?: Json | null
-          team_id?: string | null
-          total_participants?: number
-        }
-        Relationships: []
-      }
-      team_participants: {
-        Row: {
-          assessment_id: string | null
-          email: string
-          element_scores: Json | null
-          id: string
-          invited_at: string | null
-          name: string
-          responded_at: string | null
-          status: string | null
-          team_id: string | null
-          top_element: string | null
-        }
-        Insert: {
-          assessment_id?: string | null
-          email: string
-          element_scores?: Json | null
-          id?: string
-          invited_at?: string | null
-          name: string
-          responded_at?: string | null
-          status?: string | null
-          team_id?: string | null
-          top_element?: string | null
-        }
-        Update: {
-          assessment_id?: string | null
-          email?: string
-          element_scores?: Json | null
-          id?: string
-          invited_at?: string | null
-          name?: string
-          responded_at?: string | null
-          status?: string | null
-          team_id?: string | null
-          top_element?: string | null
-        }
-        Relationships: []
-      }
-      usage_reports: {
-        Row: {
-          created_at: string
-          created_by: string
-          data: Json
-          end_date: string
-          format: string
-          id: string
-          organization_id: string
-          report_type: string
-          start_date: string
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          data: Json
-          end_date: string
-          format?: string
-          id?: string
-          organization_id: string
-          report_type: string
-          start_date: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          data?: Json
-          end_date?: string
-          format?: string
-          id?: string
-          organization_id?: string
-          report_type?: string
-          start_date?: string
-        }
-        Relationships: []
-      }
-      user_achievements: {
-        Row: {
-          achievement_id: string
-          earned_at: string | null
-          id: string
-          user_id: string
-        }
-        Insert: {
-          achievement_id: string
-          earned_at?: string | null
-          id?: string
-          user_id: string
-        }
-        Update: {
-          achievement_id?: string
-          earned_at?: string | null
-          id?: string
-          user_id?: string
+          metadata?: Json | null
+          tool_name?: string
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "user_achievements_achievement_id_fkey"
-            columns: ["achievement_id"]
+            foreignKeyName: "tool_analytics_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "achievements"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           }
         ]
       }
-      user_activity_metrics: {
+      transactions: {
         Row: {
-          created_at: string
+          amount: number
+          created_at: string | null
+          currency: string | null
           id: string
-          metric_name: string
-          metric_value: number
-          organization_id: string
-          period_end: string
-          period_start: string
-          user_id: string
+          metadata: Json | null
+          product_id: string | null
+          product_type: string | null
+          status: string | null
+          stripe_session_id: string | null
+          updated_at: string | null
+          user_id: string | null
         }
         Insert: {
-          created_at?: string
+          amount: number
+          created_at?: string | null
+          currency?: string | null
           id?: string
-          metric_name: string
-          metric_value?: number
-          organization_id: string
-          period_end: string
-          period_start: string
-          user_id: string
+          metadata?: Json | null
+          product_id?: string | null
+          product_type?: string | null
+          status?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
-          created_at?: string
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
           id?: string
-          metric_name?: string
-          metric_value?: number
-          organization_id?: string
-          period_end?: string
-          period_start?: string
-          user_id?: string
+          metadata?: Json | null
+          product_id?: string | null
+          product_type?: string | null
+          status?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_activity_log: {
+        Row: {
+          activity_type: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string | null
+          email_notifications: Json | null
+          id: string
+          language: string | null
+          metadata: Json | null
+          theme: string | null
+          timezone: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email_notifications?: Json | null
+          id?: string
+          language?: string | null
+          metadata?: Json | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email_notifications?: Json | null
+          id?: string
+          language?: string | null
+          metadata?: Json | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -3481,19 +2470,19 @@ export type Database = {
           name?: string | null
           referral_code?: string | null
           source?: string | null
-          status?: string | null
-          updated_at?: string | null
+          status?: string
+          updated_at?: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           email?: string
           id?: string
           metadata?: Json | null
-          name?: string
+          name?: string | null
           referral_code?: string | null
           source?: string | null
-          status?: string | null
-          updated_at?: string | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -3552,7 +2541,6 @@ export type Database = {
           events: string[]
           id: string
           is_active: boolean
-          last_triggered_at: string | null
           name: string
           organization_id: string
           secret: string
@@ -3562,10 +2550,9 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
-          events: string[]
+          events?: string[]
           id?: string
           is_active?: boolean
-          last_triggered_at?: string | null
           name: string
           organization_id: string
           secret: string
@@ -3578,12 +2565,758 @@ export type Database = {
           events?: string[]
           id?: string
           is_active?: boolean
-          last_triggered_at?: string | null
           name?: string
           organization_id?: string
           secret?: string
           updated_at?: string
           url?: string
+        }
+        Relationships: []
+      }
+      api_usage_log: {
+        Row: {
+          id: string
+          organization_id: string | null
+          api_key_id: string | null
+          endpoint: string
+          method: string
+          status_code: number | null
+          response_time_ms: number | null
+          request_size_bytes: number | null
+          response_size_bytes: number | null
+          ip_address: string | null
+          user_agent: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id?: string | null
+          api_key_id?: string | null
+          endpoint: string
+          method: string
+          status_code?: number | null
+          response_time_ms?: number | null
+          request_size_bytes?: number | null
+          response_size_bytes?: number | null
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string | null
+          api_key_id?: string | null
+          endpoint?: string
+          method?: string
+          status_code?: number | null
+          response_time_ms?: number | null
+          request_size_bytes?: number | null
+          response_size_bytes?: number | null
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      organization_usage_metrics: {
+        Row: {
+          id: string
+          organization_id: string
+          metric_name: string
+          metric_value: number
+          period_start: string
+          period_end: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          metric_name: string
+          metric_value?: number
+          period_start: string
+          period_end: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          metric_name?: string
+          metric_value?: number
+          period_start?: string
+          period_end?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_activity_metrics: {
+        Row: {
+          id: string
+          user_id: string
+          metric_name: string
+          metric_value: number
+          period_start: string
+          period_end: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          metric_name: string
+          metric_value?: number
+          period_start: string
+          period_end: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          metric_name?: string
+          metric_value?: number
+          period_start?: string
+          period_end?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          description: string | null
+          price_monthly: number
+          price_yearly: number
+          features: Json
+          limits: Json
+          stripe_price_id_monthly: string | null
+          stripe_price_id_yearly: string | null
+          is_active: boolean
+          is_public: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          description?: string | null
+          price_monthly?: number
+          price_yearly?: number
+          features?: Json
+          limits?: Json
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
+          is_active?: boolean
+          is_public?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+          description?: string | null
+          price_monthly?: number
+          price_yearly?: number
+          features?: Json
+          limits?: Json
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
+          is_active?: boolean
+          is_public?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      organization_subscriptions: {
+        Row: {
+          id: string
+          organization_id: string
+          plan_id: string | null
+          stripe_subscription_id: string | null
+          stripe_customer_id: string | null
+          status: string
+          billing_cycle: string
+          current_period_start: string | null
+          current_period_end: string | null
+          cancel_at_period_end: boolean
+          canceled_at: string | null
+          trial_end: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          plan_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_customer_id?: string | null
+          status?: string
+          billing_cycle?: string
+          current_period_start?: string | null
+          current_period_end?: string | null
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          trial_end?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          plan_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_customer_id?: string | null
+          status?: string
+          billing_cycle?: string
+          current_period_start?: string | null
+          current_period_end?: string | null
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          trial_end?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payment_methods: {
+        Row: {
+          id: string
+          organization_id: string
+          stripe_payment_method_id: string
+          type: string
+          brand: string | null
+          last4: string | null
+          exp_month: number | null
+          exp_year: number | null
+          is_default: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          stripe_payment_method_id: string
+          type: string
+          brand?: string | null
+          last4?: string | null
+          exp_month?: number | null
+          exp_year?: number | null
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          stripe_payment_method_id?: string
+          type?: string
+          brand?: string | null
+          last4?: string | null
+          exp_month?: number | null
+          exp_year?: number | null
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      usage_reports: {
+        Row: {
+          id: string
+          organization_id: string | null
+          report_type: string
+          start_date: string
+          end_date: string
+          data: Json
+          format: string
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id?: string | null
+          report_type: string
+          start_date: string
+          end_date: string
+          data?: Json
+          format?: string
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string | null
+          report_type?: string
+          start_date?: string
+          end_date?: string
+          data?: Json
+          format?: string
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      organization_memberships: {
+        Row: {
+          organization_id: string
+          user_id: string
+          role: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          organization_id: string
+          user_id: string
+          role?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          organization_id?: string
+          user_id?: string
+          role?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      organization_invites: {
+        Row: {
+          id: string
+          email: string
+          organization_id: string
+          role: string
+          invited_by: string | null
+          expires_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          organization_id: string
+          role: string
+          invited_by?: string | null
+          expires_at: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          organization_id?: string
+          role?: string
+          invited_by?: string | null
+          expires_at?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      rate_limit_tiers: {
+        Row: {
+          id: string
+          tier_name: string
+          requests_per_minute: number
+          requests_per_hour: number
+          requests_per_day: number
+          burst_allowance: number
+          webhooks_per_minute: number
+          webhooks_per_hour: number
+          max_concurrent_requests: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tier_name: string
+          requests_per_minute?: number
+          requests_per_hour?: number
+          requests_per_day?: number
+          burst_allowance?: number
+          webhooks_per_minute?: number
+          webhooks_per_hour?: number
+          max_concurrent_requests?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tier_name?: string
+          requests_per_minute?: number
+          requests_per_hour?: number
+          requests_per_day?: number
+          burst_allowance?: number
+          webhooks_per_minute?: number
+          webhooks_per_hour?: number
+          max_concurrent_requests?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rate_limit_configs: {
+        Row: {
+          id: string
+          organization_id: string
+          tier: string
+          requests_per_minute: number
+          requests_per_hour: number
+          requests_per_day: number
+          burst_allowance: number
+          webhooks_per_minute: number
+          webhooks_per_hour: number
+          max_concurrent_requests: number
+          enforce_hard_limits: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          tier?: string
+          requests_per_minute?: number
+          requests_per_hour?: number
+          requests_per_day?: number
+          burst_allowance?: number
+          webhooks_per_minute?: number
+          webhooks_per_hour?: number
+          max_concurrent_requests?: number
+          enforce_hard_limits?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          tier?: string
+          requests_per_minute?: number
+          requests_per_hour?: number
+          requests_per_day?: number
+          burst_allowance?: number
+          webhooks_per_minute?: number
+          webhooks_per_hour?: number
+          max_concurrent_requests?: number
+          enforce_hard_limits?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rate_limit_violations: {
+        Row: {
+          id: string
+          organization_id: string
+          api_key_id: string | null
+          user_id: string | null
+          endpoint: string
+          method: string
+          limit_type: string
+          current_count: number
+          limit_value: number
+          ip_address: string | null
+          user_agent: string | null
+          response_status: number | null
+          retry_after: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          api_key_id?: string | null
+          user_id?: string | null
+          endpoint: string
+          method: string
+          limit_type: string
+          current_count: number
+          limit_value: number
+          ip_address?: string | null
+          user_agent?: string | null
+          response_status?: number | null
+          retry_after?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          api_key_id?: string | null
+          user_id?: string | null
+          endpoint?: string
+          method?: string
+          limit_type?: string
+          current_count?: number
+          limit_value?: number
+          ip_address?: string | null
+          user_agent?: string | null
+          response_status?: number | null
+          retry_after?: number | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      rate_limit_counters: {
+        Row: {
+          id: string
+          organization_id: string
+          api_key_id: string | null
+          window_type: string
+          window_start: string
+          request_count: number
+          webhook_count: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          api_key_id?: string | null
+          window_type: string
+          window_start: string
+          request_count?: number
+          webhook_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          api_key_id?: string | null
+          window_type?: string
+          window_start?: string
+          request_count?: number
+          webhook_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sso_user_mappings: {
+        Row: {
+          id: string
+          provider_id: string
+          user_id: string
+          external_id: string
+          email: string
+          attributes: Json | null
+          last_login_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          provider_id: string
+          user_id: string
+          external_id: string
+          email: string
+          attributes?: Json | null
+          last_login_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          provider_id?: string
+          user_id?: string
+          external_id?: string
+          email?: string
+          attributes?: Json | null
+          last_login_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      data_export_requests: {
+        Row: {
+          id: string
+          user_id: string
+          organization_id: string | null
+          export_type: string
+          export_format: string
+          include_profile: boolean
+          include_activity: boolean
+          include_memberships: boolean
+          include_api_keys: boolean
+          include_webhooks: boolean
+          include_billing: boolean
+          include_content: boolean
+          status: string
+          file_size_bytes: number | null
+          file_url: string | null
+          file_path: string | null
+          expires_at: string | null
+          started_at: string | null
+          completed_at: string | null
+          error_message: string | null
+          requested_reason: string | null
+          ip_address: string | null
+          user_agent: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          organization_id?: string | null
+          export_type: string
+          export_format?: string
+          include_profile?: boolean
+          include_activity?: boolean
+          include_memberships?: boolean
+          include_api_keys?: boolean
+          include_webhooks?: boolean
+          include_billing?: boolean
+          include_content?: boolean
+          status?: string
+          file_size_bytes?: number | null
+          file_url?: string | null
+          file_path?: string | null
+          expires_at?: string | null
+          started_at?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          requested_reason?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          organization_id?: string | null
+          export_type?: string
+          export_format?: string
+          include_profile?: boolean
+          include_activity?: boolean
+          include_memberships?: boolean
+          include_api_keys?: boolean
+          include_webhooks?: boolean
+          include_billing?: boolean
+          include_content?: boolean
+          status?: string
+          file_size_bytes?: number | null
+          file_url?: string | null
+          file_path?: string | null
+          expires_at?: string | null
+          started_at?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          requested_reason?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      data_deletion_requests: {
+        Row: {
+          id: string
+          user_id: string
+          organization_id: string | null
+          deletion_type: string
+          retention_reason: string | null
+          confirmed_at: string | null
+          confirmation_token: string | null
+          confirmation_expires_at: string | null
+          status: string
+          started_at: string | null
+          completed_at: string | null
+          error_message: string | null
+          items_to_delete: Json | null
+          requested_reason: string | null
+          ip_address: string | null
+          user_agent: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          organization_id?: string | null
+          deletion_type: string
+          retention_reason?: string | null
+          confirmed_at?: string | null
+          confirmation_token?: string | null
+          confirmation_expires_at?: string | null
+          status?: string
+          started_at?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          items_to_delete?: Json | null
+          requested_reason?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          organization_id?: string | null
+          deletion_type?: string
+          retention_reason?: string | null
+          confirmed_at?: string | null
+          confirmation_token?: string | null
+          confirmation_expires_at?: string | null
+          status?: string
+          started_at?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          items_to_delete?: Json | null
+          requested_reason?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      data_access_log: {
+        Row: {
+          id: string
+          accessed_user_id: string
+          accessed_by_user_id: string
+          organization_id: string | null
+          access_type: string
+          resource_type: string
+          resource_id: string | null
+          reason: string | null
+          ip_address: string | null
+          user_agent: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          accessed_user_id: string
+          accessed_by_user_id: string
+          organization_id?: string | null
+          access_type: string
+          resource_type: string
+          resource_id?: string | null
+          reason?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          accessed_user_id?: string
+          accessed_by_user_id?: string
+          organization_id?: string | null
+          access_type?: string
+          resource_type?: string
+          resource_id?: string | null
+          reason?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
         }
         Relationships: []
       }
@@ -3598,81 +3331,60 @@ export type Database = {
           entity_type: string | null
           entity_id: string | null
           metadata: Json | null
-          ip_address: unknown
+          ip_address: string | null
           user_agent: string | null
           created_at: string | null
-          user_name: string | null
+          user_full_name: string | null
           user_email: string | null
         }
-        Relationships: []
       }
     }
     Functions: {
+      increment_event_spots: { Args: { event_id: string }; Returns: undefined }
+      increment_usage_metric: { Args: { p_organization_id: string; p_metric_name: string; p_increment?: number }; Returns: undefined }
       check_rate_limit: {
         Args: {
           p_organization_id: string
-          p_api_key_id?: string | null
+          p_api_key_id: string | null
           p_window_type: string
         }
         Returns: {
           allowed: boolean
           limit_value: number
           current_count: number
-          retry_after: number
+          retry_after: number | null
         }[]
-      }
-      generate_deletion_confirmation_token: {
-        Args: {
-          p_user_id: string
-        }
-        Returns: string
-      }
-      get_user_data_summary: {
-        Args: {
-          p_user_id: string
-        }
-        Returns: Json
-      }
-      handle_new_user: {
-        Args: Record<string, never>
-        Returns: unknown
-      }
-      increment_event_spots: {
-        Args: {
-          event_id: string
-        }
-        Returns: undefined
       }
       increment_rate_limit: {
         Args: {
           p_organization_id: string
-          p_api_key_id?: string | null
+          p_api_key_id: string | null
           p_window_type: string
-          p_is_webhook?: boolean
+          p_is_webhook: boolean
         }
-        Returns: void
+        Returns: undefined
       }
-      increment_usage_metric: {
-        Args: {
-          p_organization_id: string
-          p_metric_name: string
-          p_value?: number
-        }
-        Returns: void
+      generate_deletion_confirmation_token: {
+        Args: Record<string, never>
+        Returns: string
       }
       log_data_access: {
         Args: {
           p_accessed_user_id: string
           p_accessed_by_user_id: string
-          p_resource_type: string
+          p_organization_id: string | null
           p_access_type: string
-          p_resource_id?: string | null
-          p_reason?: string | null
-          p_organization_id?: string | null
-          p_ip_address?: string | null
-          p_user_agent?: string | null
+          p_resource_type: string
+          p_resource_id: string | null
+          p_reason: string | null
+          p_ip_address: string | null
+          p_user_agent: string | null
         }
         Returns: string
+      }
+      get_user_data_summary: {
+        Args: { p_user_id: string }
+        Returns: Json
       }
     }
     Enums: {
@@ -3684,15 +3396,19 @@ export type Database = {
   }
 }
 
-// Helper types
+// Convenience type exports
 export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row']
 export type TablesInsert<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert']
 export type TablesUpdate<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update']
 
-// Convenience type aliases
+// Common entity types
 export type Profile = Tables<'profiles'>
 export type ProfileInsert = TablesInsert<'profiles'>
 export type ProfileUpdate = TablesUpdate<'profiles'>
+
+export type Organization = Tables<'organizations'>
+export type OrganizationInsert = TablesInsert<'organizations'>
+export type OrganizationUpdate = TablesUpdate<'organizations'>
 
 export type Course = Tables<'courses'>
 export type CourseInsert = TablesInsert<'courses'>
@@ -3702,66 +3418,25 @@ export type Enrollment = Tables<'enrollments'>
 export type EnrollmentInsert = TablesInsert<'enrollments'>
 export type EnrollmentUpdate = TablesUpdate<'enrollments'>
 
-export type Organization = Tables<'organizations'>
-export type OrganizationInsert = TablesInsert<'organizations'>
-export type OrganizationUpdate = TablesUpdate<'organizations'>
-
-export type OrganizationMember = Tables<'organization_members'>
-export type OrganizationMemberInsert = TablesInsert<'organization_members'>
-export type OrganizationMemberUpdate = TablesUpdate<'organization_members'>
+export type Event = Tables<'events'>
+export type EventInsert = TablesInsert<'events'>
+export type EventUpdate = TablesUpdate<'events'>
 
 export type Session = Tables<'sessions'>
 export type SessionInsert = TablesInsert<'sessions'>
 export type SessionUpdate = TablesUpdate<'sessions'>
 
-export type Webhook = Tables<'webhooks'>
-export type WebhookInsert = TablesInsert<'webhooks'>
-export type WebhookUpdate = TablesUpdate<'webhooks'>
-
-export type WebhookDelivery = Tables<'webhook_deliveries'>
-export type WebhookDeliveryInsert = TablesInsert<'webhook_deliveries'>
-export type WebhookDeliveryUpdate = TablesUpdate<'webhook_deliveries'>
-
-export type SSOProvider = Tables<'sso_providers'>
-export type SSOProviderInsert = TablesInsert<'sso_providers'>
-export type SSOProviderUpdate = TablesUpdate<'sso_providers'>
-
-export type SSOSession = Tables<'sso_sessions'>
-export type SSOSessionInsert = TablesInsert<'sso_sessions'>
-export type SSOSessionUpdate = TablesUpdate<'sso_sessions'>
-
-export type SSOAuthAttempt = Tables<'sso_auth_attempts'>
-export type SSOAuthAttemptInsert = TablesInsert<'sso_auth_attempts'>
-
-export type ActivityLog = Tables<'activity_logs'>
-export type ActivityLogInsert = TablesInsert<'activity_logs'>
-
 export type Notification = Tables<'notifications'>
 export type NotificationInsert = TablesInsert<'notifications'>
 export type NotificationUpdate = TablesUpdate<'notifications'>
 
-export type Invoice = Tables<'invoices'>
-export type InvoiceInsert = TablesInsert<'invoices'>
-export type InvoiceUpdate = TablesUpdate<'invoices'>
-
-export type Subscription = Tables<'subscriptions'>
-export type SubscriptionInsert = TablesInsert<'subscriptions'>
-export type SubscriptionUpdate = TablesUpdate<'subscriptions'>
+export type ActivityLog = Tables<'activity_logs'>
+export type ActivityLogInsert = TablesInsert<'activity_logs'>
+export type ActivityLogUpdate = TablesUpdate<'activity_logs'>
 
 export type Coupon = Tables<'coupons'>
 export type CouponInsert = TablesInsert<'coupons'>
 export type CouponUpdate = TablesUpdate<'coupons'>
-
-export type UsageReport = Tables<'usage_reports'>
-export type UsageReportInsert = TablesInsert<'usage_reports'>
-
-export type AssessmentResult = Tables<'assessment_results'>
-export type AssessmentResultInsert = TablesInsert<'assessment_results'>
-export type AssessmentResultUpdate = TablesUpdate<'assessment_results'>
-
-export type Event = Tables<'events'>
-export type EventInsert = TablesInsert<'events'>
-export type EventUpdate = TablesUpdate<'events'>
 
 export type CreditBalance = Tables<'credit_balances'>
 export type CreditBalanceInsert = TablesInsert<'credit_balances'>
@@ -3769,76 +3444,37 @@ export type CreditBalanceUpdate = TablesUpdate<'credit_balances'>
 
 export type CreditTransaction = Tables<'credit_transactions'>
 export type CreditTransactionInsert = TablesInsert<'credit_transactions'>
+export type CreditTransactionUpdate = TablesUpdate<'credit_transactions'>
 
-export type OrganizationInvitation = Tables<'organization_invitations'>
-export type OrganizationInvitationInsert = TablesInsert<'organization_invitations'>
-export type OrganizationInvitationUpdate = TablesUpdate<'organization_invitations'>
-
-// OrganizationRole is a simple string type for member role values ('owner' | 'admin' | 'member')
-export type OrganizationRole = 'owner' | 'admin' | 'member'
-
-// Full organization_roles table row type (for the roles configuration table)
-export type OrganizationRoleRow = Tables<'organization_roles'>
-export type OrganizationRoleInsert = TablesInsert<'organization_roles'>
-export type OrganizationRoleUpdate = TablesUpdate<'organization_roles'>
-
-export type OrganizationSubscription = Tables<'organization_subscriptions'>
-export type OrganizationSubscriptionInsert = TablesInsert<'organization_subscriptions'>
-export type OrganizationSubscriptionUpdate = TablesUpdate<'organization_subscriptions'>
-
-export type PaymentMethod = Tables<'payment_methods'>
-export type PaymentMethodInsert = TablesInsert<'payment_methods'>
-export type PaymentMethodUpdate = TablesUpdate<'payment_methods'>
-
-export type RateLimitConfig = Tables<'rate_limit_configs'>
-export type RateLimitConfigInsert = TablesInsert<'rate_limit_configs'>
-export type RateLimitConfigUpdate = TablesUpdate<'rate_limit_configs'>
-
-export type RateLimitTier = Tables<'rate_limit_tiers'>
-export type RateLimitTierInsert = TablesInsert<'rate_limit_tiers'>
-export type RateLimitTierUpdate = TablesUpdate<'rate_limit_tiers'>
-
-export type RateLimitViolation = Tables<'rate_limit_violations'>
-export type RateLimitViolationInsert = TablesInsert<'rate_limit_violations'>
+export type Webhook = Tables<'webhooks'>
+export type WebhookInsert = TablesInsert<'webhooks'>
+export type WebhookUpdate = TablesUpdate<'webhooks'>
 
 export type ApiKey = Tables<'api_keys'>
 export type ApiKeyInsert = TablesInsert<'api_keys'>
 export type ApiKeyUpdate = TablesUpdate<'api_keys'>
 
-export type SubscriptionPlan = Tables<'subscription_plans'>
-export type SubscriptionPlanInsert = TablesInsert<'subscription_plans'>
-export type SubscriptionPlanUpdate = TablesUpdate<'subscription_plans'>
+// Organization membership types
+export type OrganizationMembership = Tables<'organization_memberships'>
+export type OrganizationMembershipInsert = TablesInsert<'organization_memberships'>
+export type OrganizationMembershipUpdate = TablesUpdate<'organization_memberships'>
 
-export type OrganizationActivityLog = Tables<'organization_activity_log'>
-export type OrganizationActivityLogInsert = TablesInsert<'organization_activity_log'>
+export type OrganizationInvite = Tables<'organization_invites'>
+export type OrganizationInviteInsert = TablesInsert<'organization_invites'>
+export type OrganizationInviteUpdate = TablesUpdate<'organization_invites'>
 
-export type ScheduledEmail = Tables<'scheduled_emails'>
-export type ScheduledEmailInsert = TablesInsert<'scheduled_emails'>
-export type ScheduledEmailUpdate = TablesUpdate<'scheduled_emails'>
-
-export type Waitlist = Tables<'waitlist'>
-export type WaitlistInsert = TablesInsert<'waitlist'>
-export type WaitlistUpdate = TablesUpdate<'waitlist'>
-
-export type CourseEnrollment = Tables<'course_enrollments'>
-export type CourseEnrollmentInsert = TablesInsert<'course_enrollments'>
-export type CourseEnrollmentUpdate = TablesUpdate<'course_enrollments'>
-
-// Aliases for backward compatibility
-export type OrganizationMembership = OrganizationMember
-export type OrganizationInvite = OrganizationInvitation
-
-// Enum type aliases (these match the database CHECK constraints)
-export type DiscountType = 'percentage' | 'fixed'
-export type ApplicableTo = 'all' | 'courses' | 'events' | 'coaching'
-export type CreditType = 'standard' | 'bonus' | 'promotional'
+// Role types
 export type UserRole = 'registered' | 'student' | 'instructor' | 'business' | 'school' | 'admin'
-export type InstructorStatus = 'pending' | 'approved' | 'revoked'
-export type EnrollmentStatus = 'active' | 'completed' | 'cancelled'
-export type SessionStatus = 'scheduled' | 'confirmed' | 'completed' | 'cancelled'
-export type OrganizationType = 'business' | 'school' | 'nonprofit'
-export type WebhookDeliveryStatus = 'pending' | 'success' | 'failed'
-export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded'
 
-// Typed Supabase client helper
-export type TypedSupabaseClient = import('@supabase/supabase-js').SupabaseClient<Database>
+/** Organization membership roles - matches database constraint */
+export type OrganizationRole = 'owner' | 'admin' | 'member'
+
+// Coupon types
+/** Discount type for coupons */
+export type DiscountType = 'percentage' | 'fixed'
+
+/** What the coupon applies to */
+export type ApplicableTo = 'all' | 'courses' | 'events'
+
+/** Credit types available in the system */
+export type CreditType = 'course' | 'api' | 'storage' | 'default' | string

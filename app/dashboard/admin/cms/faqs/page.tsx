@@ -31,8 +31,10 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { logger } from "@/lib/logging";
 import DOMPurify from "dompurify";
-import { Edit, Plus, Trash2 } from "lucide-react";
+import { Edit, GripVertical, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { DragDropList, DragHandle, updateDisplayOrder } from "@/components/ui/drag-drop-list";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface FAQ {
   id: string;
@@ -57,6 +59,7 @@ export default function FAQsPage() {
     category: "general",
     is_published: true,
   });
+  const [reorderMode, setReorderMode] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -159,6 +162,35 @@ export default function FAQsPage() {
     setDialogOpen(true);
   };
 
+  const handleReorder = async (reorderedFaqs: FAQ[]) => {
+    // Update local state immediately
+    const updated = updateDisplayOrder(reorderedFaqs);
+    setFaqs(updated);
+    setFilteredData(updated);
+
+    // Persist to API
+    try {
+      await fetch("/api/admin/faqs/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: updated.map((faq) => ({
+            id: faq.id,
+            display_order: faq.display_order,
+          })),
+        }),
+      });
+      toast({ title: "Order updated" });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to save order",
+        variant: "destructive",
+      });
+      fetchFaqs(); // Revert on error
+    }
+  };
+
   const columns: Column<FAQ>[] = [
     {
       id: "question",
@@ -205,18 +237,26 @@ export default function FAQsPage() {
         title="FAQs"
         description="Manage frequently asked questions"
         actions={
-          <Dialog
-            open={dialogOpen}
-            onOpenChange={(open) => {
-              setDialogOpen(open);
-              if (!open) setEditingFaq(null);
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" /> Add FAQ
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button
+              variant={reorderMode ? "default" : "outline"}
+              onClick={() => setReorderMode(!reorderMode)}
+            >
+              <GripVertical className="h-4 w-4 mr-2" />
+              {reorderMode ? "Done Reordering" : "Reorder"}
+            </Button>
+            <Dialog
+              open={dialogOpen}
+              onOpenChange={(open) => {
+                setDialogOpen(open);
+                if (!open) setEditingFaq(null);
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" /> Add FAQ
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingFaq ? "Edit FAQ" : "Add FAQ"}</DialogTitle>
@@ -278,10 +318,36 @@ export default function FAQsPage() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         }
       />
 
-      <DataTable
+      {reorderMode ? (
+        <Card className="glass-card">
+          <CardContent className="pt-6">
+            <p className="text-sm text-muted-foreground mb-4">
+              Drag items to reorder. Click "Done Reordering" when finished.
+            </p>
+            <DragDropList
+              items={faqs.sort((a, b) => a.display_order - b.display_order)}
+              keyField="id"
+              onReorder={handleReorder}
+              renderItem={({ item, dragHandleProps }) => (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
+                  <DragHandle {...dragHandleProps} />
+                  <div className="flex-1">
+                    <div className="font-medium">{item.question}</div>
+                    <div className="text-xs text-muted-foreground capitalize">
+                      {item.category} • {item.is_published ? "Published" : "Draft"}
+                    </div>
+                  </div>
+                </div>
+              )}
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <DataTable
         data={filteredData}
         columns={columns}
         keyField="id"
@@ -328,6 +394,7 @@ export default function FAQsPage() {
           </Button>
         }
       />
+      )}
     </AdminPageShell>
   );
 }

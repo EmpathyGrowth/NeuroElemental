@@ -32,6 +32,7 @@ import {
   Archive,
   Calendar,
   CheckCircle,
+  Copy,
   Edit,
   Eye,
   FileText,
@@ -71,11 +72,11 @@ interface BlogPost {
   title: string;
   slug: string;
   category: string;
-  author_name: string;
+  author?: { id: string; full_name: string | null; avatar_url: string | null } | null;
   is_published: boolean;
   created_at: string;
   updated_at: string;
-  views?: number;
+  view_count?: number;
 }
 
 export default function AdminBlogPage() {
@@ -132,6 +133,28 @@ export default function AdminBlogPage() {
         }
       },
     });
+  };
+
+  const handleDuplicate = async (post: BlogPost) => {
+    try {
+      const response = await fetch(`/api/blog/${post.id}/duplicate`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success("Post duplicated successfully", {
+          description: `Created "${result.data?.title || "copy"}" as draft`,
+        });
+        fetchPosts();
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to duplicate post");
+      }
+    } catch (error) {
+      logger.error("Error duplicating post:", error as Error);
+      toast.error("Failed to duplicate post. Please try again.");
+    }
   };
 
   const handleTogglePublish = async (post: BlogPost) => {
@@ -246,7 +269,7 @@ export default function AdminBlogPage() {
         const rows = exportData.map((post) => [
           post.title,
           post.category || "Uncategorized",
-          post.author_name || "Unknown",
+          post.author?.full_name || "Unknown",
           post.is_published ? "Published" : "Draft",
           formatDate(post.created_at),
           formatDate(post.updated_at),
@@ -331,7 +354,7 @@ export default function AdminBlogPage() {
         date.getFullYear() === now.getFullYear()
       );
     }).length;
-    const totalViews = allPosts.reduce((sum, p) => sum + (p.views || 0), 0);
+    const totalViews = allPosts.reduce((sum, p) => sum + (p.view_count || 0), 0);
 
     return {
       totalPosts: allPosts.length,
@@ -369,7 +392,7 @@ export default function AdminBlogPage() {
       id: "author",
       header: "Author",
       cell: (post) => (
-        <span className="text-sm">{post.author_name || "Unknown"}</span>
+        <span className="text-sm">{post.author?.full_name || "Unknown"}</span>
       ),
       sortable: true,
     },
@@ -466,6 +489,10 @@ export default function AdminBlogPage() {
             Publish
           </>
         )}
+      </RowActionItem>
+      <RowActionItem onClick={() => handleDuplicate(post)}>
+        <Copy className="mr-2 h-4 w-4" />
+        Duplicate
       </RowActionItem>
       <RowActionSeparator />
       <RowActionItem

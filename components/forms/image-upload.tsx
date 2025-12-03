@@ -11,11 +11,23 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { MediaPicker } from "./media-picker";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface ImageUploadProps {
   value?: string;
   onChange?: (url: string | null) => void;
   onPathChange?: (path: string | null) => void;
+  onAltTextChange?: (altText: string | null) => void;
   category?: "courses" | "blogs" | "events" | "general";
   aspectRatio?: "square" | "video" | "banner" | "auto";
   maxSizeMB?: number;
@@ -24,6 +36,10 @@ interface ImageUploadProps {
   className?: string;
   /** Show the "Browse Library" option */
   showLibrary?: boolean;
+  /** Require alt text before upload (for accessibility) */
+  requireAltText?: boolean;
+  /** Current alt text value */
+  altText?: string;
 }
 
 const aspectRatioClasses = {
@@ -41,6 +57,7 @@ export function ImageUpload({
   value,
   onChange,
   onPathChange,
+  onAltTextChange,
   category = "general",
   aspectRatio = "video",
   maxSizeMB = 10,
@@ -48,12 +65,17 @@ export function ImageUpload({
   disabled = false,
   className,
   showLibrary = true,
+  requireAltText = false,
+  altText = "",
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [currentPath, setCurrentPath] = React.useState<string | null>(null);
   const [showMediaPicker, setShowMediaPicker] = React.useState(false);
+  const [showAltTextDialog, setShowAltTextDialog] = React.useState(false);
+  const [pendingFile, setPendingFile] = React.useState<File | null>(null);
+  const [tempAltText, setTempAltText] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   // Handle selection from media library
@@ -64,7 +86,7 @@ export function ImageUpload({
     setError(null);
   };
 
-  const handleFile = async (file: File) => {
+  const handleFile = async (file: File, providedAltText?: string) => {
     setError(null);
 
     // Validate file type
@@ -84,6 +106,14 @@ export function ImageUpload({
     const maxBytes = maxSizeMB * 1024 * 1024;
     if (file.size > maxBytes) {
       setError(`File size must be less than ${maxSizeMB}MB`);
+      return;
+    }
+
+    // If alt text is required and not provided, show dialog
+    if (requireAltText && !providedAltText) {
+      setPendingFile(file);
+      setTempAltText("");
+      setShowAltTextDialog(true);
       return;
     }
 
@@ -107,11 +137,35 @@ export function ImageUpload({
       onChange?.(result.data.url);
       onPathChange?.(result.data.path);
       setCurrentPath(result.data.path);
+      
+      // Set alt text if provided
+      if (providedAltText) {
+        onAltTextChange?.(providedAltText);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleAltTextSubmit = () => {
+    if (!tempAltText.trim()) {
+      setError("Alt text is required for accessibility");
+      return;
+    }
+    
+    setShowAltTextDialog(false);
+    if (pendingFile) {
+      handleFile(pendingFile, tempAltText.trim());
+      setPendingFile(null);
+    }
+  };
+
+  const handleAltTextCancel = () => {
+    setShowAltTextDialog(false);
+    setPendingFile(null);
+    setTempAltText("");
   };
 
   const handleDelete = async () => {
@@ -297,6 +351,41 @@ export function ImageUpload({
         onSelect={handleLibrarySelect}
         category={category}
       />
+
+      {/* Alt Text Dialog - Requirements: 20.1 */}
+      <Dialog open={showAltTextDialog} onOpenChange={(open) => !open && handleAltTextCancel()}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add Alt Text</DialogTitle>
+            <DialogDescription>
+              Alt text is required for accessibility. Describe the image for users who cannot see it.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="alt-text">Alt Text *</Label>
+              <Input
+                id="alt-text"
+                value={tempAltText}
+                onChange={(e) => setTempAltText(e.target.value)}
+                placeholder="Describe the image..."
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                Good alt text is concise and describes the image content or purpose.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleAltTextCancel}>
+              Cancel
+            </Button>
+            <Button onClick={handleAltTextSubmit} disabled={!tempAltText.trim()}>
+              Upload Image
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

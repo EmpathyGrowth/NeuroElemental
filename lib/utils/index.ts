@@ -31,3 +31,9 @@ export * from './formatting';
 
 // Environment utilities
 export * from './env';
+
+// Bulk operations utilities
+export * from './bulk-operations';
+
+// HTML sanitization utilities
+export * from './sanitize-html';

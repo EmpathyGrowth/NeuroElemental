@@ -6,11 +6,23 @@ import { ElementIcon } from "@/components/icons/element-icon";
 import { HeroSection } from "@/components/landing/hero-section";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { elementsData } from "@/lib/elements-data";
 import { cn } from "@/lib/utils";
-import { ArrowRight, RefreshCw, Sparkles } from "lucide-react";
+import { useAuth } from "@/components/auth/auth-provider";
+import { ArrowRight, History, Loader2, LogIn, RefreshCw, Sparkles, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 
 interface QuizQuestion {
   question: string;
@@ -18,6 +30,37 @@ interface QuizQuestion {
     text: string;
     elements: string[];
   }[];
+}
+
+interface ElementScores {
+  electric: number;
+  fiery: number;
+  aquatic: number;
+  earthly: number;
+  airy: number;
+  metallic: number;
+}
+
+interface QuizResult {
+  id: string;
+  scores: ElementScores;
+  primary_element: string;
+  created_at: string;
+}
+
+interface QuizAssessmentComparison {
+  quizResult: QuizResult;
+  assessmentScores: ElementScores | null;
+  differences: Record<string, number>;
+  primaryElementMatch: boolean;
+}
+
+interface QuizHistoryResponse {
+  history: QuizResult[];
+  count: number;
+  totalCount: number;
+  comparison: QuizAssessmentComparison | null;
+  hasEnoughData: boolean;
 }
 
 const QUIZ_QUESTIONS: QuizQuestion[] = [
@@ -211,9 +254,19 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
   },
 ];
 
+const ELEMENT_COLORS: Record<string, string> = {
+  electric: "#facc15",
+  fiery: "#ef4444",
+  aquatic: "#3b82f6",
+  earthly: "#22c55e",
+  airy: "#a855f7",
+  metallic: "#6b7280",
+};
+
 export default function QuickQuizPage() {
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [scores, setScores] = useState<Record<string, number>>({
+  const [scores, setScores] = useState<ElementScores>({
     electric: 0,
     fiery: 0,
     aquatic: 0,
@@ -222,17 +275,87 @@ export default function QuickQuizPage() {
     metallic: 0,
   });
   const [isComplete, setIsComplete] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showGuestModal, setShowGuestModal] = useState(false);
+  const [quizHistory, setQuizHistory] = useState<QuizResult[]>([]);
+  const [comparison, setComparison] = useState<QuizAssessmentComparison | null>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // Fetch quiz history on mount (Requirements 10.1)
+  const fetchQuizHistory = useCallback(async () => {
+    if (!isAuthenticated) return;
+    
+    setIsLoadingHistory(true);
+    try {
+      const response = await fetch("/api/tools/quiz/history");
+      if (response.ok) {
+        const data: QuizHistoryResponse = await response.json();
+        setQuizHistory(data.history || []);
+        setComparison(data.comparison || null);
+      }
+    } catch (error) {
+      console.error("Failed to fetch quiz history:", error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchQuizHistory();
+    }
+  }, [isAuthenticated, fetchQuizHistory]);
 
   const handleAnswer = (elements: string[]) => {
     const newScores = { ...scores };
     elements.forEach((el) => {
-      newScores[el] = (newScores[el] || 0) + 1;
+      newScores[el as keyof ElementScores] = (newScores[el as keyof ElementScores] || 0) + 1;
     });
     setScores(newScores);
 
     if (currentQuestion < QUIZ_QUESTIONS.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     } else {
+      handleQuizComplete(newScores);
+    }
+  };
+
+  // Save quiz result on completion (Requirements 10.1)
+  const handleQuizComplete = async (finalScores: ElementScores) => {
+    // Show guest modal for unauthenticated users (Requirements 10.4)
+    if (!isAuthenticated) {
+      setShowGuestModal(true);
+      setIsComplete(true);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Convert raw scores to percentages (0-100)
+      const maxScore = QUIZ_QUESTIONS.length;
+      const percentageScores: ElementScores = {
+        electric: Math.round((finalScores.electric / maxScore) * 100),
+        fiery: Math.round((finalScores.fiery / maxScore) * 100),
+        aquatic: Math.round((finalScores.aquatic / maxScore) * 100),
+        earthly: Math.round((finalScores.earthly / maxScore) * 100),
+        airy: Math.round((finalScores.airy / maxScore) * 100),
+        metallic: Math.round((finalScores.metallic / maxScore) * 100),
+      };
+
+      const response = await fetch("/api/tools/quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scores: percentageScores }),
+      });
+
+      if (response.ok) {
+        // Refresh history after saving
+        await fetchQuizHistory();
+      }
+    } catch (error) {
+      console.error("Failed to save quiz result:", error);
+    } finally {
+      setIsSaving(false);
       setIsComplete(true);
     }
   };
@@ -262,6 +385,68 @@ export default function QuickQuizPage() {
     setIsComplete(false);
   };
 
+  // Prepare history chart data (Requirements 10.3)
+  const historyChartData = quizHistory
+    .slice(0, 10)
+    .reverse()
+    .map((result) => ({
+      date: new Date(result.created_at || "").toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      ...result.scores,
+    }));
+
+  // Show history chart only when 2+ results exist (Requirements 10.3)
+  const showHistoryChart = quizHistory.length >= 2;
+
+  // Guest user modal component (Requirements 10.4)
+  const GuestUserModal = () => (
+    <Dialog open={showGuestModal} onOpenChange={setShowGuestModal}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <LogIn className="w-5 h-5" />
+            Sign In to Save Your Results
+          </DialogTitle>
+          <DialogDescription>
+            Create a free account to save your quiz results and compare them with your full assessment.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 pt-4">
+          <div className="p-4 rounded-lg bg-muted/50 space-y-2">
+            <h4 className="font-semibold text-sm">What you&apos;ll get:</h4>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• Save and track your quiz results over time</li>
+              <li>• Compare with your full assessment</li>
+              <li>• See element score trends</li>
+              <li>• Get personalized insights</li>
+            </ul>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Button asChild>
+              <Link href="/auth/signup?redirect=/tools/quick-quiz">
+                Create Free Account
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/auth/login?redirect=/tools/quick-quiz">
+                Sign In
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setShowGuestModal(false)}
+            >
+              Continue Without Saving
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+
   if (isComplete) {
     const results = getResults();
     const primaryElement = elementsData[results.primary];
@@ -283,6 +468,16 @@ export default function QuickQuizPage() {
           <section className="py-16 relative">
             <div className="absolute inset-0 bg-muted/30 backdrop-blur-sm" />
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+              {/* Saving indicator */}
+              {isSaving && (
+                <div className="flex justify-center mb-6">
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Saving your results...</span>
+                  </div>
+                </div>
+              )}
+
               {/* Primary Element */}
               <div className="mb-8">
                 <div className="flex items-center gap-2 mb-4">
@@ -317,6 +512,57 @@ export default function QuickQuizPage() {
                 </div>
               </Card>
 
+              {/* Assessment Comparison (Requirements 10.2) */}
+              {isAuthenticated && comparison && comparison.assessmentScores && (
+                <Card className="p-6 glass-card border-primary/30 mb-8">
+                  <div className="flex items-center gap-2 mb-4">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    <h3 className="font-bold">Comparison with Full Assessment</h3>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <div className={cn(
+                      "inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm",
+                      comparison.primaryElementMatch 
+                        ? "bg-green-500/10 text-green-600" 
+                        : "bg-amber-500/10 text-amber-600"
+                    )}>
+                      {comparison.primaryElementMatch ? (
+                        <>✓ Primary element matches your full assessment</>
+                      ) : (
+                        <>Your quiz result differs from your full assessment</>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Score differences (Quiz vs Assessment):
+                    </p>
+                    {Object.entries(comparison.differences)
+                      .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a))
+                      .map(([element, diff]) => {
+                        const el = elementsData[element];
+                        const diffValue = Math.round(diff);
+                        return (
+                          <div key={element} className="flex items-center gap-3">
+                            <ElementIcon slug={element} size="1.5rem" />
+                            <span className="font-medium w-20">{el?.name}</span>
+                            <div className="flex-1 flex items-center gap-2">
+                              <span className={cn(
+                                "text-sm font-medium",
+                                diffValue > 0 ? "text-green-500" : diffValue < 0 ? "text-red-500" : "text-muted-foreground"
+                              )}>
+                                {diffValue > 0 ? `+${diffValue}%` : diffValue < 0 ? `${diffValue}%` : "Same"}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </Card>
+              )}
+
               {/* Element Breakdown */}
               <Card className="p-6 glass-card border-border/50 mb-8">
                 <h3 className="font-bold mb-4">Full Breakdown</h3>
@@ -346,6 +592,56 @@ export default function QuickQuizPage() {
                     })}
                 </div>
               </Card>
+
+              {/* History Chart (Requirements 10.3) */}
+              {isAuthenticated && showHistoryChart && (
+                <Card className="p-6 glass-card border-border/50 mb-8">
+                  <div className="flex items-center gap-2 mb-4">
+                    <History className="w-5 h-5 text-primary" />
+                    <h3 className="font-bold">Element Score Trends</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Your element scores over your last {quizHistory.length} quizzes
+                  </p>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={historyChartData}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis
+                          dataKey="date"
+                          className="text-xs"
+                          tick={{ fill: "currentColor" }}
+                        />
+                        <YAxis
+                          domain={[0, 100]}
+                          className="text-xs"
+                          tick={{ fill: "currentColor" }}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                          }}
+                          labelStyle={{ color: "hsl(var(--foreground))" }}
+                        />
+                        <Legend />
+                        {Object.keys(ELEMENT_COLORS).map((element) => (
+                          <Line
+                            key={element}
+                            type="monotone"
+                            dataKey={element}
+                            name={elementsData[element]?.name || element}
+                            stroke={ELEMENT_COLORS[element]}
+                            strokeWidth={2}
+                            dot={{ fill: ELEMENT_COLORS[element], strokeWidth: 2 }}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+              )}
 
               {/* Note */}
               <Card className="p-6 glass-card border-primary/30 mb-8">
@@ -380,6 +676,7 @@ export default function QuickQuizPage() {
         </main>
 
         <Footer />
+        <GuestUserModal />
       </div>
     );
   }
@@ -441,7 +738,7 @@ export default function QuickQuizPage() {
                     )}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                         <span className="font-bold text-primary">
                           {String.fromCharCode(65 + index)}
                         </span>
@@ -476,6 +773,7 @@ export default function QuickQuizPage() {
       </main>
 
       <Footer />
+      <GuestUserModal />
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { AdminPageHeader } from "@/components/dashboard/admin-page-header";
 import { AdminPageShell } from "@/components/dashboard/admin-page-shell";
 import { LazyWYSIWYG } from "@/components/editor/lazy-wysiwyg";
-import { ImageUpload } from "@/components/forms/image-upload";
+import { BaseFileUpload } from "@/components/forms/base-file-upload";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import {
@@ -452,11 +452,14 @@ export default function NewEventPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Thumbnail Image</Label>
-              <ImageUpload
+              <BaseFileUpload
+                config={{
+                  type: "image",
+                  aspectRatio: "16:9",
+                  onUpload: (url) => setThumbnailUrl(url || ""),
+                }}
                 value={thumbnailUrl}
-                onChange={(url) => setThumbnailUrl(url || "")}
                 category="events"
-                aspectRatio="video"
                 placeholder="Upload event thumbnail"
               />
               <p className="text-xs text-muted-foreground">

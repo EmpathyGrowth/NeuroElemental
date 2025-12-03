@@ -11,11 +11,13 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 interface StateTrackerProps {
   elementSlug: string;
   className?: string;
+  /** Callback when user identifies their state (Requirements 5.1) */
+  onStateIdentified?: (mode: string, guidanceViewed?: string[]) => void;
 }
 
 interface StateInfo {
@@ -71,18 +73,33 @@ const STATE_INFO: StateInfo[] = [
   },
 ];
 
-export function StateTracker({ elementSlug, className }: StateTrackerProps) {
+export function StateTracker({ elementSlug, className, onStateIdentified }: StateTrackerProps) {
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [expandedState, setExpandedState] = useState<string | null>(null);
+  const [guidanceViewed, setGuidanceViewed] = useState<string[]>([]);
   const elementData = getElementData(elementSlug);
 
   if (!elementData) {
     return null;
   }
 
+  /**
+   * Handle state selection and log to backend (Requirements 5.1)
+   */
   const handleStateSelect = (stateId: string) => {
+    const isNewSelection = stateId !== selectedState;
     setSelectedState(stateId === selectedState ? null : stateId);
     setExpandedState(stateId === expandedState ? null : stateId);
+
+    // Track guidance viewed
+    if (isNewSelection && !guidanceViewed.includes(stateId)) {
+      setGuidanceViewed((prev) => [...prev, stateId]);
+    }
+
+    // Notify parent when state is identified
+    if (isNewSelection && onStateIdentified) {
+      onStateIdentified(stateId, [...guidanceViewed, stateId]);
+    }
   };
 
   return (

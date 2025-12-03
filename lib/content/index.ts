@@ -9,6 +9,19 @@ import { LANDING_CONTENT } from "./landing";
 
 export { LANDING_CONTENT } from "./landing";
 
+// Content duplication utilities
+export {
+  duplicateContent,
+  duplicateBlogPost,
+  duplicateEmailTemplate,
+  duplicateCourse,
+  generateCopyTitle,
+  generateUniqueSlug,
+  type DuplicatableContentType,
+  type DuplicationResult,
+  type CourseDuplicationResult,
+} from "./duplication";
+
 /**
  * Deep merge two objects, with source overriding target for matching keys
  */

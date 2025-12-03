@@ -30,9 +30,8 @@ interface Notification {
 export function NotificationBell() {
   const { user, loading: authLoading } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start as true
   const [unreadCount, setUnreadCount] = useState(0);
-  const [hasFetched, setHasFetched] = useState(false);
 
   useEffect(() => {
     // Don't fetch while auth is still loading
@@ -41,9 +40,12 @@ export function NotificationBell() {
     // No user means no notifications
     if (!user) {
       setLoading(false);
-      setHasFetched(true);
+      setNotifications([]);
       return;
     }
+
+    let isMounted = true;
+    const controller = new AbortController();
 
     const fetchNotifications = async () => {
       setLoading(true);
@@ -54,23 +56,33 @@ export function NotificationBell() {
           .select("*")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
-          .limit(5);
+          .limit(5)
+          .abortSignal(controller.signal);
 
+        if (!isMounted) return;
         if (error) throw error;
 
         setNotifications((data as Notification[]) || []);
         setUnreadCount(data?.filter((n) => !n.read).length || 0);
       } catch {
-        // Silently fail - notifications table may not exist
-        setNotifications([]);
-        setUnreadCount(0);
+        // Silently fail - notifications table may not exist or request aborted
+        if (isMounted) {
+          setNotifications([]);
+          setUnreadCount(0);
+        }
       } finally {
-        setLoading(false);
-        setHasFetched(true);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchNotifications();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, [user, authLoading]);
 
   const markAsRead = async (notificationId: string) => {
@@ -142,7 +154,7 @@ export function NotificationBell() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {loading || (!hasFetched && authLoading) ? (
+        {loading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>

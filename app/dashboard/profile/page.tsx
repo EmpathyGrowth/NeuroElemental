@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/auth/auth-provider";
-import { AvatarUpload } from "@/components/forms/avatar-upload";
+import { BaseFileUpload } from "@/components/forms/base-file-upload";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -359,26 +359,26 @@ export default function ProfilePage() {
 
                 <div className="space-y-2">
                   <Label>Profile Photo</Label>
-                  <AvatarUpload
-                    currentAvatarUrl={avatarUrl}
-                    userId={user!.id}
-                    fullName={fullName}
-                    onUploadComplete={(url) => {
-                      setAvatarUrl(url);
-                      // Auto-save avatar changes
-                      updateUserProfile(user!.id, {
-                        avatar_url: url || undefined,
-                      }).then(({ error: updateError }) => {
-                        if (updateError) {
-                          toast.error("Failed to save avatar");
-                        } else {
-                          toast.success("Avatar updated");
-                          refetchProfile();
-                        }
-                      });
+                  <BaseFileUpload
+                    config={{
+                      type: "avatar",
+                      onUpload: (url) => {
+                        setAvatarUrl(url);
+                        // Auto-save avatar changes
+                        updateUserProfile(user!.id, {
+                          avatar_url: url || undefined,
+                        }).then(({ error: updateError }) => {
+                          if (updateError) {
+                            toast.error("Failed to save avatar");
+                          } else {
+                            refetchProfile();
+                          }
+                        });
+                      },
+                      onError: (error) => toast.error(error),
                     }}
-                    onError={(error) => toast.error(error)}
-                    size="lg"
+                    value={avatarUrl}
+                    userId={user!.id}
                   />
                 </div>
 

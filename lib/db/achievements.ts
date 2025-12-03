@@ -176,6 +176,64 @@ export class AchievementRepository extends BaseRepository<"achievements"> {
   }
 
   /**
+   * Award achievement to user (idempotent)
+   * Only awards if user doesn't already have the achievement
+   *
+   * @param userId - User ID
+   * @param achievementId - Achievement ID
+   * @returns The user achievement record (existing or new), or null if already awarded
+   */
+  async awardAchievement(
+    userId: string,
+    achievementId: string
+  ): Promise<{ awarded: boolean; achievement: UserAchievement | null }> {
+    // Check if already awarded
+    const existing = await this.hasAchievement(userId, achievementId);
+    
+    if (existing) {
+      // Already has achievement - return existing
+      const { data } = await this.supabase
+        .from("user_achievements")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("achievement_id", achievementId)
+        .single();
+      
+      return { awarded: false, achievement: data as UserAchievement | null };
+    }
+
+    // Award the achievement
+    try {
+      const achievement = await this.awardToUser(userId, achievementId);
+      return { awarded: true, achievement };
+    } catch (error) {
+      // Handle race condition - if another request awarded it
+      const { data } = await this.supabase
+        .from("user_achievements")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("achievement_id", achievementId)
+        .maybeSingle();
+      
+      if (data) {
+        return { awarded: false, achievement: data as UserAchievement };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Check if user has a specific achievement (alias for hasUnlocked)
+   *
+   * @param userId - User ID
+   * @param achievementId - Achievement ID
+   * @returns True if user has the achievement
+   */
+  async hasAchievement(userId: string, achievementId: string): Promise<boolean> {
+    return this.hasUnlocked(userId, achievementId);
+  }
+
+  /**
    * Check if user has unlocked achievement
    *
    * @param userId - User ID

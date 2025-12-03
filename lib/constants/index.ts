@@ -3,6 +3,9 @@
  * Eliminates hardcoded values scattered across the codebase
  */
 
+// Re-export achievement definitions
+export * from "./achievements";
+
 /**
  * Pagination constants
  */
