@@ -25,6 +25,8 @@ import { DollarSign, Download, ShoppingCart, Star, Users } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
+import { ChartEmptyState } from "@/components/ui/empty-state";
+
 // Loading skeleton for charts
 const ChartSkeleton = ({ height }: { height: string }) => (
   <Skeleton className={`h-[${height}] w-full`} />

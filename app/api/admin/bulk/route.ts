@@ -4,7 +4,7 @@ import {
   badRequestError,
   notFoundError,
 } from "@/lib/api";
-import { createServerClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
 /**
@@ -98,7 +98,7 @@ export const POST = createAdminRoute(async (req) => {
   }
 
   const { contentType, operation, ids } = parsed.data;
-  const supabase = await createServerClient();
+  const supabase = await createClient();
 
   const result: BulkOperationResult = {
     success: true,
