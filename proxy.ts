@@ -1,7 +1,7 @@
 /**
  * Next.js Proxy (formerly Middleware)
  * Handles rate limiting, CSRF protection, and request validation
- * Runs on the Node.js runtime for all matching routes
+ * Runs on the Edge runtime for all matching routes
  *
  * Note: In Next.js 16, middleware.ts was renamed to proxy.ts
  * to better reflect its purpose as a network boundary layer
@@ -211,6 +211,7 @@ function validateCsrf(request: NextRequest): boolean {
 
   return false;
 }
+
 
 /**
  * Check if the current path should be redirected (CMS redirects)
