@@ -55,12 +55,12 @@ export async function requireOrgAccess(
   const supabase = getSupabaseServer()
 
   // Check if user is a member of the organization
-  const { data: membership, error } = await supabase
+  const { data: membership, error } = await (supabase as any)
     .from('organization_members')
     .select('role')
     .eq('organization_id', organizationId)
     .eq('user_id', user.id)
-    .single()
+    .single() as { data: { role: string } | null; error: Error | null }
 
   if (error || !membership) {
     return {
@@ -96,13 +96,13 @@ export async function requireOrgAdmin(
   const supabase = getSupabaseServer()
 
   // Check if user has admin/owner role
-  const { data: membership, error } = await supabase
+  const { data: membership, error } = await (supabase as any)
     .from('organization_members')
     .select('role')
     .eq('organization_id', organizationId)
     .eq('user_id', user.id)
     .in('role', ['owner', 'admin'])
-    .single()
+    .single() as { data: { role: string } | null; error: Error | null }
 
   if (error || !membership) {
     return {
@@ -138,13 +138,13 @@ export async function requireOrgOwner(
   const supabase = getSupabaseServer()
 
   // Check if user is owner
-  const { data: membership, error } = await supabase
+  const { data: membership, error } = await (supabase as any)
     .from('organization_members')
     .select('role')
     .eq('organization_id', organizationId)
     .eq('user_id', user.id)
     .eq('role', 'owner')
-    .single()
+    .single() as { data: { role: string } | null; error: Error | null }
 
   if (error || !membership) {
     return {
@@ -228,12 +228,12 @@ export async function getUserOrgRoleMiddleware(
 ): Promise<string | null> {
   const supabase = getSupabaseServer()
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('organization_members')
     .select('role')
     .eq('organization_id', organizationId)
     .eq('user_id', userId)
-    .single()
+    .single() as { data: { role: string } | null; error: Error | null }
 
   if (error || !data) {
     return null

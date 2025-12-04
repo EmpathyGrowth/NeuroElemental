@@ -80,6 +80,10 @@ export function generateCopyTitle(originalTitle: string): string {
   return `${originalTitle} (Copy)`;
 }
 
+// Type alias for blog post
+type BlogPost = Database["public"]["Tables"]["blog_posts"]["Row"];
+type BlogPostInsert = Database["public"]["Tables"]["blog_posts"]["Insert"];
+
 /**
  * Duplicate a blog post
  * Creates a copy with "(Copy)" suffix, draft status, and unique slug
@@ -87,19 +91,19 @@ export function generateCopyTitle(originalTitle: string): string {
 export async function duplicateBlogPost(
   postId: string,
   userId?: string
-): Promise<DuplicationResult<Database["public"]["Tables"]["blog_posts"]["Row"]>> {
+): Promise<DuplicationResult<BlogPost>> {
   const supabase = createAdminClient();
 
   try {
-    // Fetch original post
-    const { data: original, error: fetchError } = await supabase
+    // Fetch original post - use any cast to avoid TypeScript inference issues
+    const { data: original, error: fetchError } = await (supabase as any)
       .from("blog_posts")
       .select("*")
       .eq("id", postId)
-      .single();
+      .single() as { data: BlogPost | null; error: Error | null };
 
     if (fetchError || !original) {
-      logger.error("Failed to fetch blog post for duplication", fetchError);
+      logger.error("Failed to fetch blog post for duplication", fetchError ?? undefined);
       return { success: false, error: "Blog post not found" };
     }
 
@@ -108,25 +112,27 @@ export async function duplicateBlogPost(
     const newTitle = generateCopyTitle(original.title);
 
     // Create duplicate with draft status
-    const { data: duplicate, error: createError } = await supabase
+    const insertData: BlogPostInsert = {
+      title: newTitle,
+      slug: newSlug,
+      content: original.content,
+      excerpt: original.excerpt,
+      category: original.category,
+      tags: original.tags,
+      featured_image_url: original.featured_image_url,
+      author_id: userId || original.author_id,
+      is_published: false, // Always draft
+      published_at: null,
+    };
+
+    const { data: duplicate, error: createError } = await (supabase as any)
       .from("blog_posts")
-      .insert({
-        title: newTitle,
-        slug: newSlug,
-        content: original.content,
-        excerpt: original.excerpt,
-        category: original.category,
-        tags: original.tags,
-        featured_image_url: original.featured_image_url,
-        author_id: userId || original.author_id,
-        is_published: false, // Always draft
-        published_at: null,
-      })
+      .insert(insertData)
       .select()
-      .single();
+      .single() as { data: BlogPost | null; error: Error | null };
 
     if (createError || !duplicate) {
-      logger.error("Failed to create blog post duplicate", createError);
+      logger.error("Failed to create blog post duplicate", createError ?? undefined);
       return { success: false, error: "Failed to create duplicate" };
     }
 
@@ -228,6 +234,11 @@ export interface CourseDuplicationResult {
   error?: string;
 }
 
+// Type aliases for course-related tables
+type Course = Database["public"]["Tables"]["courses"]["Row"];
+type CourseModule = Database["public"]["Tables"]["course_modules"]["Row"];
+type CourseLesson = Database["public"]["Tables"]["course_lessons"]["Row"];
+
 /**
  * Duplicate a course with all its modules and lessons
  * Preserves order and relationships
@@ -240,15 +251,15 @@ export async function duplicateCourse(
   const supabase = createAdminClient();
 
   try {
-    // Fetch original course
-    const { data: originalCourse, error: courseError } = await supabase
+    // Fetch original course - use any cast to avoid TypeScript inference issues
+    const { data: originalCourse, error: courseError } = await (supabase as any)
       .from("courses")
       .select("*")
       .eq("id", courseId)
-      .single();
+      .single() as { data: Course | null; error: Error | null };
 
     if (courseError || !originalCourse) {
-      logger.error("Failed to fetch course for duplication", courseError);
+      logger.error("Failed to fetch course for duplication", courseError ?? undefined);
       return { success: false, error: "Course not found" };
     }
 
@@ -257,7 +268,7 @@ export async function duplicateCourse(
     const newTitle = generateCopyTitle(originalCourse.title);
 
     // Create duplicate course with draft status
-    const { data: newCourse, error: createCourseError } = await supabase
+    const { data: newCourse, error: createCourseError } = await (supabase as any)
       .from("courses")
       .insert({
         title: newTitle,
@@ -278,22 +289,22 @@ export async function duplicateCourse(
         enrollment_count: 0, // Reset enrollment count
       })
       .select()
-      .single();
+      .single() as { data: Course | null; error: Error | null };
 
     if (createCourseError || !newCourse) {
-      logger.error("Failed to create course duplicate", createCourseError);
+      logger.error("Failed to create course duplicate", createCourseError ?? undefined);
       return { success: false, error: "Failed to create course duplicate" };
     }
 
     // Fetch original modules
-    const { data: originalModules, error: modulesError } = await supabase
+    const { data: originalModules, error: modulesError } = await (supabase as any)
       .from("course_modules")
       .select("*")
       .eq("course_id", courseId)
-      .order("order_index", { ascending: true });
+      .order("order_index", { ascending: true }) as { data: CourseModule[] | null; error: Error | null };
 
     if (modulesError) {
-      logger.error("Failed to fetch modules for duplication", modulesError);
+      logger.error("Failed to fetch modules for duplication", modulesError ?? undefined);
       // Course created but modules failed - return partial success
       return {
         success: true,
@@ -306,7 +317,7 @@ export async function duplicateCourse(
 
     // Duplicate modules
     for (const originalModule of originalModules || []) {
-      const { data: newModule, error: createModuleError } = await supabase
+      const { data: newModule, error: createModuleError } = await (supabase as any)
         .from("course_modules")
         .insert({
           course_id: newCourse.id,
@@ -315,29 +326,29 @@ export async function duplicateCourse(
           order_index: originalModule.order_index,
         })
         .select()
-        .single();
+        .single() as { data: CourseModule | null; error: Error | null };
 
       if (createModuleError || !newModule) {
-        logger.error("Failed to create module duplicate", createModuleError);
+        logger.error("Failed to create module duplicate", createModuleError ?? undefined);
         continue;
       }
 
       moduleIdMap.set(originalModule.id, newModule.id);
 
       // Fetch and duplicate lessons for this module
-      const { data: originalLessons, error: lessonsError } = await supabase
+      const { data: originalLessons, error: lessonsError } = await (supabase as any)
         .from("course_lessons")
         .select("*")
         .eq("module_id", originalModule.id)
-        .order("order_index", { ascending: true });
+        .order("order_index", { ascending: true }) as { data: CourseLesson[] | null; error: Error | null };
 
       if (lessonsError) {
-        logger.error("Failed to fetch lessons for duplication", lessonsError);
+        logger.error("Failed to fetch lessons for duplication", lessonsError ?? undefined);
         continue;
       }
 
       for (const originalLesson of originalLessons || []) {
-        const { error: createLessonError } = await supabase
+        const { error: createLessonError } = await (supabase as any)
           .from("course_lessons")
           .insert({
             module_id: newModule.id,
@@ -348,10 +359,10 @@ export async function duplicateCourse(
             duration_minutes: originalLesson.duration_minutes,
             order_index: originalLesson.order_index,
             is_preview: originalLesson.is_preview,
-          });
+          }) as { error: Error | null };
 
         if (createLessonError) {
-          logger.error("Failed to create lesson duplicate", createLessonError);
+          logger.error("Failed to create lesson duplicate", createLessonError ?? undefined);
           continue;
         }
 

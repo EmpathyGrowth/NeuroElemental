@@ -33,7 +33,7 @@ export const PUT = createAdminRoute(async (request) => {
       updateData.module_id = module_id;
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('course_lessons')
       .update(updateData)
       .eq('id', id);

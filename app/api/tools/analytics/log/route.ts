@@ -33,7 +33,7 @@ const logInteractionSchema = z.object({
   tool_name: z.enum(VALID_TOOL_NAMES as [ToolName, ...ToolName[]]),
   action: z.enum(VALID_ACTIONS as [ToolAction, ...ToolAction[]]),
   duration_seconds: z.number().int().min(0).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**

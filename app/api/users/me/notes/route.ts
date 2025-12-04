@@ -115,7 +115,7 @@ export const POST = createAuthenticatedRoute(async (request, _context, user) => 
   }
 
 
-  const { data: note, error } = await supabase
+  const { data: note, error } = await (supabase as any)
     .from('lesson_notes')
     .insert({
       user_id: user.id,

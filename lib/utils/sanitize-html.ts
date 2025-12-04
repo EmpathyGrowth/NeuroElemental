@@ -14,7 +14,7 @@ import DOMPurify from "isomorphic-dompurify";
  * Configuration for DOMPurify that preserves safe formatting elements
  * while removing XSS vectors like script tags and event handlers
  */
-const SAFE_HTML_CONFIG: DOMPurify.Config = {
+const SAFE_HTML_CONFIG = {
   // Allowed HTML tags - formatting, structure, and media
   ALLOWED_TAGS: [
     // Text formatting

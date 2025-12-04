@@ -51,7 +51,7 @@ describe('Property 14: RLS Policy Coverage', () => {
           { minLength: 0, maxLength: 20 }
         ),
         (tables) => {
-          const tablesWithoutRLS = getTablesWithoutRLS(tables as TableInfo[]);
+          const tablesWithoutRLS = getTablesWithoutRLS(tables as unknown as TableInfo[]);
 
           // All returned tables should have RLS disabled
           for (const table of tablesWithoutRLS) {

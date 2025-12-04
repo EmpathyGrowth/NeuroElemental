@@ -370,7 +370,7 @@ export const DELETE = createAuthenticatedRoute(async (request, _context, user) =
     website_url: null
   };
 
-  const { error: profileError } = await supabase
+  const { error: profileError } = await (supabase as any)
     .from('profiles')
     .update(deleteData)
     .eq('id', user.id);

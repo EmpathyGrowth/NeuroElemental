@@ -8,7 +8,7 @@ import { getSupabaseServer } from '@/lib/db';
 export const GET = createAuthenticatedRoute(async (_req, _context, user) => {
   const supabase = getSupabaseServer();
 
-  const { data: memberships, error } = await supabase
+  const { data: memberships, error } = await (supabase as any)
     .from('organization_members')
     .select(`
       id,
@@ -18,7 +18,7 @@ export const GET = createAuthenticatedRoute(async (_req, _context, user) => {
         name
       )
     `)
-    .eq('user_id', user.id);
+    .eq('user_id', user.id) as { data: Array<{ id: string; role: string; organizations: { id: string; name: string } | null }> | null; error: unknown };
 
   if (error) {
     return successResponse({ organizations: [] });
@@ -28,8 +28,8 @@ export const GET = createAuthenticatedRoute(async (_req, _context, user) => {
   const organizations = (memberships || [])
     .filter(m => m.organizations)
     .map(m => ({
-      id: (m.organizations as any).id,
-      name: (m.organizations as any).name,
+      id: m.organizations!.id,
+      name: m.organizations!.name,
       userRole: m.role,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));

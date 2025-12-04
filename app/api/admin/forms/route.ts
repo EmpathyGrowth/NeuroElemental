@@ -77,7 +77,7 @@ export const POST = createAdminRoute(async (request) => {
   const parsed = formSchema.safeParse(body);
   if (!parsed.success) {
     throw badRequestError(
-      parsed.error.errors[0]?.message || "Invalid form data"
+      parsed.error.issues[0]?.message || "Invalid form data"
     );
   }
 

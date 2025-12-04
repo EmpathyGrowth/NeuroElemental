@@ -16,15 +16,15 @@ export const GET = createCronRoute(async (request) => {
   const cronSecret = request.headers.get('x-cron-secret')!
 
   // Find all pending jobs
-  const { data: pendingJobs, error: fetchError } = await supabase
+  const { data: pendingJobs, error: fetchError } = await (supabase as any)
     .from('audit_export_jobs')
     .select('id, organization_id')
     .eq('status', 'pending')
     .order('created_at', { ascending: true })
-    .limit(10) // Process max 10 jobs per run
+    .limit(10) as { data: Array<{ id: string; organization_id: string }> | null; error: { message: string } | null } // Process max 10 jobs per run
 
   if (fetchError) {
-    logger.error('Error fetching pending jobs', fetchError)
+    logger.error('Error fetching pending jobs', new Error(fetchError.message))
     throw internalError('Failed to fetch pending jobs')
   }
 

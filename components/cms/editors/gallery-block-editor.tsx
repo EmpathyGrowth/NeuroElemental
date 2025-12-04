@@ -150,7 +150,7 @@ export function GalleryBlockEditor({
                     onUpload: (url) => updateImage(index, "url", url || ""),
                   }}
                   value={image.url}
-                  category="gallery"
+                  category="general"
                   placeholder="Upload image"
                 />
 

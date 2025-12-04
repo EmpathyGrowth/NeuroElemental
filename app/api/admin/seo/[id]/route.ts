@@ -28,7 +28,7 @@ const updateSchema = z.object({
   twitter_card: z.string().max(50).optional(),
   canonical_url: z.string().optional(),
   robots: z.string().max(100).optional(),
-  structured_data: z.record(z.unknown()).optional(),
+  structured_data: z.record(z.string(), z.unknown()).optional(),
   is_noindex: z.boolean().optional(),
 });
 
@@ -59,7 +59,7 @@ export const PATCH = createAdminRoute(
     const parsed = updateSchema.safeParse(body);
     if (!parsed.success) {
       throw badRequestError(
-        parsed.error.errors[0]?.message || "Invalid SEO data"
+        parsed.error.issues[0]?.message || "Invalid SEO data"
       );
     }
 

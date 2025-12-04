@@ -31,12 +31,12 @@ const templateUpdateSchema = z.object({
 });
 
 const previewSchema = z.object({
-  sample_data: z.record(z.string()),
+  sample_data: z.record(z.string(), z.string()),
 });
 
 const testEmailSchema = z.object({
   email: z.string().email(),
-  sample_data: z.record(z.string()).optional(),
+  sample_data: z.record(z.string(), z.string()).optional(),
 });
 
 /**
@@ -134,7 +134,7 @@ export const PATCH = createAdminRoute<{ id: string }>(
     const parsed = templateUpdateSchema.safeParse(body);
     if (!parsed.success) {
       throw badRequestError(
-        parsed.error.errors[0]?.message || "Invalid template data"
+        parsed.error.issues[0]?.message || "Invalid template data"
       );
     }
 

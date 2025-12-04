@@ -125,7 +125,7 @@ export async function createWebhook(params: {
     const secret = generateWebhookSecret()
 
     // Create webhook
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('webhooks')
       .insert({
         organization_id: params.organizationId,
@@ -137,7 +137,7 @@ export async function createWebhook(params: {
         is_active: true,
       })
       .select()
-      .single()
+      .single() as { data: any; error: Error | null }
 
     if (error) {
       logger.error('Error creating webhook:', error as Error)
@@ -227,7 +227,7 @@ export async function updateWebhook(
       }
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('webhooks')
       .update(updates)
       .eq('id', webhookId)
@@ -252,7 +252,7 @@ export async function deleteWebhook(webhookId: string, organizationId: string) {
   try {
     const supabase = createAdminClient()
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('webhooks')
       .delete()
       .eq('id', webhookId)
@@ -282,7 +282,7 @@ export async function regenerateWebhookSecret(
 
     const newSecret = generateWebhookSecret()
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('webhooks')
       .update({ secret: newSecret })
       .eq('id', webhookId)

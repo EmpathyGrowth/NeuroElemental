@@ -36,10 +36,10 @@ export const GET = createCronRoute(async () => {
   }> = []
 
   // Fetch credit balances
-  const { data: creditBalances } = await supabase
+  const { data: creditBalances } = await (supabase as any)
     .from('credit_balances')
     .select('id, organization_id, credit_type, balance')
-    .gt('balance', 0)
+    .gt('balance', 0) as { data: Array<{ id: string; organization_id: string; credit_type: string; balance: number }> | null }
 
   if (!creditBalances || creditBalances.length === 0) {
     return successResponse({
@@ -58,11 +58,11 @@ export const GET = createCronRoute(async () => {
     if (!orgId) continue
 
     // Fetch organization name
-    const { data: org } = await supabase
+    const { data: org } = await (supabase as any)
       .from('organizations')
       .select('id, name')
       .eq('id', orgId)
-      .single()
+      .single() as { data: { id: string; name: string } | null }
 
     if (!org) continue
 
@@ -72,13 +72,13 @@ export const GET = createCronRoute(async () => {
       const cooldownDate = new Date()
       cooldownDate.setDate(cooldownDate.getDate() - LOW_CREDIT_WARNING_COOLDOWN_DAYS)
 
-      const { data: recentWarnings } = await supabase
+      const { data: recentWarnings } = await (supabase as any)
         .from('credit_warnings')
         .select('id')
         .eq('organization_id', org.id)
         .eq('warning_type', `low_credits_${creditType}`)
         .gte('notified_at', cooldownDate.toISOString())
-        .limit(1)
+        .limit(1) as { data: Array<{ id: string }> | null }
 
       if (recentWarnings && recentWarnings.length > 0) {
         // Warning already sent recently, skip
@@ -86,7 +86,7 @@ export const GET = createCronRoute(async () => {
       }
 
       // Get organization admins to send email
-      const { data: admins } = await supabase
+      const { data: admins } = await (supabase as any)
         .from('organization_members')
         .select(`
           user_id,
@@ -121,7 +121,7 @@ export const GET = createCronRoute(async () => {
       }
 
       // Record warning in database
-      const { error: insertError } = await supabase.from('credit_warnings').insert({
+      const { error: insertError } = await (supabase as any).from('credit_warnings').insert({
         organization_id: org.id,
         warning_type: `low_credits_${creditType}`,
         current_balance: balance,

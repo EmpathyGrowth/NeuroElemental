@@ -110,9 +110,9 @@ export class ToolAnalyticsRepository extends BaseRepository<"tool_analytics"> {
       metadata: (data.metadata as Json) || null,
     };
 
-    const { error } = await this.supabase
+    const { error } = await (this.supabase as any)
       .from("tool_analytics")
-      .insert(insertData);
+      .insert(insertData) as { error: Error | null };
 
     if (error) {
       logger.error(
@@ -134,7 +134,7 @@ export class ToolAnalyticsRepository extends BaseRepository<"tool_analytics"> {
     toolName: string,
     dateRange?: DateRange
   ): Promise<ToolStats> {
-    let query = this.supabase
+    let query = (this.supabase as any)
       .from("tool_analytics")
       .select("*")
       .eq("tool_name", toolName);
@@ -145,7 +145,7 @@ export class ToolAnalyticsRepository extends BaseRepository<"tool_analytics"> {
         .lte("created_at", dateRange.end);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query as { data: ToolAnalyticsRow[] | null; error: Error | null };
 
     if (error) {
       logger.error(
@@ -217,11 +217,11 @@ export class ToolAnalyticsRepository extends BaseRepository<"tool_analytics"> {
         break;
     }
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("tool_analytics")
       .select("user_id")
       .eq("tool_name", toolName)
-      .gte("created_at", startDate.toISOString());
+      .gte("created_at", startDate.toISOString()) as { data: { user_id: string | null }[] | null; error: Error | null };
 
     if (error) {
       logger.error(
@@ -242,11 +242,11 @@ export class ToolAnalyticsRepository extends BaseRepository<"tool_analytics"> {
    * @returns Completion rate as percentage (0-100)
    */
   async getCompletionRate(toolName: string): Promise<number> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("tool_analytics")
       .select("action")
       .eq("tool_name", toolName)
-      .in("action", ["start", "complete"]);
+      .in("action", ["start", "complete"]) as { data: { action: string }[] | null; error: Error | null };
 
     if (error) {
       logger.error(
@@ -298,12 +298,12 @@ export class ToolAnalyticsRepository extends BaseRepository<"tool_analytics"> {
     userId: string,
     limit: number = 50
   ): Promise<ToolInteraction[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("tool_analytics")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .limit(limit) as { data: ToolAnalyticsRow[] | null; error: Error | null };
 
     if (error) {
       logger.error(

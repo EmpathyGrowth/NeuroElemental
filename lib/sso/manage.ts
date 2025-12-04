@@ -79,18 +79,18 @@ export async function getSSOProvider(
 ): Promise<SSOProvider | null> {
   const supabase = getSupabaseServer();
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("sso_providers")
     .select("*")
     .eq("organization_id", organizationId)
     .eq("is_active", true)
-    .single();
+    .single() as { data: SSOProvider | null; error: Error | null };
 
   if (error || !data) {
     return null;
   }
 
-  return data as SSOProvider;
+  return data;
 }
 
 /**
@@ -127,7 +127,7 @@ export async function createSSOProvider(
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("sso_providers")
       .insert({
         organization_id: organizationId,
@@ -162,7 +162,7 @@ export async function createSSOProvider(
         is_active: true,
       })
       .select()
-      .single();
+      .single() as { data: SSOProvider | null; error: { message: string } | null };
 
     if (error) {
       logger.error("Error creating SSO provider", error as Error);
@@ -194,12 +194,12 @@ export async function updateSSOProvider(
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("sso_providers")
       .update(updates)
       .eq("id", providerId)
       .select()
-      .single();
+      .single() as { data: SSOProvider | null; error: { message: string } | null };
 
     if (error) {
       logger.error("Error updating SSO provider", error as Error);
@@ -228,10 +228,10 @@ export async function deleteSSOProvider(
   try {
     const supabase = getSupabaseServer();
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("sso_providers")
       .update({ is_active: false })
-      .eq("id", providerId);
+      .eq("id", providerId) as { error: { message: string } | null };
 
     if (error) {
       logger.error("Error deleting SSO provider", error as Error);
@@ -321,7 +321,7 @@ export async function logSSOAuthAttempt(attempt: {
   try {
     const supabase = getSupabaseServer();
 
-    const { error } = await supabase.from("sso_auth_attempts").insert(attempt);
+    const { error } = await (supabase as any).from("sso_auth_attempts").insert(attempt) as { error: { message: string } | null };
 
     if (error) {
       logger.error("Error logging SSO auth attempt", error as Error);
@@ -360,7 +360,7 @@ export async function getSSOAuthAttempts(
     const limit = options?.limit ?? 50;
     const offset = options?.offset ?? 0;
 
-    let query = supabase
+    let query = (supabase as any)
       .from("sso_auth_attempts")
       .select("*", { count: "exact" })
       .eq("organization_id", organizationId)
@@ -371,7 +371,7 @@ export async function getSSOAuthAttempts(
       query = query.eq("status", options.status);
     }
 
-    const { data, error, count } = await query;
+    const { data, error, count } = await query as { data: SSOAuthAttempt[] | null; error: Error | null; count: number | null };
 
     if (error) {
       logger.error("Error fetching SSO auth attempts", error as Error);
@@ -402,12 +402,12 @@ export async function getSSOUserMapping(
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("sso_user_mappings")
       .select("*")
       .eq("provider_id", providerId)
       .eq("idp_user_id", idpUserId)
-      .single();
+      .single() as { data: any; error: Error | null };
 
     if (error || !data) {
       return null;
@@ -501,18 +501,18 @@ export async function createSSOSession(session: {
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("sso_sessions")
       .insert(session)
       .select("id")
-      .single();
+      .single() as { data: { id: string } | null; error: { message: string } | null };
 
     if (error) {
       logger.error("Error creating SSO session", error as Error);
       return { success: false, error: error.message };
     }
 
-    return { success: true, sessionId: data.id };
+    return { success: true, sessionId: data?.id };
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "An unexpected error occurred";
@@ -532,13 +532,13 @@ export async function getUserSSOSessions(userId: string): Promise<any[]> {
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("sso_sessions")
       .select("*, sso_providers(provider_name, provider_type)")
       .eq("user_id", userId)
       .is("logged_out_at", null)
       .gt("expires_at", new Date().toISOString())
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }) as { data: any[] | null; error: Error | null };
 
     if (error) {
       logger.error("Error fetching user SSO sessions", error as Error);
@@ -565,10 +565,10 @@ export async function logoutSSOSession(
   try {
     const supabase = getSupabaseServer();
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("sso_sessions")
       .update({ logged_out_at: new Date().toISOString() })
-      .eq("id", sessionId);
+      .eq("id", sessionId) as { error: { message: string } | null };
 
     if (error) {
       logger.error("Error logging out SSO session", error as Error);
@@ -597,11 +597,11 @@ export async function testSSOProvider(
   try {
     const supabase = getSupabaseServer();
 
-    const { data: provider, error } = await supabase
+    const { data: provider, error } = await (supabase as any)
       .from("sso_providers")
       .select("*")
       .eq("id", providerId)
-      .single();
+      .single() as { data: SSOProvider | null; error: Error | null };
 
     if (error || !provider) {
       return { success: false, error: "Provider not found" };

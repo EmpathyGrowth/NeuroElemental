@@ -54,7 +54,7 @@ export const PATCH = createAuthenticatedRoute<{ id: string }>(
     const validation = goalUpdateSchema.safeParse(body);
 
     if (!validation.success) {
-      throw badRequestError(validation.error.errors[0].message);
+      throw badRequestError(validation.error.issues[0].message);
     }
 
     const supabase = getSupabaseServer();

@@ -273,11 +273,11 @@ class EmailService {
         status: "pending",
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("scheduled_emails")
         .insert(insertData)
         .select()
-        .single();
+        .single() as { data: ScheduledEmail | null; error: Error | null };
 
       if (error) {
         return { success: false, error: error.message };
@@ -297,12 +297,12 @@ class EmailService {
       const supabase = createAdminClient();
 
       // Get pending emails scheduled for now or past
-      const { data: emails, error } = await supabase
+      const { data: emails, error } = await (supabase as any)
         .from("scheduled_emails")
         .select("*")
         .eq("status", "pending")
         .lte("scheduled_for", new Date().toISOString())
-        .limit(50);
+        .limit(50) as { data: ScheduledEmail[] | null; error: Error | null };
 
       if (error) {
         logger.error(
@@ -374,7 +374,7 @@ class EmailService {
                 ? result.error
                 : result.error?.message || null,
           };
-          await supabase
+          await (supabase as any)
             .from("scheduled_emails")
             .update(updateData)
             .eq("id", email.id);
@@ -386,7 +386,7 @@ class EmailService {
             status: "failed",
             error: err.message,
           };
-          await supabase
+          await (supabase as any)
             .from("scheduled_emails")
             .update(failedUpdate)
             .eq("id", email.id);
@@ -420,11 +420,11 @@ class EmailService {
         updated_at: new Date().toISOString(),
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("email_preferences")
         .upsert(insertData)
         .select()
-        .single();
+        .single() as { data: unknown; error: Error | null };
 
       if (error) {
         return { success: false, error: error.message };

@@ -43,7 +43,7 @@ export const PATCH = createAdminRoute<{ id: string }>(
     const parsed = faqUpdateSchema.safeParse(body);
     if (!parsed.success) {
       throw badRequestError(
-        parsed.error.errors[0]?.message || "Invalid FAQ data"
+        parsed.error.issues[0]?.message || "Invalid FAQ data"
       );
     }
 

@@ -90,7 +90,7 @@ export const PUT = createAuthenticatedRoute<{ id: string }>(async (request, cont
       cancel_at_period_end: true,
     });
 
-    await supabase
+    await (supabase as any)
       .from('subscriptions')
       .update({
         cancel_at_period_end: true,
@@ -108,7 +108,7 @@ export const PUT = createAuthenticatedRoute<{ id: string }>(async (request, cont
       cancel_at_period_end: false,
     });
 
-    await supabase
+    await (supabase as any)
       .from('subscriptions')
       .update({
         cancel_at_period_end: false,
@@ -140,7 +140,7 @@ export const PUT = createAuthenticatedRoute<{ id: string }>(async (request, cont
       proration_behavior: 'always_invoice',
     });
 
-    await supabase
+    await (supabase as any)
       .from('subscriptions')
       .update({
         plan_id,
@@ -181,7 +181,7 @@ export const DELETE = createAuthenticatedRoute<{ id: string }>(async (_request, 
   await stripe.subscriptions.cancel(stripeSubId);
 
   // Update database
-  const { error: updateError } = await supabase
+  const { error: updateError } = await (supabase as any)
     .from('subscriptions')
     .update({
       status: 'canceled',

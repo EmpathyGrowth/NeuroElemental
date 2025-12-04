@@ -153,7 +153,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
         invited_by: user.id,
         expires_at: expiresAt.toISOString(),
       }
-      const { data: invitation, error: inviteError } = await supabase
+      const { data: invitation, error: inviteError } = await (supabase as any)
         .from('organization_invitations')
         .insert(invitationInsert)
         .select()

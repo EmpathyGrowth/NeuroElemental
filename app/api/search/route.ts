@@ -40,12 +40,22 @@ export const GET = createAuthenticatedRoute(async (request, _context, user) => {
 
   // Search courses (public or enrolled)
   if (!type || type === "course") {
-    const { data: courses } = await supabase
+    const { data: courses } = (await (supabase as any)
       .from("courses")
       .select("id, title, description, thumbnail_url, slug, is_published")
       .or(`title.ilike.${searchPattern},description.ilike.${searchPattern}`)
       .eq("is_published", true)
-      .limit(limit);
+      .limit(limit)) as {
+      data:
+        | {
+            id: string;
+            title: string;
+            description: string | null;
+            thumbnail_url: string | null;
+            slug: string;
+          }[]
+        | null;
+    };
 
     if (courses) {
       results.push(
@@ -63,12 +73,22 @@ export const GET = createAuthenticatedRoute(async (request, _context, user) => {
 
   // Search events
   if (!type || type === "event") {
-    const { data: events } = await supabase
+    const { data: events } = (await (supabase as any)
       .from("events")
       .select("id, title, description, thumbnail_url, slug, is_published")
       .or(`title.ilike.${searchPattern},description.ilike.${searchPattern}`)
       .eq("is_published", true)
-      .limit(limit);
+      .limit(limit)) as {
+      data:
+        | {
+            id: string;
+            title: string;
+            description: string | null;
+            thumbnail_url: string | null;
+            slug: string;
+          }[]
+        | null;
+    };
 
     if (events) {
       results.push(
@@ -86,12 +106,22 @@ export const GET = createAuthenticatedRoute(async (request, _context, user) => {
 
   // Search blog posts
   if (!type || type === "blog") {
-    const { data: posts } = await supabase
+    const { data: posts } = (await (supabase as any)
       .from("blog_posts")
       .select("id, title, excerpt, featured_image_url, slug, is_published")
       .or(`title.ilike.${searchPattern},excerpt.ilike.${searchPattern}`)
       .eq("is_published", true)
-      .limit(limit);
+      .limit(limit)) as {
+      data:
+        | {
+            id: string;
+            title: string;
+            excerpt: string | null;
+            featured_image_url: string | null;
+            slug: string;
+          }[]
+        | null;
+    };
 
     if (posts) {
       results.push(
@@ -112,11 +142,21 @@ export const GET = createAuthenticatedRoute(async (request, _context, user) => {
     (!type || type === "user") &&
     (user.role === "admin" || user.role === "instructor")
   ) {
-    const { data: users } = await supabase
+    const { data: users } = (await (supabase as any)
       .from("profiles")
       .select("id, full_name, email, avatar_url, role")
       .or(`full_name.ilike.${searchPattern},email.ilike.${searchPattern}`)
-      .limit(limit);
+      .limit(limit)) as {
+      data:
+        | {
+            id: string;
+            full_name: string | null;
+            email: string;
+            avatar_url: string | null;
+            role: string;
+          }[]
+        | null;
+    };
 
     if (users) {
       results.push(
@@ -135,11 +175,11 @@ export const GET = createAuthenticatedRoute(async (request, _context, user) => {
 
   // Search quizzes (if admin)
   if ((!type || type === "quiz") && user.role === "admin") {
-    const { data: quizzes } = await supabase
+    const { data: quizzes } = (await (supabase as any)
       .from("quizzes")
       .select("id, title")
       .ilike("title", searchPattern)
-      .limit(limit);
+      .limit(limit)) as { data: { id: string; title: string }[] | null };
 
     if (quizzes) {
       results.push(

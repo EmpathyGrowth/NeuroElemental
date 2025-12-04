@@ -95,10 +95,10 @@ export class EventRegistrationRepository extends BaseRepository<"event_registrat
     }
 
     // Fetch user profiles
-    const { data: profiles } = await this.supabase
+    const { data: profiles } = await (this.supabase as any)
       .from("profiles")
       .select("id, full_name, email")
-      .in("id", userIds);
+      .in("id", userIds) as { data: { id: string; full_name: string | null; email: string | null }[] | null };
 
     // Create a map of user profiles for quick lookup
     const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
@@ -167,12 +167,12 @@ export class EventRegistrationRepository extends BaseRepository<"event_registrat
       throw notFoundError("Registration");
     }
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("event_registrations")
       .update({ attended })
       .eq("id", registrationId)
       .select()
-      .single();
+      .single() as { data: EventRegistration | null; error: Error | null };
 
     if (error || !data) {
       logger.error(
@@ -182,7 +182,7 @@ export class EventRegistrationRepository extends BaseRepository<"event_registrat
       throw internalError("Failed to update registration");
     }
 
-    return data as EventRegistration;
+    return data;
   }
 
   /**
@@ -271,11 +271,11 @@ export class EventRegistrationRepository extends BaseRepository<"event_registrat
   async createRegistration(
     data: EventRegistrationInsert
   ): Promise<EventRegistration> {
-    const { data: registration, error } = await this.supabase
+    const { data: registration, error } = await (this.supabase as any)
       .from("event_registrations")
       .insert(data)
       .select()
-      .single();
+      .single() as { data: EventRegistration | null; error: Error | null };
 
     if (error || !registration) {
       logger.error(
@@ -285,7 +285,7 @@ export class EventRegistrationRepository extends BaseRepository<"event_registrat
       throw internalError("Failed to create registration");
     }
 
-    return registration as EventRegistration;
+    return registration;
   }
 
   /**

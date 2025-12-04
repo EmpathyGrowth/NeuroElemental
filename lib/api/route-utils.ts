@@ -268,7 +268,7 @@ export async function createNotification(
 ): Promise<void> {
   const supabase = getSupabaseServer();
 
-  await supabase
+  await (supabase as any)
     .from('notifications')
     .insert({
       user_id: userId,

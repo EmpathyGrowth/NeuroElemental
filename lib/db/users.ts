@@ -61,11 +61,11 @@ export class UserRepository extends BaseRepository<"profiles"> {
    * @returns Array of matching user profiles
    */
   async searchUsers(query: string, limit: number = 20): Promise<Profile[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("profiles")
       .select("*")
       .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
-      .limit(limit);
+      .limit(limit) as { data: Profile[] | null; error: Error | null };
 
     if (error) {
       logger.error(
@@ -113,7 +113,7 @@ export class UserRepository extends BaseRepository<"profiles"> {
     // If there's a search query, we need custom logic for the OR condition
     if (filters?.search) {
       const offset = (page - 1) * limit;
-      let query = this.supabase
+      let query = (this.supabase as any)
         .from("profiles")
         .select("*", { count: "exact" });
 
@@ -132,7 +132,7 @@ export class UserRepository extends BaseRepository<"profiles"> {
         .range(offset, offset + limit - 1)
         .order("created_at", { ascending: false });
 
-      const { data, error, count } = await query;
+      const { data, error, count } = await query as { data: Profile[] | null; error: Error | null; count: number | null };
 
       if (error) {
         logger.error(
@@ -247,7 +247,7 @@ export class UserRepository extends BaseRepository<"profiles"> {
     completedAt: string | null;
     isCompleted: boolean;
   }> {
-    const profile = await this.findById(userId);
+    const profile = await this.findById(userId) as Profile & { onboarding_current_step?: string | null; onboarding_completed_at?: string | null };
     if (!profile) {
       return { currentStep: null, completedAt: null, isCompleted: false };
     }
@@ -270,7 +270,7 @@ export class UserRepository extends BaseRepository<"profiles"> {
    * @returns The profile with all relations
    */
   async getProfileWithRelations(userId: string): Promise<any> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("profiles")
       .select(
         `
@@ -309,7 +309,7 @@ export class UserRepository extends BaseRepository<"profiles"> {
       `
       )
       .eq("id", userId)
-      .single();
+      .single() as { data: any; error: Error | null };
 
     if (error) {
       logger.error(
@@ -336,11 +336,11 @@ export class UserRepository extends BaseRepository<"profiles"> {
         // Total users
         this.count(),
         // Active users (last 7 days)
-        this.supabase
+        (this.supabase as any)
           .from("profiles")
           .select("*", { count: "exact", head: true })
           .gte("updated_at", weekAgo)
-          .then((res) => res.count || 0),
+          .then((res: { count: number | null }) => res.count || 0),
         // Instructors
         this.count({ role: "instructor" } as Partial<Profile>),
         // Pending instructors
@@ -367,14 +367,14 @@ export class UserRepository extends BaseRepository<"profiles"> {
     }
 
     const [enrollmentsRes, certificatesRes] = await Promise.all([
-      this.supabase
+      (this.supabase as any)
         .from("course_enrollments")
         .select("user_id")
-        .in("user_id", userIds),
-      this.supabase
+        .in("user_id", userIds) as Promise<{ data: { user_id: string | null }[] | null }>,
+      (this.supabase as any)
         .from("certificates")
         .select("user_id")
-        .in("user_id", userIds),
+        .in("user_id", userIds) as Promise<{ data: { user_id: string | null }[] | null }>,
     ]);
 
     const enrollmentCounts: Record<string, number> = {};

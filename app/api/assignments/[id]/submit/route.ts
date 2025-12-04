@@ -23,23 +23,23 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
 
   // Fetch lesson to verify assignment exists
   // Note: lesson_assignments table doesn't exist yet - using course_lessons as proxy
-  const { data: lesson, error: lessonError } = await supabase
+  const { data: lesson, error: lessonError } = await (supabase as any)
     .from('course_lessons')
     .select('id, title, content_type')
     .eq('id', id)
-    .single();
+    .single() as { data: { id: string; title: string; content_type: string } | null; error: Error | null };
 
   if (lessonError || !lesson) {
     throw notFoundError('Assignment not found');
   }
 
   // Check if user already submitted
-  const { data: existingSubmission } = await supabase
+  const { data: existingSubmission } = await (supabase as any)
     .from('assignment_submissions')
     .select('id, status')
     .eq('assignment_id', id)
     .eq('user_id', user.id)
-    .single();
+    .single() as { data: { id: string; status: string } | null };
 
   if (existingSubmission && existingSubmission.status === 'graded') {
     throw badRequestError('Assignment already graded. Cannot resubmit.');
@@ -66,12 +66,12 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
       updated_at: getCurrentTimestamp(),
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('assignment_submissions')
       .update(updateData)
       .eq('id', existingSubmission.id)
       .select()
-      .single();
+      .single() as { data: SubmissionRow | null; error: Error | null };
 
     if (error) {
       logger.error('Error updating submission', new Error(error.message));
@@ -80,11 +80,11 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
     submission = data;
   } else {
     // Create new submission
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('assignment_submissions')
       .insert(submissionData)
       .select()
-      .single();
+      .single() as { data: SubmissionRow | null; error: Error | null };
 
     if (error) {
       logger.error('Error creating submission', new Error(error.message));
@@ -104,12 +104,12 @@ export const GET = createAuthenticatedRoute<{ id: string }>(async (_request, con
   const supabase = await getSupabaseServer();
 
   // Fetch user's submission
-  const { data: submission, error } = await supabase
+  const { data: submission, error } = await (supabase as any)
     .from('assignment_submissions')
     .select('*')
     .eq('assignment_id', id)
     .eq('user_id', user.id)
-    .single();
+    .single() as { data: SubmissionRow | null; error: { code?: string; message?: string } | null };
 
   if (error && error.code !== 'PGRST116') {
     logger.error('Error fetching submission', error instanceof Error ? error : new Error(String(error)));
@@ -119,11 +119,11 @@ export const GET = createAuthenticatedRoute<{ id: string }>(async (_request, con
   // If submission exists, fetch the related lesson info
   let assignmentInfo = null;
   if (submission) {
-    const { data: lesson } = await supabase
+    const { data: lesson } = await (supabase as any)
       .from('course_lessons')
       .select('id, title')
       .eq('id', id)
-      .single();
+      .single() as { data: { id: string; title: string } | null };
 
     if (lesson) {
       assignmentInfo = {

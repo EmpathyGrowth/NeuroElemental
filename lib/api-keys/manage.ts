@@ -97,7 +97,7 @@ export async function createApiKey(params: {
     }
 
     // Store in database
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('api_keys')
       .insert({
         organization_id: params.organizationId,
@@ -140,7 +140,7 @@ export async function validateApiKey(apiKey: string) {
     const keyHash = hashApiKey(apiKey)
 
     // Find matching key
-    const { data: keyData, error } = await supabase
+    const { data: keyData, error } = await (supabase as any)
       .from('api_keys')
       .select(`
         *,
@@ -149,7 +149,7 @@ export async function validateApiKey(apiKey: string) {
       `)
       .eq('key_hash', keyHash)
       .eq('is_active', true)
-      .single()
+      .single() as { data: { id: string; expires_at: string | null; [key: string]: unknown } | null; error: unknown }
 
     if (error || !keyData) {
       return { valid: false, error: 'Invalid API key' }
@@ -161,7 +161,7 @@ export async function validateApiKey(apiKey: string) {
     }
 
     // Update last used timestamp
-    await supabase
+    await (supabase as any)
       .from('api_keys')
       .update({ last_used_at: getCurrentTimestamp() })
       .eq('id', keyData.id)
@@ -225,7 +225,7 @@ export async function revokeApiKey(keyId: string, organizationId: string) {
   try {
     const supabase = createAdminClient()
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('api_keys')
       .update({ is_active: false })
       .eq('id', keyId)

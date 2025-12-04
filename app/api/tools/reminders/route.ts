@@ -38,11 +38,11 @@ interface ReminderSettings {
 export const GET = createAuthenticatedRoute(async (_request, _context, user) => {
   const supabase = getSupabaseServer();
 
-  const { data: preferences } = await supabase
+  const { data: preferences } = await (supabase as any)
     .from("user_preferences")
     .select("preferences")
     .eq("user_id", user.id)
-    .single();
+    .single() as { data: { preferences: Record<string, unknown> } | null };
 
   const reminderSettings: ReminderSettings = (preferences?.preferences as Record<string, unknown>)?.reminder_settings as ReminderSettings || {
     enabled: false,
@@ -72,11 +72,11 @@ export const POST = createAuthenticatedRoute(async (request, _context, user) => 
   const settings = result.data;
 
   // Get existing preferences
-  const { data: existing } = await supabase
+  const { data: existing } = await (supabase as any)
     .from("user_preferences")
     .select("preferences")
     .eq("user_id", user.id)
-    .single();
+    .single() as { data: { preferences: Record<string, unknown> } | null };
 
   const currentPrefs = (existing?.preferences as Record<string, unknown>) || {};
 
@@ -87,7 +87,7 @@ export const POST = createAuthenticatedRoute(async (request, _context, user) => 
   };
 
   // Upsert preferences
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("user_preferences")
     .upsert({
       user_id: user.id,
@@ -117,11 +117,11 @@ export const DELETE = createAuthenticatedRoute(async (_request, _context, user) 
   const supabase = getSupabaseServer();
 
   // Get existing preferences
-  const { data: existing } = await supabase
+  const { data: existing } = await (supabase as any)
     .from("user_preferences")
     .select("preferences")
     .eq("user_id", user.id)
-    .single();
+    .single() as { data: { preferences: Record<string, unknown> } | null };
 
   const currentPrefs = (existing?.preferences as Record<string, unknown>) || {};
 
@@ -134,7 +134,7 @@ export const DELETE = createAuthenticatedRoute(async (_request, _context, user) 
     },
   };
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("user_preferences")
     .upsert({
       user_id: user.id,

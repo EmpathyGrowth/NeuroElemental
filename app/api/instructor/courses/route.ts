@@ -88,7 +88,7 @@ export const POST = createAuthenticatedRoute(async (request, _context, user) => 
   const validation = courseCreateSchema.safeParse(body);
 
   if (!validation.success) {
-    throw badRequestError(validation.error.errors[0]?.message || 'Invalid request body');
+    throw badRequestError(validation.error.issues[0]?.message || 'Invalid request body');
   }
 
   const courseData = validation.data;
@@ -106,7 +106,7 @@ export const POST = createAuthenticatedRoute(async (request, _context, user) => 
   }
 
   // Create the course
-  const { data: course, error } = await supabase
+  const { data: course, error } = await (supabase as any)
     .from('courses')
     .insert({
       title: courseData.title,

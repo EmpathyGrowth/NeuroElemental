@@ -58,11 +58,11 @@ export const GET = createOptionalAuthRoute<{ id: string }>(
     const supabase = getSupabaseServer();
 
     // Get course
-    const { data: course, error: courseError } = await supabase
+    const { data: course, error: courseError } = await (supabase as any)
       .from("courses")
       .select("id, title")
       .eq("id", id)
-      .single();
+      .single() as { data: { id: string; title: string } | null; error: { message: string } | null };
 
     if (courseError || !course) {
       throw notFoundError("Course");
@@ -100,22 +100,22 @@ export const POST = createAuthenticatedRoute<{ id: string }>(
     }
 
     // Get course
-    const { data: course, error: courseError } = await supabase
+    const { data: course, error: courseError } = await (supabase as any)
       .from("courses")
       .select("id")
       .eq("id", id)
-      .single();
+      .single() as { data: { id: string } | null; error: { message: string } | null };
 
     if (courseError || !course) {
       throw notFoundError("Course");
     }
 
     // Get user profile
-    const { data: profile } = await supabase
+    const { data: profile } = await (supabase as any)
       .from("profiles")
       .select("full_name, avatar_url")
       .eq("id", user.id)
-      .single();
+      .single() as { data: { full_name: string; avatar_url: string | null } | null };
 
     const discussion: Discussion = {
       id: crypto.randomUUID(),

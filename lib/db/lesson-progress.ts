@@ -93,7 +93,7 @@ export class LessonProgressRepository extends BaseRepository<"lesson_progress"> 
     lessonId: string,
     data: { time_spent_seconds?: number; completed_at?: string | null }
   ): Promise<LessonProgress> {
-    const { data: progress, error } = await this.supabase
+    const { data: progress, error } = await (this.supabase as any)
       .from("lesson_progress")
       .upsert(
         {
@@ -106,7 +106,7 @@ export class LessonProgressRepository extends BaseRepository<"lesson_progress"> 
         }
       )
       .select()
-      .single();
+      .single() as { data: LessonProgress | null; error: Error | null };
 
     if (error || !progress) {
       logger.error(
@@ -116,7 +116,7 @@ export class LessonProgressRepository extends BaseRepository<"lesson_progress"> 
       throw internalError("Failed to update lesson progress");
     }
 
-    return progress as LessonProgress;
+    return progress;
   }
 
   /**
@@ -290,10 +290,10 @@ export class LessonProgressRepository extends BaseRepository<"lesson_progress"> 
     totalLessons: number;
   }> {
     // Get user's enrollments
-    const { data: enrollments, error: enrollmentsError } = await this.supabase
+    const { data: enrollments, error: enrollmentsError } = await (this.supabase as any)
       .from("course_enrollments")
       .select("id")
-      .eq("user_id", userId);
+      .eq("user_id", userId) as { data: { id: string }[] | null; error: Error | null };
 
     if (enrollmentsError || !enrollments || enrollments.length === 0) {
       return {
@@ -385,7 +385,7 @@ export class LessonProgressRepository extends BaseRepository<"lesson_progress"> 
       updateData.video_duration_seconds = Math.floor(durationSeconds);
     }
 
-    const { data: progress, error } = await this.supabase
+    const { data: progress, error } = await (this.supabase as any)
       .from("lesson_progress")
       .upsert(
         {
@@ -398,7 +398,7 @@ export class LessonProgressRepository extends BaseRepository<"lesson_progress"> 
         }
       )
       .select()
-      .single();
+      .single() as { data: LessonProgress | null; error: Error | null };
 
     if (error || !progress) {
       logger.error(
@@ -408,7 +408,7 @@ export class LessonProgressRepository extends BaseRepository<"lesson_progress"> 
       throw internalError("Failed to save video position");
     }
 
-    return progress as LessonProgress;
+    return progress;
   }
 
   /**

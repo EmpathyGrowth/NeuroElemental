@@ -25,12 +25,12 @@ export const GET = createAuthenticatedRoute(
     const { id: organizationId } = await context.params;
 
     // Verify user has access to this organization
-    const { data: membership } = await supabase
+    const { data: membership } = await (supabase as any)
       .from("organization_members")
       .select("role")
       .eq("organization_id", organizationId)
       .eq("user_id", user.id)
-      .single();
+      .single() as { data: { role: string } | null };
 
     if (!membership) {
       throw notFoundError("Organization");
@@ -43,10 +43,10 @@ export const GET = createAuthenticatedRoute(
 
     // Get organization members who have opted in to sharing
     // Requirements: 16.5 - Exclude non-opted-in users
-    const { data: members } = await supabase
+    const { data: members } = await (supabase as any)
       .from("organization_members")
       .select("user_id")
-      .eq("organization_id", organizationId);
+      .eq("organization_id", organizationId) as { data: Array<{ user_id: string }> | null };
 
     if (!members || members.length === 0) {
       return successResponse({
@@ -62,10 +62,10 @@ export const GET = createAuthenticatedRoute(
     const memberIds = members.map((m) => m.user_id);
 
     // Get opted-in members (check user_preferences for sharing opt-in)
-    const { data: preferences } = await supabase
+    const { data: preferences } = await (supabase as any)
       .from("user_preferences")
       .select("user_id, preferences")
-      .in("user_id", memberIds);
+      .in("user_id", memberIds) as { data: Array<{ user_id: string; preferences: Record<string, unknown> }> | null };
 
     const optedInUserIds = (preferences || [])
       .filter((p) => {
@@ -89,12 +89,12 @@ export const GET = createAuthenticatedRoute(
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-    const { data: checkIns } = await supabase
+    const { data: checkIns } = await (supabase as any)
       .from("logs")
       .select("user_id, data, created_at")
       .eq("type", "check_in")
       .in("user_id", optedInUserIds)
-      .gte("created_at", oneWeekAgo.toISOString());
+      .gte("created_at", oneWeekAgo.toISOString()) as { data: Array<{ user_id: string; data: Record<string, unknown>; created_at: string }> | null };
 
     // Calculate statistics
     const checkInsThisWeek = checkIns?.length || 0;
@@ -132,14 +132,14 @@ export const GET = createAuthenticatedRoute(
     let protectionModeAlerts = 0;
 
     for (const userId of optedInUserIds) {
-      const { data: recentCheckIns } = await supabase
+      const { data: recentCheckIns } = await (supabase as any)
         .from("logs")
         .select("data")
         .eq("type", "check_in")
         .eq("user_id", userId)
         .gte("created_at", threeDaysAgo.toISOString())
         .order("created_at", { ascending: false })
-        .limit(3);
+        .limit(3) as { data: Array<{ data: Record<string, unknown> }> | null };
 
       if (recentCheckIns && recentCheckIns.length >= 3) {
         const allProtection = recentCheckIns.every((c) => {

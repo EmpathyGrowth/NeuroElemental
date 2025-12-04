@@ -1006,6 +1006,60 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          html_content: string
+          id: string
+          is_active: boolean | null
+          name: string
+          preview_text: string | null
+          slug: string
+          subject: string
+          text_content: string | null
+          updated_at: string | null
+          updated_by: string | null
+          variables: Json | null
+          version: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          html_content: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          preview_text?: string | null
+          slug: string
+          subject: string
+          text_content?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          variables?: Json | null
+          version?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          html_content?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          preview_text?: string | null
+          slug?: string
+          subject?: string
+          text_content?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          variables?: Json | null
+          version?: number | null
+        }
+        Relationships: []
+      }
       energy_budgets: {
         Row: {
           activities: Json
@@ -3454,14 +3508,28 @@ export type ApiKey = Tables<'api_keys'>
 export type ApiKeyInsert = TablesInsert<'api_keys'>
 export type ApiKeyUpdate = TablesUpdate<'api_keys'>
 
-// Organization membership types
-export type OrganizationMembership = Tables<'organization_memberships'>
-export type OrganizationMembershipInsert = TablesInsert<'organization_memberships'>
-export type OrganizationMembershipUpdate = TablesUpdate<'organization_memberships'>
+// Organization membership types (actual table names)
+export type OrganizationMember = Tables<'organization_members'>
+export type OrganizationMemberInsert = TablesInsert<'organization_members'>
+export type OrganizationMemberUpdate = TablesUpdate<'organization_members'>
 
-export type OrganizationInvite = Tables<'organization_invites'>
-export type OrganizationInviteInsert = TablesInsert<'organization_invites'>
-export type OrganizationInviteUpdate = TablesUpdate<'organization_invites'>
+export type OrganizationInvitation = Tables<'organization_invitations'>
+export type OrganizationInvitationInsert = TablesInsert<'organization_invitations'>
+export type OrganizationInvitationUpdate = TablesUpdate<'organization_invitations'>
+
+// Backward compatibility aliases
+export type OrganizationMembership = OrganizationMember
+export type OrganizationMembershipInsert = OrganizationMemberInsert
+export type OrganizationMembershipUpdate = OrganizationMemberUpdate
+
+export type OrganizationInvite = OrganizationInvitation
+export type OrganizationInviteInsert = OrganizationInvitationInsert
+export type OrganizationInviteUpdate = OrganizationInvitationUpdate
+
+// Email template types
+export type EmailTemplate = Tables<'email_templates'>
+export type EmailTemplateInsert = TablesInsert<'email_templates'>
+export type EmailTemplateUpdate = TablesUpdate<'email_templates'>
 
 // Role types
 export type UserRole = 'registered' | 'student' | 'instructor' | 'business' | 'school' | 'admin'

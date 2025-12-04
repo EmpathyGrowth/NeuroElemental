@@ -104,7 +104,7 @@ export class EnrollmentRepository extends BaseRepository<'course_enrollments'> {
    * Get all enrollments for a user with course details
    */
   async getUserEnrollments(userId: string): Promise<EnrollmentWithCourse[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from('course_enrollments')
       .select(`
         *,
@@ -118,21 +118,21 @@ export class EnrollmentRepository extends BaseRepository<'course_enrollments'> {
         )
       `)
       .eq('user_id', userId)
-      .order('enrolled_at', { ascending: false })
+      .order('enrolled_at', { ascending: false }) as { data: EnrollmentWithCourse[] | null; error: Error | null }
 
     if (error) {
       logger.error('Error fetching user enrollments', toError(error))
       throw internalError('Failed to fetch enrollments')
     }
 
-    return (data as EnrollmentWithCourse[]) || []
+    return data || []
   }
 
   /**
    * Get all enrollments for a course with user details
    */
   async getCourseEnrollments(courseId: string): Promise<EnrollmentWithUser[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from('course_enrollments')
       .select(`
         *,
@@ -144,14 +144,14 @@ export class EnrollmentRepository extends BaseRepository<'course_enrollments'> {
         )
       `)
       .eq('course_id', courseId)
-      .order('enrolled_at', { ascending: false })
+      .order('enrolled_at', { ascending: false }) as { data: EnrollmentWithUser[] | null; error: Error | null }
 
     if (error) {
       logger.error('Error fetching course enrollments', toError(error))
       throw internalError('Failed to fetch enrollments')
     }
 
-    return (data as EnrollmentWithUser[]) || []
+    return data || []
   }
 
   /**
@@ -172,11 +172,11 @@ export class EnrollmentRepository extends BaseRepository<'course_enrollments'> {
    * Get completed enrollment count for a user
    */
   async getUserCompletedCount(userId: string): Promise<number> {
-    const { count, error } = await this.supabase
+    const { count, error } = await (this.supabase as any)
       .from('course_enrollments')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
-      .not('completed_at', 'is', null)
+      .not('completed_at', 'is', null) as { count: number | null; error: Error | null }
 
     if (error) {
       logger.error('Error counting completed enrollments', toError(error))
@@ -316,7 +316,7 @@ export class EnrollmentRepository extends BaseRepository<'course_enrollments'> {
    * Get recent enrollments (for admin dashboard)
    */
   async getRecentEnrollments(limit: number = 10): Promise<EnrollmentFull[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from('course_enrollments')
       .select(`
         *,
@@ -336,21 +336,21 @@ export class EnrollmentRepository extends BaseRepository<'course_enrollments'> {
         )
       `)
       .order('enrolled_at', { ascending: false })
-      .limit(limit)
+      .limit(limit) as { data: EnrollmentFull[] | null; error: Error | null }
 
     if (error) {
       logger.error('Error fetching recent enrollments', toError(error))
       throw internalError('Failed to fetch recent enrollments')
     }
 
-    return (data as EnrollmentFull[]) || []
+    return data || []
   }
 
   /**
    * Get enrollment statistics for a time period
    */
   async getEnrollmentStats(fromDate?: string, toDate?: string): Promise<EnrollmentStats> {
-    let query = this.supabase
+    let query = (this.supabase as any)
       .from('course_enrollments')
       .select('progress_percentage, completed_at')
 
@@ -361,7 +361,7 @@ export class EnrollmentRepository extends BaseRepository<'course_enrollments'> {
       query = query.lte('enrolled_at', toDate)
     }
 
-    const { data, error } = await query
+    const { data, error } = await query as { data: { progress_percentage: number | null; completed_at: string | null }[] | null; error: Error | null }
 
     if (error) {
       logger.error('Error fetching enrollment stats', toError(error))
@@ -397,11 +397,11 @@ export class EnrollmentRepository extends BaseRepository<'course_enrollments'> {
     const offset = (page - 1) * limit
 
     // Get count
-    const { count, error: countError } = await this.supabase
+    const { count, error: countError } = await (this.supabase as any)
       .from('course_enrollments')
       .select('*', { count: 'exact', head: true })
       .gte('enrolled_at', fromDate)
-      .lte('enrolled_at', toDate)
+      .lte('enrolled_at', toDate) as { count: number | null; error: Error | null }
 
     if (countError) {
       logger.error('Error counting enrollments', toError(countError))
@@ -409,7 +409,7 @@ export class EnrollmentRepository extends BaseRepository<'course_enrollments'> {
     }
 
     // Get data
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from('course_enrollments')
       .select(`
         *,
@@ -431,7 +431,7 @@ export class EnrollmentRepository extends BaseRepository<'course_enrollments'> {
       .gte('enrolled_at', fromDate)
       .lte('enrolled_at', toDate)
       .order('enrolled_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+      .range(offset, offset + limit - 1) as { data: EnrollmentFull[] | null; error: Error | null }
 
     if (error) {
       logger.error('Error fetching enrollments in range', toError(error))
@@ -453,10 +453,10 @@ export class EnrollmentRepository extends BaseRepository<'course_enrollments'> {
    * Bulk get enrollment counts for multiple users (optimized for N+1)
    */
   async getBulkUserEnrollmentCounts(userIds: string[]): Promise<Map<string, number>> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from('course_enrollments')
       .select('user_id')
-      .in('user_id', userIds)
+      .in('user_id', userIds) as { data: { user_id: string | null }[] | null; error: Error | null }
 
     if (error) {
       logger.error('Error fetching bulk enrollment counts', toError(error))
@@ -480,10 +480,10 @@ export class EnrollmentRepository extends BaseRepository<'course_enrollments'> {
    * Bulk get enrollment counts for multiple courses (optimized for N+1)
    */
   async getBulkCourseEnrollmentCounts(courseIds: string[]): Promise<Map<string, number>> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from('course_enrollments')
       .select('course_id')
-      .in('course_id', courseIds)
+      .in('course_id', courseIds) as { data: { course_id: string | null }[] | null; error: Error | null }
 
     if (error) {
       logger.error('Error fetching bulk course enrollment counts', toError(error))

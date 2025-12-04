@@ -7,13 +7,29 @@
 
 import { internalError } from "@/lib/api";
 import { logger } from "@/lib/logging";
-import { Database } from "@/lib/types/supabase";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUpdateTimestamp } from "@/lib/utils";
-import { BaseRepository } from "./base-repository";
 
-type LearningStreak = Database["public"]["Tables"]["learning_streaks"]["Row"];
-type LearningStreakInsert =
-  Database["public"]["Tables"]["learning_streaks"]["Insert"];
+/** Learning streak record */
+interface LearningStreak {
+  id: string;
+  user_id: string;
+  current_streak: number | null;
+  longest_streak: number | null;
+  last_activity_date: string | null;
+  streak_history: unknown;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/** Learning streak insert */
+interface LearningStreakInsert {
+  user_id: string;
+  current_streak?: number;
+  longest_streak?: number;
+  last_activity_date?: string;
+  streak_history?: unknown;
+}
 
 /** Streak history entry */
 export interface StreakHistoryEntry {
@@ -35,23 +51,21 @@ export interface StreakStats {
 /**
  * Learning Streaks Repository
  */
-export class LearningStreaksRepository extends BaseRepository<"learning_streaks"> {
-  constructor() {
-    super("learning_streaks");
-  }
+export class LearningStreaksRepository {
+  protected supabase = createAdminClient();
 
   /**
    * Get user's streak record
    */
   async getUserStreak(userId: string): Promise<LearningStreak | null> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("learning_streaks")
       .select("*")
       .eq("user_id", userId)
-      .maybeSingle();
+      .maybeSingle() as { data: LearningStreak | null; error: Error | null };
 
     if (error) {
-      logger.error("Error fetching learning streak", error);
+      logger.error("Error fetching learning streak", error ?? undefined);
       return null;
     }
 
@@ -161,22 +175,21 @@ export class LearningStreaksRepository extends BaseRepository<"learning_streaks"
       { date: today, activity, details },
     ];
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("learning_streaks")
       .update({
         current_streak: newCurrentStreak,
         longest_streak: newLongestStreak,
         last_activity_date: today,
-        streak_history:
-          newHistory as unknown as Database["public"]["Tables"]["learning_streaks"]["Update"]["streak_history"],
+        streak_history: newHistory,
         ...getUpdateTimestamp(),
       })
       .eq("user_id", userId)
       .select()
-      .single();
+      .single() as { data: LearningStreak | null; error: Error | null };
 
     if (error || !data) {
-      logger.error("Error updating streak", error);
+      logger.error("Error updating streak", error ?? undefined);
       throw internalError("Failed to update streak");
     }
 
@@ -199,18 +212,17 @@ export class LearningStreaksRepository extends BaseRepository<"learning_streaks"
       current_streak: 1,
       longest_streak: 1,
       last_activity_date: date,
-      streak_history:
-        history as unknown as Database["public"]["Tables"]["learning_streaks"]["Insert"]["streak_history"],
+      streak_history: history,
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("learning_streaks")
       .insert(insertData)
       .select()
-      .single();
+      .single() as { data: LearningStreak | null; error: Error | null };
 
     if (error || !data) {
-      logger.error("Error creating streak", error);
+      logger.error("Error creating streak", error ?? undefined);
       throw internalError("Failed to create streak");
     }
 
@@ -243,19 +255,18 @@ export class LearningStreaksRepository extends BaseRepository<"learning_streaks"
       { date, activity, details },
     ];
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("learning_streaks")
       .update({
-        streak_history:
-          newHistory as unknown as Database["public"]["Tables"]["learning_streaks"]["Update"]["streak_history"],
+        streak_history: newHistory,
         ...getUpdateTimestamp(),
       })
       .eq("user_id", streak.user_id)
       .select()
-      .single();
+      .single() as { data: LearningStreak | null; error: Error | null };
 
     if (error || !data) {
-      logger.error("Error updating streak history", error);
+      logger.error("Error updating streak history", error ?? undefined);
       return streak; // Return existing on error
     }
 
@@ -291,14 +302,14 @@ export class LearningStreaksRepository extends BaseRepository<"learning_streaks"
       longestStreak: number;
     }>
   > {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("learning_streaks")
       .select("user_id, current_streak, longest_streak")
       .order("current_streak", { ascending: false })
-      .limit(limit);
+      .limit(limit) as { data: { user_id: string; current_streak: number | null; longest_streak: number | null }[] | null; error: Error | null };
 
     if (error) {
-      logger.error("Error fetching streak leaderboard", error);
+      logger.error("Error fetching streak leaderboard", error ?? undefined);
       return [];
     }
 
@@ -318,15 +329,15 @@ export class LearningStreaksRepository extends BaseRepository<"learning_streaks"
     );
 
     // Reset streaks that haven't been active since before yesterday
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("learning_streaks")
       .update({ current_streak: 0 })
       .lt("last_activity_date", yesterday)
       .gt("current_streak", 0)
-      .select("id");
+      .select("id") as { data: { id: string }[] | null; error: Error | null };
 
     if (error) {
-      logger.error("Error resetting broken streaks", error);
+      logger.error("Error resetting broken streaks", error ?? undefined);
       return 0;
     }
 

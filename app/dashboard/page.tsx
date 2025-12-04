@@ -11,11 +11,11 @@ export default async function DashboardPage() {
     redirect('/auth/sign-in');
   }
 
-  const { data: profile } = await supabase
+  const { data: profile } = await (supabase as any)
     .from('profiles')
     .select('role')
     .eq('id', user.id)
-    .single();
+    .single() as { data: { role: string } | null };
 
   if (!profile || !('role' in profile)) {
     // If no profile exists, something is wrong or they haven't completed setup

@@ -134,7 +134,7 @@ export const PUT = createAuthenticatedRoute(async (request, _context, user) => {
     }
 
     // Also update the profile's updated_at for tracking
-    await supabase
+    await (supabase as any)
       .from("profiles")
       .update({ ...getUpdateTimestamp() })
       .eq("id", user.id);

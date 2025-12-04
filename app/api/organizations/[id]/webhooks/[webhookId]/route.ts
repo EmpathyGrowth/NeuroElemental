@@ -36,28 +36,28 @@ export const GET = createAuthenticatedRoute<{ id: string; webhookId: string }>(
 
     const supabase = getSupabaseServer();
 
-    const { data: webhook, error } = await supabase
+    const { data: webhook, error } = await (supabase as any)
       .from("webhooks")
       .select("*")
       .eq("id", webhookId)
       .eq("organization_id", id)
-      .single();
+      .single() as { data: { id: string; secret: string; [key: string]: unknown } | null; error: { message: string } | null };
 
     if (error || !webhook) {
       throw notFoundError("Webhook");
     }
 
     // Get recent deliveries
-    const { data: deliveries } = await supabase
+    const { data: deliveries } = await (supabase as any)
       .from("webhook_deliveries")
       .select("*")
       .eq("webhook_id", webhookId)
       .order("created_at", { ascending: false })
-      .limit(10);
+      .limit(10) as { data: Array<Record<string, unknown>> | null };
 
     return successResponse({
       webhook: {
-        ...webhook,
+        ...(webhook || {}),
         // Don't expose the full secret, just indicate it exists
         secret: webhook.secret ? "••••••••" : null,
       },
@@ -99,7 +99,7 @@ export const PUT = createAuthenticatedRoute<{ id: string; webhookId: string }>(
     }
 
     // Update the webhook
-    const { data: webhook, error } = await supabase
+    const { data: webhook, error } = await (supabase as any)
       .from("webhooks")
       .update({
         ...validation.data,
@@ -107,7 +107,7 @@ export const PUT = createAuthenticatedRoute<{ id: string; webhookId: string }>(
       })
       .eq("id", webhookId)
       .select()
-      .single();
+      .single() as { data: { id: string; secret: string; [key: string]: unknown } | null; error: { message: string } | null };
 
     if (error) {
       throw internalError("Failed to update webhook");
@@ -116,8 +116,8 @@ export const PUT = createAuthenticatedRoute<{ id: string; webhookId: string }>(
     return successResponse({
       success: true,
       webhook: {
-        ...webhook,
-        secret: webhook.secret ? "••••••••" : null,
+        ...(webhook || {}),
+        secret: webhook?.secret ? "••••••••" : null,
       },
       message: "Webhook updated successfully",
     });

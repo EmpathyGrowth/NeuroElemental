@@ -49,11 +49,11 @@ async function getProfile(userId: string) {
   const { getSupabaseServer } = await import('@/lib/db');
   const supabase = getSupabaseServer();
 
-  const { data } = await supabase
+  const { data } = await (supabase as any)
     .from('profiles')
     .select('role, instructor_status')
     .eq('id', userId)
-    .single();
+    .single() as { data: { role: string; instructor_status: string } | null };
 
   return data;
 }

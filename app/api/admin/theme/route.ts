@@ -129,7 +129,7 @@ export const PATCH = createAdminRoute(async (request, _context, { userId }) => {
   const parsed = themeUpdateSchema.safeParse(body);
   if (!parsed.success) {
     throw badRequestError(
-      parsed.error.errors[0]?.message || "Invalid theme data"
+      parsed.error.issues[0]?.message || "Invalid theme data"
     );
   }
 

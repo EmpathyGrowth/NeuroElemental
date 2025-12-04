@@ -46,11 +46,11 @@ export async function requireAdmin(
 
   // Check admin role
   const supabase = getSupabaseServer();
-  const { data: profile, error } = await supabase
+  const { data: profile, error } = await (supabase as any)
     .from("profiles")
     .select("role")
     .eq("id", user.id)
-    .single();
+    .single() as { data: { role: string } | null; error: Error | null };
 
   if (error || !profile || profile.role !== "admin") {
     return {
@@ -86,11 +86,11 @@ export async function isUserAdmin(): Promise<boolean> {
   if (!user) return false;
 
   const supabase = getSupabaseServer();
-  const { data: profile } = await supabase
+  const { data: profile } = await (supabase as any)
     .from("profiles")
     .select("role")
     .eq("id", user.id)
-    .single();
+    .single() as { data: { role: string } | null };
 
   return profile?.role === "admin";
 }
@@ -103,11 +103,11 @@ export async function getUserRole(): Promise<string | null> {
   if (!user) return null;
 
   const supabase = getSupabaseServer();
-  const { data: profile } = await supabase
+  const { data: profile } = await (supabase as any)
     .from("profiles")
     .select("role")
     .eq("id", user.id)
-    .single();
+    .single() as { data: { role: string } | null };
 
   return profile?.role || null;
 }

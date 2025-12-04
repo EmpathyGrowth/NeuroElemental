@@ -45,11 +45,11 @@ export class EmailPreferencesRepository extends BaseRepository<"email_preference
    * @returns Email preferences
    */
   async getByUser(userId: string): Promise<Partial<EmailPreferences>> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("email_preferences")
       .select("*")
       .eq("user_id", userId)
-      .maybeSingle();
+      .maybeSingle() as { data: EmailPreferences | null; error: Error | null };
 
     if (error || !data) {
       // Return defaults if no preferences exist
@@ -83,7 +83,7 @@ export class EmailPreferencesRepository extends BaseRepository<"email_preference
 
     if (existing) {
       // Update existing
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from("email_preferences")
         .update({
           ...preferences,
@@ -91,7 +91,7 @@ export class EmailPreferencesRepository extends BaseRepository<"email_preference
         })
         .eq("user_id", userId)
         .select()
-        .single();
+        .single() as { data: EmailPreferences | null; error: Error | null };
 
       if (error || !data) {
         logger.error(
@@ -101,10 +101,10 @@ export class EmailPreferencesRepository extends BaseRepository<"email_preference
         throw internalError("Failed to update preferences");
       }
 
-      return data as EmailPreferences;
+      return data;
     } else {
       // Create new
-      const { data, error } = await this.supabase
+      const { data, error } = await (this.supabase as any)
         .from("email_preferences")
         .insert({
           user_id: userId,
@@ -122,7 +122,7 @@ export class EmailPreferencesRepository extends BaseRepository<"email_preference
           ...getTimestampFields(),
         })
         .select()
-        .single();
+        .single() as { data: EmailPreferences | null; error: Error | null };
 
       if (error || !data) {
         logger.error(
@@ -132,7 +132,7 @@ export class EmailPreferencesRepository extends BaseRepository<"email_preference
         throw internalError("Failed to create preferences");
       }
 
-      return data as EmailPreferences;
+      return data;
     }
   }
 

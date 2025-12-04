@@ -56,7 +56,7 @@ export const PUT = createAuthenticatedRoute<{ id: string }>(async (request, cont
 
   const { is_read } = validation.data;
 
-  const { data: notification, error } = await supabase
+  const { data: notification, error } = await (supabase as any)
     .from('notifications')
     .update({ read: is_read })
     .eq('id', id)

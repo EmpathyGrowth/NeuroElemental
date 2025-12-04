@@ -168,7 +168,7 @@ export async function createStripeCustomer(
     })
 
     // Store customer ID in database
-    const { error: upsertError } = await supabase
+    const { error: upsertError } = await (supabase as any)
       .from('organization_subscriptions')
       .upsert({
         organization_id: organizationId,
@@ -420,13 +420,13 @@ export async function changePlan(
     )
 
     // Update database
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('organization_subscriptions')
       .update({
         plan_id: newPlanId,
         ...getUpdateTimestamp(),
       })
-      .eq('organization_id', organizationId)
+      .eq('organization_id', organizationId) as { error: { message: string } | null }
 
     if (updateError) {
       logger.error('Error updating subscription in database', undefined, { errorMsg: updateError.message })
@@ -496,7 +496,7 @@ export async function cancelSubscription(
     }
 
     // Update database
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('organization_subscriptions')
       .update({
         cancel_at_period_end: !cancelImmediately,
@@ -504,7 +504,7 @@ export async function cancelSubscription(
         status: cancelImmediately ? 'canceled' : orgSub.status,
         ...getUpdateTimestamp(),
       })
-      .eq('organization_id', organizationId)
+      .eq('organization_id', organizationId) as { error: { message: string } | null }
 
     if (updateError) {
       logger.error('Error updating subscription in database', undefined, { errorMsg: updateError.message })
@@ -573,7 +573,7 @@ export async function reactivateSubscription(
     })
 
     // Update database
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('organization_subscriptions')
       .update({
         cancel_at_period_end: false,
@@ -581,7 +581,7 @@ export async function reactivateSubscription(
         status: 'active',
         ...getUpdateTimestamp(),
       })
-      .eq('organization_id', organizationId)
+      .eq('organization_id', organizationId) as { error: { message: string } | null }
 
     if (updateError) {
       logger.error('Error updating subscription in database', undefined, { errorMsg: updateError.message })
@@ -708,7 +708,7 @@ export async function syncSubscriptionFromStripe(
       typeof customer !== 'string' && !customer.deleted ? customer.email : null
 
     // Update or insert subscription
-    const { error: upsertError } = await supabase
+    const { error: upsertError } = await (supabase as any)
       .from('organization_subscriptions')
       .upsert({
         organization_id: organizationId,
@@ -736,7 +736,7 @@ export async function syncSubscriptionFromStripe(
         payment_method_last4: paymentMethodLast4,
         payment_method_brand: paymentMethodBrand,
         ...getUpdateTimestamp(),
-      })
+      }) as { error: { message: string } | null }
 
     if (upsertError) {
       logger.error('Error syncing subscription to database', undefined, { errorMsg: upsertError.message })

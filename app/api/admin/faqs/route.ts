@@ -37,7 +37,7 @@ export const POST = createAdminRoute(async (request) => {
   const parsed = faqSchema.safeParse(body);
   if (!parsed.success) {
     throw badRequestError(
-      parsed.error.errors[0]?.message || "Invalid FAQ data"
+      parsed.error.issues[0]?.message || "Invalid FAQ data"
     );
   }
 

@@ -113,8 +113,8 @@ export async function getUsersForReminder(): Promise<
 
   const usersToNotify: Array<{ userId: string; method: "push" | "email" | "both" }> = [];
 
-  for (const pref of preferences) {
-    const settings = (pref.preferences as Record<string, unknown>)?.reminder_settings as ReminderSettings;
+  for (const pref of preferences as { user_id: string; preferences: Record<string, unknown> }[]) {
+    const settings = pref.preferences?.reminder_settings as ReminderSettings;
     if (!settings?.enabled) continue;
 
     // Check if time matches (within 5 minute window)
@@ -130,7 +130,7 @@ export async function getUsersForReminder(): Promise<
 
     usersToNotify.push({
       userId: pref.user_id,
-      method: settings.method,
+method: settings.method,
     });
   }
 

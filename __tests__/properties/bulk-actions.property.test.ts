@@ -546,7 +546,7 @@ function parseCSV(csv: string): { headers: string[]; rows: string[][] } {
 }
 
 // Generators for export tests
-interface ExportableItem {
+interface ExportableItem extends Record<string, unknown> {
   id: string;
   title: string;
   status: string;

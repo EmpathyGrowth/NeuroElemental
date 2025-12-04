@@ -174,7 +174,7 @@ export class CreditRepository extends BaseRepository<'credit_transactions'> {
         const adminClient = createAdminClient();
 
         // Upsert the credit balance
-        const { error } = await adminClient
+        const { error } = await (adminClient as any)
             .from('credit_balances')
             .upsert({
                 organization_id,

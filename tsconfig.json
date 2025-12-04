@@ -6,6 +6,7 @@
       "dom.iterable",
       "ES2022"
     ],
+    "types": ["vitest/globals"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,

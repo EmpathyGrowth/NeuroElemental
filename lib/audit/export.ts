@@ -86,7 +86,7 @@ export async function createAuditExportJob(
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("audit_export_jobs")
       .insert({
         organization_id: organizationId,
@@ -233,7 +233,7 @@ export async function updateAuditExportJobStatus(
       updateData.completed_at = new Date().toISOString();
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("audit_export_jobs")
       .update(updateData)
       .eq("id", jobId);
@@ -369,7 +369,7 @@ export async function logExportAccess(
   try {
     const supabase = getSupabaseServer();
 
-    const { error } = await supabase.from("audit_export_access_log").insert({
+    const { error } = await (supabase as any).from("audit_export_access_log").insert({
       export_job_id: exportJobId,
       organization_id: organizationId,
       accessed_by: userId,

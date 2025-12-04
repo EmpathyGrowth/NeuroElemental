@@ -90,7 +90,7 @@ export const POST = createPublicRoute(async (request, _context) => {
       // Handle different purchase types
       if (metadata?.type === 'course') {
         // Create course enrollment
-        await supabase
+        await (supabase as any)
           .from('course_enrollments')
           .insert({
             user_id: userId,
@@ -101,7 +101,7 @@ export const POST = createPublicRoute(async (request, _context) => {
           });
       } else if (metadata?.type === 'certification') {
         // Update instructor status
-        await supabase
+        await (supabase as any)
           .from('profiles')
           .update({
             instructor_status: 'approved',
@@ -136,7 +136,7 @@ export const POST = createPublicRoute(async (request, _context) => {
         .single() as { data: UserProfile | null; error: unknown };
 
       if (profile) {
-        await supabase
+        await (supabase as any)
           .from('subscriptions')
           .upsert({
             user_id: profile.id,
@@ -160,7 +160,7 @@ export const POST = createPublicRoute(async (request, _context) => {
     case 'customer.subscription.deleted': {
       const subscription = event.data.object as StripeSubscriptionData;
 
-      await supabase
+      await (supabase as any)
         .from('subscriptions')
         .update({ status: 'canceled' })
         .eq('stripe_subscription_id', subscription.id);
@@ -173,7 +173,7 @@ export const POST = createPublicRoute(async (request, _context) => {
 
       // Record successful payment
       if (invoice.subscription) {
-        await supabase
+        await (supabase as any)
           .from('invoices')
           .insert({
             stripe_invoice_id: invoice.id,
@@ -217,7 +217,7 @@ export const POST = createPublicRoute(async (request, _context) => {
           .single() as { data: UserProfile | null; error: unknown };
 
         if (profile) {
-          await supabase
+          await (supabase as any)
             .from('notifications')
             .insert({
               user_id: profile.id,

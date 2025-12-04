@@ -31,15 +31,15 @@ async function getEnrollmentId(
   const supabase = getSupabaseServer();
 
   // Get the course ID from the lesson through module
-  const { data: lesson } = await supabase
+  const { data: lesson } = await (supabase as any)
     .from("course_lessons")
     .select("module_id, course_modules!inner(course_id)")
     .eq("id", lessonId)
-    .single();
+    .single() as { data: { module_id: string; course_modules: { course_id: string } } | null };
 
   if (!lesson) return null;
 
-  const courseId = (lesson.course_modules as { course_id?: string })?.course_id;
+  const courseId = lesson.course_modules?.course_id;
   if (!courseId) return null;
 
   // Get the enrollment
@@ -91,7 +91,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(
     const parsed = videoPositionSchema.safeParse(body);
     if (!parsed.success) {
       throw badRequestError(
-        parsed.error.errors[0]?.message || "Invalid position"
+        parsed.error.issues[0]?.message || "Invalid position"
       );
     }
 

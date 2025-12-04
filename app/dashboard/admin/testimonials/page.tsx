@@ -159,7 +159,12 @@ export default function AdminTestimonialsPage() {
   };
 
   const handleReorder = async (reorderedItems: Testimonial[]) => {
-    const updated = updateDisplayOrder(reorderedItems);
+    // Convert null display_order to undefined for updateDisplayOrder compatibility
+    const itemsForUpdate = reorderedItems.map(item => ({
+      ...item,
+      display_order: item.display_order ?? undefined
+    }));
+    const updated = updateDisplayOrder(itemsForUpdate) as Testimonial[];
     setTestimonials(updated);
 
     try {

@@ -128,9 +128,9 @@ export default function EditEventPage() {
       setThumbnailUrl(event.thumbnail_url || "");
       setIsPublished(event.is_published || false);
       setSeoData({
-        meta_title: (event as Record<string, unknown>).meta_title as string || "",
-        meta_description: (event as Record<string, unknown>).meta_description as string || "",
-        social_image: (event as Record<string, unknown>).og_image_url as string || "",
+        meta_title: (event as unknown as Record<string, unknown>).meta_title as string || "",
+        meta_description: (event as unknown as Record<string, unknown>).meta_description as string || "",
+        social_image: (event as unknown as Record<string, unknown>).og_image_url as string || "",
       });
 
       // Parse datetime
@@ -640,7 +640,7 @@ export default function EditEventPage() {
               !endDate ||
               !endTime
             }
-            className="bg-gradient-to-r from-primary to-[#764BA2]"
+            className="bg-linear-to-r from-primary to-[#764BA2]"
           >
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             <Save className="w-4 h-4 mr-2" />

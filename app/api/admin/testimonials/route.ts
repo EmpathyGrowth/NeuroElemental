@@ -13,6 +13,12 @@ const testimonialSchema = z.object({
   display_order: z.number().int().min(0).optional().default(0),
 });
 
+// Transform schema data to repository format (quote -> content)
+function toRepositoryFormat(data: z.infer<typeof testimonialSchema>) {
+  const { quote, is_verified, ...rest } = data;
+  return { ...rest, content: quote };
+}
+
 /**
  * GET /api/admin/testimonials
  * Get all testimonials (admin only)
@@ -35,10 +41,10 @@ export const POST = createAdminRoute(async (req) => {
   const parsed = testimonialSchema.safeParse(body);
 
   if (!parsed.success) {
-    throw badRequestError(parsed.error.errors[0]?.message || "Invalid request body");
+    throw badRequestError(parsed.error.issues[0]?.message || "Invalid request body");
   }
 
-  const testimonial = await testimonialRepository.create(parsed.data);
+  const testimonial = await testimonialRepository.create(toRepositoryFormat(parsed.data));
 
   return successResponse({ testimonial }, 201);
 });

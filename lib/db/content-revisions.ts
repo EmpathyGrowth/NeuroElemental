@@ -60,7 +60,7 @@ export async function createRevision(
 
   const nextVersion = (count || 0) + 1;
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("content_revisions")
     .insert({
       content_type: entityType,
@@ -71,7 +71,7 @@ export async function createRevision(
       created_by: userId,
     })
     .select()
-    .single();
+    .single() as { data: ContentRevision | null; error: Error | null };
 
   if (error || !data) {
     logger.error(
@@ -202,12 +202,12 @@ export async function archiveOldRevisions(
   const supabase = await createClient();
 
   // Get all revision IDs for this entity, ordered by version
-  const { data: revisions, error: fetchError } = await supabase
+  const { data: revisions, error: fetchError } = await (supabase as any)
     .from("content_revisions")
     .select("id")
     .eq("content_type", entityType)
     .eq("content_id", entityId)
-    .order("version", { ascending: false });
+    .order("version", { ascending: false }) as { data: { id: string }[] | null; error: Error | null };
 
   if (fetchError || !revisions) {
     logger.error(

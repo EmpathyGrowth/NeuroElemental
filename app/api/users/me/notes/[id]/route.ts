@@ -100,7 +100,7 @@ export const PUT = createAuthenticatedRoute<{ id: string }>(async (request, cont
   }
 
 
-  const { data: note, error } = await supabase
+  const { data: note, error } = await (supabase as any)
     .from('lesson_notes')
     .update({
       content: content.trim(),

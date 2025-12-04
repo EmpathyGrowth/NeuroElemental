@@ -44,7 +44,7 @@ export const POST = createAuthenticatedRoute<{ id: string; webhookId: string }>(
     const newSecret = `whsec_${crypto.randomBytes(32).toString("hex")}`;
 
     // Update the webhook with new secret
-    const { data: webhook, error } = await supabase
+    const { data: webhook, error } = await (supabase as any)
       .from("webhooks")
       .update({
         secret: newSecret,
@@ -52,7 +52,7 @@ export const POST = createAuthenticatedRoute<{ id: string; webhookId: string }>(
       })
       .eq("id", webhookId)
       .select("id, name, url, events, is_active, updated_at")
-      .single();
+      .single() as { data: { id: string; name: string; url: string; events: string[]; is_active: boolean; updated_at: string } | null; error: { message: string } | null };
 
     if (error) {
       throw internalError("Failed to regenerate webhook secret");
@@ -61,7 +61,7 @@ export const POST = createAuthenticatedRoute<{ id: string; webhookId: string }>(
     return successResponse({
       success: true,
       webhook: {
-        ...webhook,
+        ...(webhook || {}),
         // Return the new secret - this is the only time it will be shown in full
         secret: newSecret,
       },

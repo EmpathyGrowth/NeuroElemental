@@ -126,7 +126,7 @@ class NotificationManager {
 
   async markAsRead(notificationId: string) {
     const update: NotificationUpdate = { read: true };
-    const { error } = await this.supabase
+    const { error } = await (this.supabase as any)
       .from('notifications')
       .update(update)
       .eq('id', notificationId);
@@ -141,7 +141,7 @@ class NotificationManager {
 
   async markAllAsRead(userId: string) {
     const update: NotificationUpdate = { read: true };
-    const { error } = await this.supabase
+    const { error } = await (this.supabase as any)
       .from('notifications')
       .update(update)
       .eq('user_id', userId)
@@ -170,11 +170,11 @@ class NotificationManager {
   }
 
   async sendNotification(notification: NotificationInsert) {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from('notifications')
       .insert(notification)
       .select()
-      .single();
+      .single() as { data: Notification | null; error: Error | null };
 
     if (error) {
       logger.error('Error sending notification:', error as Error);

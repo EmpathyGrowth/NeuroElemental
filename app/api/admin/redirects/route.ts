@@ -44,7 +44,7 @@ export const POST = createAdminRoute(async (request, _context, { userId }) => {
   const parsed = redirectSchema.safeParse(body);
   if (!parsed.success) {
     throw badRequestError(
-      parsed.error.errors[0]?.message || "Invalid redirect data"
+      parsed.error.issues[0]?.message || "Invalid redirect data"
     );
   }
 

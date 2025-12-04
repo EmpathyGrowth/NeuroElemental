@@ -17,7 +17,7 @@ type QuizParams = { id: string };
 
 /** Quiz submission request schema */
 const submitQuizSchema = z.object({
-  answers: z.record(z.union([z.string(), z.boolean()])),
+  answers: z.record(z.string(), z.union([z.string(), z.boolean()])),
 });
 
 /**

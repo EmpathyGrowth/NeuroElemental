@@ -22,12 +22,12 @@ export const POST = createAuthenticatedRoute<{ id: string; webhookId: string }>(
   const supabase = getSupabaseServer();
 
   // Get the webhook
-  const { data: webhook, error } = await supabase
+  const { data: webhook, error } = await (supabase as any)
     .from('webhooks')
     .select('*')
     .eq('id', webhookId)
     .eq('organization_id', id)
-    .single();
+    .single() as { data: { id: string; url: string; secret: string; [key: string]: unknown } | null; error: { message: string } | null };
 
   if (error || !webhook) {
     throw notFoundError('Webhook');
@@ -90,7 +90,7 @@ export const POST = createAuthenticatedRoute<{ id: string; webhookId: string }>(
   }
 
   // Record the test delivery
-  const { data: delivery } = await supabase
+  const { data: delivery } = await (supabase as any)
     .from('webhook_deliveries')
     .insert({
       webhook_id: webhookId,
@@ -105,7 +105,7 @@ export const POST = createAuthenticatedRoute<{ id: string; webhookId: string }>(
       completed_at: new Date().toISOString(),
     })
     .select()
-    .single();
+    .single() as { data: { id: string; created_at: string } | null };
 
   const success = responseStatus !== null && responseStatus >= 200 && responseStatus < 300;
 

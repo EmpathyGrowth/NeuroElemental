@@ -15,10 +15,10 @@ import { createAdminRoute, successResponse } from "@/lib/api";
 import { duplicateCourse } from "@/lib/content/duplication";
 
 export const POST = createAdminRoute<{ id: string }>(
-  async (_request, context, user) => {
+  async (_request, context, admin) => {
     const { id } = await context.params;
 
-    const result = await duplicateCourse(id, user?.id);
+    const result = await duplicateCourse(id, admin.userId);
 
     if (!result.success) {
       throw new Error(result.error || "Failed to duplicate course");

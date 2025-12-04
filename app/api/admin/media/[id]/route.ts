@@ -41,7 +41,7 @@ export const PATCH = createAdminRoute<{ id: string }>(
 
     const parsed = mediaUpdateSchema.safeParse(body);
     if (!parsed.success) {
-      throw badRequestError(parsed.error.errors[0]?.message || "Invalid data");
+      throw badRequestError(parsed.error.issues[0]?.message || "Invalid data");
     }
 
     const item = await mediaLibraryRepository.update(id, parsed.data);

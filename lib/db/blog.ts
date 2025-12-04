@@ -182,11 +182,11 @@ export class BlogRepository extends BaseRepository<"blog_posts"> {
    * Get all distinct categories from published posts
    */
   async getCategories(): Promise<string[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("blog_posts")
       .select("category")
       .eq("is_published", true)
-      .not("category", "is", null);
+      .not("category", "is", null) as { data: { category: string | null }[] | null; error: Error | null };
 
     if (error) {
       logger.error("Error fetching blog categories", error as Error);

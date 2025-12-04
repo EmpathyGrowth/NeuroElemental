@@ -94,7 +94,7 @@ export const POST = createAdminRoute(async (request) => {
     const parsed = menuSchema.safeParse(body);
     if (!parsed.success) {
       throw badRequestError(
-        parsed.error.errors[0]?.message || "Invalid menu data"
+        parsed.error.issues[0]?.message || "Invalid menu data"
       );
     }
     const menu = await navigationRepository.createMenu(
@@ -108,7 +108,7 @@ export const POST = createAdminRoute(async (request) => {
     const parsed = menuItemSchema.safeParse(body);
     if (!parsed.success) {
       throw badRequestError(
-        parsed.error.errors[0]?.message || "Invalid menu item data"
+        parsed.error.issues[0]?.message || "Invalid menu item data"
       );
     }
     const item = await navigationRepository.addMenuItem(parsed.data);

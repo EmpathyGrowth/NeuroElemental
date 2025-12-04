@@ -7,12 +7,24 @@
 
 import { internalError } from "@/lib/api";
 import { logger } from "@/lib/logging";
-import { Database } from "@/lib/types/supabase";
-import { BaseRepository } from "./base-repository";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-type LessonBookmark = Database["public"]["Tables"]["lesson_bookmarks"]["Row"];
-type LessonBookmarkInsert =
-  Database["public"]["Tables"]["lesson_bookmarks"]["Insert"];
+/** Lesson bookmark record */
+interface LessonBookmark {
+  id: string;
+  user_id: string;
+  lesson_id: string;
+  note: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/** Lesson bookmark insert */
+interface LessonBookmarkInsert {
+  user_id: string;
+  lesson_id: string;
+  note?: string | null;
+}
 
 /** Bookmark with lesson info */
 export interface LessonBookmarkWithLesson extends LessonBookmark {
@@ -48,21 +60,19 @@ export interface LessonBookmarkWithContext extends LessonBookmark {
 /**
  * Lesson Bookmarks Repository
  */
-export class LessonBookmarksRepository extends BaseRepository<"lesson_bookmarks"> {
-  constructor() {
-    super("lesson_bookmarks");
-  }
+export class LessonBookmarksRepository {
+  protected supabase = createAdminClient();
 
   /**
    * Check if lesson is bookmarked
    */
   async isBookmarked(userId: string, lessonId: string): Promise<boolean> {
-    const { data } = await this.supabase
+    const { data } = await (this.supabase as any)
       .from("lesson_bookmarks")
       .select("id")
       .eq("user_id", userId)
       .eq("lesson_id", lessonId)
-      .maybeSingle();
+      .maybeSingle() as { data: { id: string } | null };
 
     return !!data;
   }
@@ -74,15 +84,15 @@ export class LessonBookmarksRepository extends BaseRepository<"lesson_bookmarks"
     userId: string,
     lessonId: string
   ): Promise<LessonBookmark | null> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("lesson_bookmarks")
       .select("*")
       .eq("user_id", userId)
       .eq("lesson_id", lessonId)
-      .maybeSingle();
+      .maybeSingle() as { data: LessonBookmark | null; error: Error | null };
 
     if (error) {
-      logger.error("Error fetching bookmark", error);
+      logger.error("Error fetching bookmark", error ?? undefined);
       return null;
     }
 
@@ -93,7 +103,7 @@ export class LessonBookmarksRepository extends BaseRepository<"lesson_bookmarks"
    * Get all bookmarks for a user
    */
   async getUserBookmarks(userId: string): Promise<LessonBookmarkWithLesson[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("lesson_bookmarks")
       .select(
         `
@@ -102,14 +112,14 @@ export class LessonBookmarksRepository extends BaseRepository<"lesson_bookmarks"
       `
       )
       .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }) as { data: LessonBookmarkWithLesson[] | null; error: Error | null };
 
     if (error) {
-      logger.error("Error fetching user bookmarks", error);
+      logger.error("Error fetching user bookmarks", error ?? undefined);
       return [];
     }
 
-    return (data || []) as LessonBookmarkWithLesson[];
+    return data || [];
   }
 
   /**
@@ -118,7 +128,7 @@ export class LessonBookmarksRepository extends BaseRepository<"lesson_bookmarks"
   async getUserBookmarksWithContext(
     userId: string
   ): Promise<LessonBookmarkWithContext[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("lesson_bookmarks")
       .select(
         `
@@ -137,14 +147,14 @@ export class LessonBookmarksRepository extends BaseRepository<"lesson_bookmarks"
       `
       )
       .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }) as { data: LessonBookmarkWithContext[] | null; error: Error | null };
 
     if (error) {
-      logger.error("Error fetching bookmarks with context", error);
+      logger.error("Error fetching bookmarks with context", error ?? undefined);
       return [];
     }
 
-    return (data || []) as unknown as LessonBookmarkWithContext[];
+    return data || [];
   }
 
   /**
@@ -154,7 +164,7 @@ export class LessonBookmarksRepository extends BaseRepository<"lesson_bookmarks"
     userId: string,
     courseId: string
   ): Promise<LessonBookmarkWithLesson[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("lesson_bookmarks")
       .select(
         `
@@ -171,14 +181,14 @@ export class LessonBookmarksRepository extends BaseRepository<"lesson_bookmarks"
       )
       .eq("user_id", userId)
       .eq("lesson.course_modules.course_id", courseId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }) as { data: LessonBookmarkWithLesson[] | null; error: Error | null };
 
     if (error) {
-      logger.error("Error fetching course bookmarks", error);
+      logger.error("Error fetching course bookmarks", error ?? undefined);
       return [];
     }
 
-    return (data || []) as unknown as LessonBookmarkWithLesson[];
+    return data || [];
   }
 
   /**
@@ -201,14 +211,14 @@ export class LessonBookmarksRepository extends BaseRepository<"lesson_bookmarks"
       note: note || null,
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("lesson_bookmarks")
       .insert(insertData)
       .select()
-      .single();
+      .single() as { data: LessonBookmark | null; error: Error | null };
 
     if (error || !data) {
-      logger.error("Error creating bookmark", error);
+      logger.error("Error creating bookmark", error ?? undefined);
       throw internalError("Failed to create bookmark");
     }
 
@@ -219,14 +229,14 @@ export class LessonBookmarksRepository extends BaseRepository<"lesson_bookmarks"
    * Remove a bookmark
    */
   async removeBookmark(userId: string, lessonId: string): Promise<void> {
-    const { error } = await this.supabase
+    const { error } = await (this.supabase as any)
       .from("lesson_bookmarks")
       .delete()
       .eq("user_id", userId)
-      .eq("lesson_id", lessonId);
+      .eq("lesson_id", lessonId) as { error: Error | null };
 
     if (error) {
-      logger.error("Error removing bookmark", error);
+      logger.error("Error removing bookmark", error ?? undefined);
       throw internalError("Failed to remove bookmark");
     }
   }
@@ -258,16 +268,16 @@ export class LessonBookmarksRepository extends BaseRepository<"lesson_bookmarks"
     lessonId: string,
     note: string | null
   ): Promise<LessonBookmark | null> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("lesson_bookmarks")
       .update({ note })
       .eq("user_id", userId)
       .eq("lesson_id", lessonId)
       .select()
-      .single();
+      .single() as { data: LessonBookmark | null; error: Error | null };
 
     if (error) {
-      logger.error("Error updating bookmark note", error);
+      logger.error("Error updating bookmark note", error ?? undefined);
       return null;
     }
 
@@ -278,7 +288,17 @@ export class LessonBookmarksRepository extends BaseRepository<"lesson_bookmarks"
    * Get bookmark count for user
    */
   async getUserBookmarkCount(userId: string): Promise<number> {
-    return this.count({ user_id: userId });
+    const { count, error } = await (this.supabase as any)
+      .from("lesson_bookmarks")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId) as { count: number | null; error: Error | null };
+
+    if (error) {
+      logger.error("Error counting bookmarks", error ?? undefined);
+      return 0;
+    }
+
+    return count || 0;
   }
 
   /**

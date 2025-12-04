@@ -8,17 +8,29 @@
 
 import { internalError } from "@/lib/api";
 import { logger } from "@/lib/logging";
-import { Database } from "@/lib/types/supabase";
-import { BaseRepository } from "./base-repository";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-type Achievement = Database["public"]["Tables"]["achievements"]["Row"];
-type _AchievementInsert =
-  Database["public"]["Tables"]["achievements"]["Insert"];
-type _AchievementUpdate =
-  Database["public"]["Tables"]["achievements"]["Update"];
-type UserAchievement = Database["public"]["Tables"]["user_achievements"]["Row"];
-type _UserAchievementInsert =
-  Database["public"]["Tables"]["user_achievements"]["Insert"];
+/** Achievement record */
+interface Achievement {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+  points: number | null;
+  icon_url: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** User achievement record */
+interface UserAchievement {
+  id: string;
+  user_id: string;
+  achievement_id: string;
+  earned_at: string | null;
+  created_at: string;
+}
 
 /**
  * Achievement with unlock status for a specific user
@@ -40,12 +52,10 @@ export interface AchievementStats {
 
 /**
  * Achievement Repository
- * Extends BaseRepository with achievement-specific operations
+ * Provides achievement-specific operations
  */
-export class AchievementRepository extends BaseRepository<"achievements"> {
-  constructor() {
-    super("achievements");
-  }
+export class AchievementRepository {
+  protected supabase = createAdminClient();
 
   /**
    * Get all active achievements
@@ -53,12 +63,12 @@ export class AchievementRepository extends BaseRepository<"achievements"> {
    * @returns Array of active achievements ordered by category and points
    */
   async getActive(): Promise<Achievement[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("achievements")
       .select("*")
       .eq("is_active", true)
       .order("category", { ascending: true })
-      .order("points", { ascending: true });
+      .order("points", { ascending: true }) as { data: Achievement[] | null; error: Error | null };
 
     if (error) {
       logger.error(
@@ -68,7 +78,7 @@ export class AchievementRepository extends BaseRepository<"achievements"> {
       throw internalError("Failed to fetch achievements");
     }
 
-    return data as Achievement[];
+    return data || [];
   }
 
   /**
@@ -78,10 +88,10 @@ export class AchievementRepository extends BaseRepository<"achievements"> {
    * @returns Array of user achievements
    */
   async getUserAchievements(userId: string): Promise<UserAchievement[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("user_achievements")
       .select("*")
-      .eq("user_id", userId);
+      .eq("user_id", userId) as { data: UserAchievement[] | null; error: Error | null };
 
     if (error) {
       logger.error(
@@ -91,7 +101,7 @@ export class AchievementRepository extends BaseRepository<"achievements"> {
       throw internalError("Failed to fetch user achievements");
     }
 
-    return data as UserAchievement[];
+    return data || [];
   }
 
   /**
@@ -155,14 +165,14 @@ export class AchievementRepository extends BaseRepository<"achievements"> {
     userId: string,
     achievementId: string
   ): Promise<UserAchievement> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("user_achievements")
       .insert({
         user_id: userId,
         achievement_id: achievementId,
       })
       .select()
-      .single();
+      .single() as { data: UserAchievement | null; error: Error | null };
 
     if (error || !data) {
       logger.error(
@@ -172,7 +182,7 @@ export class AchievementRepository extends BaseRepository<"achievements"> {
       throw internalError("Failed to award achievement");
     }
 
-    return data as UserAchievement;
+    return data;
   }
 
   /**
@@ -192,14 +202,14 @@ export class AchievementRepository extends BaseRepository<"achievements"> {
     
     if (existing) {
       // Already has achievement - return existing
-      const { data } = await this.supabase
+      const { data } = await (this.supabase as any)
         .from("user_achievements")
         .select("*")
         .eq("user_id", userId)
         .eq("achievement_id", achievementId)
-        .single();
+        .single() as { data: UserAchievement | null };
       
-      return { awarded: false, achievement: data as UserAchievement | null };
+      return { awarded: false, achievement: data };
     }
 
     // Award the achievement
@@ -208,15 +218,15 @@ export class AchievementRepository extends BaseRepository<"achievements"> {
       return { awarded: true, achievement };
     } catch (error) {
       // Handle race condition - if another request awarded it
-      const { data } = await this.supabase
+      const { data } = await (this.supabase as any)
         .from("user_achievements")
         .select("*")
         .eq("user_id", userId)
         .eq("achievement_id", achievementId)
-        .maybeSingle();
+        .maybeSingle() as { data: UserAchievement | null };
       
       if (data) {
-        return { awarded: false, achievement: data as UserAchievement };
+        return { awarded: false, achievement: data };
       }
       throw error;
     }
@@ -241,12 +251,12 @@ export class AchievementRepository extends BaseRepository<"achievements"> {
    * @returns True if user has unlocked the achievement
    */
   async hasUnlocked(userId: string, achievementId: string): Promise<boolean> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("user_achievements")
       .select("id")
       .eq("user_id", userId)
       .eq("achievement_id", achievementId)
-      .maybeSingle();
+      .maybeSingle() as { data: { id: string } | null; error: Error | null };
 
     if (error) {
       logger.error(
@@ -266,12 +276,12 @@ export class AchievementRepository extends BaseRepository<"achievements"> {
    * @returns Array of achievements in the category
    */
   async getByCategory(category: string): Promise<Achievement[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("achievements")
       .select("*")
       .eq("category", category)
       .eq("is_active", true)
-      .order("points", { ascending: true });
+      .order("points", { ascending: true }) as { data: Achievement[] | null; error: Error | null };
 
     if (error) {
       logger.error(
@@ -281,7 +291,7 @@ export class AchievementRepository extends BaseRepository<"achievements"> {
       throw internalError("Failed to fetch achievements");
     }
 
-    return data as Achievement[];
+    return data || [];
   }
 }
 

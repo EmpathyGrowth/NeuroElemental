@@ -148,11 +148,11 @@ export class ModuleRepository extends BaseRepository<"course_modules"> {
    * @returns Created module
    */
   async createModule(data: ModuleInsert): Promise<Module> {
-    const { data: module, error } = await this.supabase
+    const { data: module, error } = await (this.supabase as any)
       .from("course_modules")
       .insert(data)
       .select()
-      .single();
+      .single() as { data: Module | null; error: Error | null };
 
     if (error || !module) {
       logger.error(
@@ -162,7 +162,7 @@ export class ModuleRepository extends BaseRepository<"course_modules"> {
       throw internalError("Failed to create module");
     }
 
-    return module as Module;
+    return module;
   }
 
   /**
@@ -173,12 +173,12 @@ export class ModuleRepository extends BaseRepository<"course_modules"> {
    * @returns Updated module
    */
   async updateModule(moduleId: string, data: ModuleUpdate): Promise<Module> {
-    const { data: module, error } = await this.supabase
+    const { data: module, error } = await (this.supabase as any)
       .from("course_modules")
       .update(data)
       .eq("id", moduleId)
       .select()
-      .single();
+      .single() as { data: Module | null; error: Error | null };
 
     if (error || !module) {
       logger.error(
@@ -188,7 +188,7 @@ export class ModuleRepository extends BaseRepository<"course_modules"> {
       throw internalError("Failed to update module");
     }
 
-    return module as Module;
+    return module;
   }
 
   /**
@@ -258,10 +258,10 @@ export class ModuleRepository extends BaseRepository<"course_modules"> {
    * @returns Total duration in minutes
    */
   async getTotalDuration(moduleId: string): Promise<number> {
-    const { data: lessons, error } = await this.supabase
+    const { data: lessons, error } = await (this.supabase as any)
       .from("course_lessons")
       .select("duration_minutes")
-      .eq("module_id", moduleId);
+      .eq("module_id", moduleId) as { data: { duration_minutes: number | null }[] | null; error: Error | null };
 
     if (error || !lessons) {
       logger.error(

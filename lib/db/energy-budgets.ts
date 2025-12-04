@@ -58,7 +58,7 @@ export class EnergyBudgetRepository extends BaseRepository<"energy_budgets"> {
       user_id: row.user_id,
       date: row.date,
       total_budget: row.total_budget,
-      activities: (row.activities as EnergyActivity[]) || [],
+      activities: (row.activities as unknown as EnergyActivity[]) || [],
       remaining_budget: row.remaining_budget,
       created_at: row.created_at,
       updated_at: row.updated_at,
@@ -116,26 +116,26 @@ export class EnergyBudgetRepository extends BaseRepository<"energy_budgets"> {
 
     if (existing) {
       // Update existing budget
-      const updateData: EnergyBudgetUpdate = {
+      const updatePayload: Record<string, unknown> = {
         ...getUpdateTimestamp(),
       };
 
       if (data.total_budget !== undefined) {
-        updateData.total_budget = data.total_budget;
+        updatePayload.total_budget = data.total_budget;
       }
       if (data.activities !== undefined) {
-        updateData.activities = data.activities as unknown as Json;
+        updatePayload.activities = data.activities;
       }
       if (data.remaining_budget !== undefined) {
-        updateData.remaining_budget = data.remaining_budget;
+        updatePayload.remaining_budget = data.remaining_budget;
       }
 
-      const { data: updated, error } = await this.supabase
+      const { data: updated, error } = await (this.supabase as any)
         .from("energy_budgets")
-        .update(updateData)
+        .update(updatePayload)
         .eq("id", existing.id)
         .select()
-        .single();
+        .single() as { data: EnergyBudgetRow | null; error: Error | null };
 
       if (error || !updated) {
         logger.error(
@@ -148,19 +148,19 @@ export class EnergyBudgetRepository extends BaseRepository<"energy_budgets"> {
       return this.toEnergyBudget(updated);
     } else {
       // Create new budget
-      const insertData: EnergyBudgetInsert = {
+      const insertPayload = {
         user_id: userId,
         date,
         total_budget: data.total_budget ?? 100,
-        activities: (data.activities as unknown as Json) ?? [],
+        activities: data.activities ?? [],
         remaining_budget: data.remaining_budget ?? data.total_budget ?? 100,
       };
 
-      const { data: created, error } = await this.supabase
+      const { data: created, error } = await (this.supabase as any)
         .from("energy_budgets")
-        .insert(insertData)
+        .insert(insertPayload)
         .select()
-        .single();
+        .single() as { data: EnergyBudgetRow | null; error: Error | null };
 
       if (error || !created) {
         logger.error(

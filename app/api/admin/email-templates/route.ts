@@ -66,7 +66,7 @@ export const POST = createAdminRoute(async (request) => {
   const parsed = templateSchema.safeParse(body);
   if (!parsed.success) {
     throw badRequestError(
-      parsed.error.errors[0]?.message || "Invalid template data"
+      parsed.error.issues[0]?.message || "Invalid template data"
     );
   }
 

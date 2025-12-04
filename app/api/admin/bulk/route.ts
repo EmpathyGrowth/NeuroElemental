@@ -93,7 +93,7 @@ export const POST = createAdminRoute(async (req) => {
 
   if (!parsed.success) {
     throw badRequestError(
-      parsed.error.errors[0]?.message || "Invalid request body"
+      parsed.error.issues[0]?.message || "Invalid request body"
     );
   }
 
@@ -111,10 +111,10 @@ export const POST = createAdminRoute(async (req) => {
 
   if (operation === "delete") {
     // Bulk delete
-    const { error, count } = await supabase
+    const { error, count } = await (supabase as any)
       .from(contentType)
       .delete()
-      .in("id", ids);
+      .in("id", ids) as { error: Error | null; count: number | null };
 
     if (error) {
       result.success = false;
@@ -128,10 +128,10 @@ export const POST = createAdminRoute(async (req) => {
     const statusField = getStatusField(contentType);
     const statusValue = getPublishValue(contentType, operation === "publish");
 
-    const { error, count } = await supabase
+    const { error, count } = await (supabase as any)
       .from(contentType)
       .update({ [statusField]: statusValue, updated_at: new Date().toISOString() })
-      .in("id", ids);
+      .in("id", ids) as { error: Error | null; count: number | null };
 
     if (error) {
       result.success = false;

@@ -28,8 +28,8 @@ const blockSchema = z.object({
     "code",
     "custom",
   ]),
-  content: z.record(z.unknown()),
-  settings: z.record(z.unknown()).optional(),
+  content: z.record(z.string(), z.unknown()),
+  settings: z.record(z.string(), z.unknown()).optional(),
   is_global: z.boolean().default(false),
   is_active: z.boolean().default(true),
 });
@@ -39,7 +39,7 @@ const placementSchema = z.object({
   page_path: z.string().min(1),
   position: z.string().min(1),
   display_order: z.number().default(0),
-  overrides: z.record(z.unknown()).optional(),
+  overrides: z.record(z.string(), z.unknown()).optional(),
   is_visible: z.boolean().default(true),
 });
 
@@ -72,7 +72,7 @@ export const POST = createAdminRoute(async (request, _context, { userId }) => {
     const parsed = placementSchema.safeParse(body);
     if (!parsed.success) {
       throw badRequestError(
-        parsed.error.errors[0]?.message || "Invalid placement data"
+        parsed.error.issues[0]?.message || "Invalid placement data"
       );
     }
     const placement = await contentBlocksRepository.addToPage(parsed.data);
@@ -83,7 +83,7 @@ export const POST = createAdminRoute(async (request, _context, { userId }) => {
   const parsed = blockSchema.safeParse(body);
   if (!parsed.success) {
     throw badRequestError(
-      parsed.error.errors[0]?.message || "Invalid block data"
+      parsed.error.issues[0]?.message || "Invalid block data"
     );
   }
 

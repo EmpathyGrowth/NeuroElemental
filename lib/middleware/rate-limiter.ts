@@ -45,11 +45,11 @@ export async function checkRateLimit(
     const windowType = options?.windowType || 'minute'
 
     // Call database function to check rate limit
-    const { data, error } = await supabase.rpc('check_rate_limit', {
+    const { data, error } = await (supabase as any).rpc('check_rate_limit', {
       p_organization_id: organizationId,
       p_api_key_id: options?.apiKeyId || null,
       p_window_type: windowType,
-    })
+    }) as { data: { allowed: boolean; limit_value: number; current_count: number; retry_after?: number }[] | null; error: Error | null }
 
     if (error) {
       logger.error('Error checking rate limit', undefined, { errorMsg: error instanceof Error ? error.message : String(error)   })
@@ -111,7 +111,7 @@ export async function incrementRateLimit(
 
     await Promise.all(
       windowTypes.map((windowType) =>
-        supabase.rpc('increment_rate_limit', {
+        (supabase as any).rpc('increment_rate_limit', {
           p_organization_id: organizationId,
           p_api_key_id: options?.apiKeyId || null,
           p_window_type: windowType,
@@ -144,7 +144,7 @@ export async function logRateLimitViolation(params: {
   try {
     const supabase = createAdminClient()
 
-    await supabase.from('rate_limit_violations').insert({
+    await (supabase as any).from('rate_limit_violations').insert({
       organization_id: params.organizationId,
       api_key_id: params.apiKeyId,
       user_id: params.userId,
@@ -172,19 +172,19 @@ export async function getRateLimitConfig(
   try {
     const supabase = createAdminClient()
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('rate_limit_configs')
       .select('*')
       .eq('organization_id', organizationId)
-      .single()
+      .single() as { data: RateLimitConfig | null; error: Error | null }
 
     if (error || !data) {
       // Return default free tier if no config found
-      const { data: tierData } = await supabase
+      const { data: tierData } = await (supabase as any)
         .from('rate_limit_tiers')
         .select('*')
         .eq('tier_name', 'free')
-        .single()
+        .single() as { data: RateLimitConfig | null }
 
       if (tierData) {
         return {
@@ -220,18 +220,18 @@ export async function updateRateLimitTier(
     const supabase = createAdminClient()
 
     // Get tier details
-    const { data: tier, error: tierError } = await supabase
+    const { data: tier, error: tierError } = await (supabase as any)
       .from('rate_limit_tiers')
       .select('*')
       .eq('tier_name', tierName)
-      .single()
+      .single() as { data: RateLimitConfig | null; error: Error | null }
 
     if (tierError || !tier) {
       return { success: false, error: 'Tier not found' }
     }
 
     // Update organization config
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('rate_limit_configs')
       .upsert({
         organization_id: organizationId,
@@ -243,7 +243,7 @@ export async function updateRateLimitTier(
         webhooks_per_minute: tier.webhooks_per_minute,
         webhooks_per_hour: tier.webhooks_per_hour,
         max_concurrent_requests: tier.max_concurrent_requests,
-      })
+      }) as { error: Error | null }
 
     if (error) {
       return { success: false, error }

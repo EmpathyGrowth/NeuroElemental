@@ -11,7 +11,7 @@ import { z } from "zod";
 const contentSchema = z.object({
   page: z.string().min(1, "Page is required").max(100),
   section: z.string().min(1, "Section is required").max(100),
-  content: z.record(z.unknown()),
+  content: z.record(z.string(), z.unknown()),
   is_published: z.boolean().optional().default(true),
 });
 
@@ -36,7 +36,7 @@ export const POST = createAdminRoute(async (request, _context, { userId }) => {
   const parsed = contentSchema.safeParse(body);
   if (!parsed.success) {
     throw badRequestError(
-      parsed.error.errors[0]?.message || "Invalid content data"
+      parsed.error.issues[0]?.message || "Invalid content data"
     );
   }
 

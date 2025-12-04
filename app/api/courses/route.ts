@@ -47,18 +47,18 @@ export const POST = createAdminRoute(async (request, _context, { userId }) => {
   const supabase = getSupabaseServer();
 
   // Check if slug is unique
-  const { data: existingCourse } = await supabase
+  const { data: existingCourse } = await (supabase as any)
     .from('courses')
     .select('id')
     .eq('slug', courseData.slug)
-    .single();
+    .single() as { data: { id: string } | null };
 
   if (existingCourse) {
     throw internalError('A course with this slug already exists');
   }
 
   // Create the course
-  const { data: course, error } = await supabase
+  const { data: course, error } = await (supabase as any)
     .from('courses')
     .insert({
       ...courseData,

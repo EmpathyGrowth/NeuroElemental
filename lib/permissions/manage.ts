@@ -188,7 +188,7 @@ export async function createOrganizationRole(
       };
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("organization_roles")
       .insert({
         organization_id: organizationId,
@@ -201,7 +201,7 @@ export async function createOrganizationRole(
         is_system: false,
       })
       .select()
-      .single();
+      .single() as { data: OrganizationRole | null; error: Error | null };
 
     if (error) {
       logger.error("Error creating organization role", error as Error);
@@ -238,11 +238,11 @@ export async function updateOrganizationRole(
     const supabase = getSupabaseServer();
 
     // Check if role is system role
-    const { data: existingRole } = await supabase
+    const { data: existingRole } = await (supabase as any)
       .from("organization_roles")
       .select("is_system")
       .eq("id", roleId)
-      .single();
+      .single() as { data: { is_system: boolean } | null };
 
     if (existingRole?.is_system) {
       return {
@@ -272,12 +272,12 @@ export async function updateOrganizationRole(
       }
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("organization_roles")
       .update(updates)
       .eq("id", roleId)
       .select()
-      .single();
+      .single() as { data: OrganizationRole | null; error: Error | null };
 
     if (error) {
       logger.error("Error updating organization role", error as Error);
@@ -307,11 +307,11 @@ export async function deleteOrganizationRole(
     const supabase = getSupabaseServer();
 
     // Check if role is system role
-    const { data: existingRole } = await supabase
+    const { data: existingRole } = await (supabase as any)
       .from("organization_roles")
       .select("is_system")
       .eq("id", roleId)
-      .single();
+      .single() as { data: { is_system: boolean } | null };
 
     if (existingRole?.is_system) {
       return {
@@ -321,11 +321,11 @@ export async function deleteOrganizationRole(
     }
 
     // Check if role is assigned to any members
-    const { data: assignedMembers } = await supabase
+    const { data: assignedMembers } = await (supabase as any)
       .from("organization_members")
       .select("id")
       .eq("role_id", roleId)
-      .limit(1);
+      .limit(1) as { data: { id: string }[] | null };
 
     if (assignedMembers && assignedMembers.length > 0) {
       return {
@@ -462,7 +462,7 @@ export async function assignRoleToUser(
   try {
     const supabase = getSupabaseServer();
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("organization_members")
       .update({ role_id: roleId })
       .eq("organization_id", organizationId)

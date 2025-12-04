@@ -30,11 +30,11 @@ export const GET = createAdminRoute(async (request) => {
     switch (exportType) {
       case 'users': {
         // Export user data
-        const { data: users } = await supabase
+        const { data: users } = await (supabase as any)
           .from('profiles')
           .select('id, email, full_name, role, created_at')
           .gte('created_at', startDate.toISOString())
-          .order('created_at', { ascending: false })
+          .order('created_at', { ascending: false }) as { data: { id: string; email: string | null; full_name: string | null; role: string | null; created_at: string }[] | null }
 
         csvContent = 'ID,Email,Name,Role,Created At\n'
         users?.forEach(user => {
@@ -46,12 +46,12 @@ export const GET = createAdminRoute(async (request) => {
 
       case 'revenue': {
         // Export revenue data
-        const { data: transactions } = await supabase
+        const { data: transactions } = await (supabase as any)
           .from('credit_transactions')
           .select('id, user_id, amount, transaction_type, metadata, created_at')
           .eq('transaction_type', 'add')
           .gte('created_at', startDate.toISOString())
-          .order('created_at', { ascending: false })
+          .order('created_at', { ascending: false }) as { data: { id: string; user_id: string | null; amount: number; transaction_type: string; metadata: any; created_at: string }[] | null }
 
         csvContent = 'ID,User ID,Amount (cents),Type,Category,Created At\n'
         transactions?.forEach(tx => {
@@ -75,7 +75,7 @@ export const GET = createAdminRoute(async (request) => {
           completed_at: string | null;
           course: { title?: string } | null;
         }
-        const { data: enrollments } = await supabase
+        const { data: enrollments } = await (supabase as any)
           .from('course_enrollments')
           .select(`
             id,
@@ -101,14 +101,14 @@ export const GET = createAdminRoute(async (request) => {
       case 'events': {
         // Export event registration data
         // Note: Using type assertion because event_registrations schema may not be fully typed
-        const { data: registrations } = await supabase
+        const { data: registrations } = await (supabase as any)
           .from('event_registrations')
           .select('id, user_id, event_id, created_at')
           .order('created_at', { ascending: false }) as { data: Array<{ id: string; user_id: string; event_id: string; created_at: string }> | null; error: unknown }
 
         // Get event titles separately
         const eventIds = [...new Set(registrations?.map(r => r.event_id) || [])]
-        const { data: events } = await supabase
+        const { data: events } = await (supabase as any)
           .from('events')
           .select('id, title')
           .in('id', eventIds) as { data: Array<{ id: string; title: string }> | null; error: unknown }
@@ -126,36 +126,36 @@ export const GET = createAdminRoute(async (request) => {
 
       default: {
         // Export overview summary
-        const { count: totalUsers } = await supabase
+        const { count: totalUsers } = await (supabase as any)
+          .from('profiles')
+          .select('*', { count: 'exact', head: true }) as { count: number | null }
+
+        const { count: newUsers } = await (supabase as any)
           .from('profiles')
           .select('*', { count: 'exact', head: true })
+          .gte('created_at', startDate.toISOString()) as { count: number | null }
 
-        const { count: newUsers } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', startDate.toISOString())
-
-        const { count: totalCourses } = await supabase
+        const { count: totalCourses } = await (supabase as any)
           .from('courses')
-          .select('*', { count: 'exact', head: true })
+          .select('*', { count: 'exact', head: true }) as { count: number | null }
 
-        const { count: totalEnrollments } = await supabase
+        const { count: totalEnrollments } = await (supabase as any)
+          .from('course_enrollments')
+          .select('*', { count: 'exact', head: true }) as { count: number | null }
+
+        const { count: newEnrollments } = await (supabase as any)
           .from('course_enrollments')
           .select('*', { count: 'exact', head: true })
+          .gte('enrolled_at', startDate.toISOString()) as { count: number | null }
 
-        const { count: newEnrollments } = await supabase
-          .from('course_enrollments')
-          .select('*', { count: 'exact', head: true })
-          .gte('enrolled_at', startDate.toISOString())
-
-        const { count: totalEvents } = await supabase
+        const { count: totalEvents } = await (supabase as any)
           .from('events')
-          .select('*', { count: 'exact', head: true })
+          .select('*', { count: 'exact', head: true }) as { count: number | null }
 
-        const { data: transactions } = await supabase
+        const { data: transactions } = await (supabase as any)
           .from('credit_transactions')
           .select('metadata')
-          .eq('transaction_type', 'add')
+          .eq('transaction_type', 'add') as { data: { metadata: any }[] | null }
 
         const totalRevenue = transactions?.reduce((sum, t) => {
           const price = (t.metadata as { price?: number })?.price || 0

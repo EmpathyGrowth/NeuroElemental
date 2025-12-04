@@ -164,7 +164,7 @@ export async function checkRateLimit(
   supabase: SupabaseServerClient,
   params: RateLimitParams
 ): Promise<{ data: RateLimitResult | null; error: Error | null }> {
-  const { data, error } = await supabase.rpc('check_rate_limit', params)
+  const { data, error } = await (supabase as unknown as RpcCaller).rpc('check_rate_limit', params)
   return { data: data as RateLimitResult | null, error: error as Error | null }
 }
 
@@ -182,7 +182,7 @@ export async function incrementRateLimit(
   supabase: SupabaseServerClient,
   params: IncrementRateLimitParams
 ): Promise<{ error: Error | null }> {
-  const { error } = await supabase.rpc('increment_rate_limit', params)
+  const { error } = await (supabase as unknown as RpcCaller).rpc('increment_rate_limit', params)
   return { error: error as Error | null }
 }
 
@@ -208,7 +208,7 @@ export async function logDataAccess(
   supabase: SupabaseServerClient,
   params: LogDataAccessParams
 ): Promise<{ data: string | null; error: Error | null }> {
-  const { data, error } = await supabase.rpc('log_data_access', params)
+  const { data, error } = await (supabase as unknown as RpcCaller).rpc('log_data_access', params)
   return { data: data as string | null, error: error as Error | null }
 }
 
@@ -227,7 +227,7 @@ export async function getUserDataSummary(
   supabase: SupabaseServerClient,
   params: { p_user_id: string }
 ): Promise<{ data: UserDataSummary | null; error: Error | null }> {
-  const { data, error } = await supabase.rpc('get_user_data_summary', params)
+  const { data, error } = await (supabase as unknown as RpcCaller).rpc('get_user_data_summary', params)
   return { data: data as UserDataSummary | null, error: error as Error | null }
 }
 
@@ -247,7 +247,7 @@ export async function incrementUsageMetric(
   supabase: SupabaseServerClient,
   params: IncrementUsageMetricParams
 ): Promise<{ error: Error | null }> {
-  const { error } = await supabase.rpc('increment_usage_metric', params)
+  const { error } = await (supabase as unknown as RpcCaller).rpc('increment_usage_metric', params)
   return { error: error as Error | null }
 }
 
@@ -258,7 +258,7 @@ export async function incrementEventSpots(
   supabase: SupabaseServerClient,
   eventId: string
 ): Promise<{ error: Error | null }> {
-  const { error } = await supabase.rpc('increment_event_spots', { event_id: eventId } as { event_id: string })
+  const { error } = await (supabase as unknown as RpcCaller).rpc('increment_event_spots', { event_id: eventId })
   return { error: error as Error | null }
 }
 

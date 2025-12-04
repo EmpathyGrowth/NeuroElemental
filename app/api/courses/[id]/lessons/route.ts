@@ -34,16 +34,16 @@ export const GET = createPublicRoute<{ id: string }>(async (request, context) =>
   const supabase = await getSupabaseServer();
 
   // Get course modules first
-  const { data: modules, error: modulesError } = await supabase
+  const { data: modules, error: modulesError } = await (supabase as any)
     .from('course_modules')
     .select('id')
-    .eq('course_id', params.id);
+    .eq('course_id', params.id) as { data: Array<{ id: string }> | null; error: { message: string } | null };
 
   if (modulesError) {
     throw badRequestError(modulesError.message);
   }
 
-  const moduleIds = modules?.map((m) => m.id) || [];
+  const moduleIds = modules?.map((m: { id: string }) => m.id) || [];
 
   if (moduleIds.length === 0) {
     return successResponse({ lessons: [] });
@@ -107,7 +107,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
     is_preview,
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('course_lessons')
     .insert(lessonData)
     .select()

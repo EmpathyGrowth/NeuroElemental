@@ -51,23 +51,23 @@ async function checkAndUnlockAchievement(
 
   try {
     // Check if already unlocked
-    const { data: existing } = await supabase
+    const { data: existing } = await (supabase as any)
       .from("user_achievements")
       .select("id")
       .eq("user_id", userId)
       .eq("achievement_id", achievementId)
-      .single();
+      .single() as { data: { id: string } | null };
 
     if (existing) {
       return false; // Already unlocked
     }
 
     // Get achievement details
-    const { data: achievement } = await supabase
+    const { data: achievement } = await (supabase as any)
       .from("achievements")
       .select("*")
       .eq("id", achievementId)
-      .single();
+      .single() as { data: Achievement | null };
 
     if (!achievement) {
       return false;
@@ -81,10 +81,10 @@ async function checkAndUnlockAchievement(
 
     if (currentValue >= criteriaValue) {
       // Unlock achievement
-      const { error } = await supabase.from("user_achievements").insert({
+      const { error } = await (supabase as any).from("user_achievements").insert({
         user_id: userId,
         achievement_id: achievementId,
-      });
+      }) as { error: Error | null };
 
       if (error) {
         logger.error("Error unlocking achievement:", error as Error);
@@ -121,10 +121,10 @@ export async function checkLessonAchievements(userId: string): Promise<void> {
   const supabase = getSupabaseServer();
 
   // Get total completed lessons
-  const { data: completions } = await supabase
+  const { data: completions } = await (supabase as any)
     .from("lesson_completions")
     .select("id")
-    .eq("user_id", userId);
+    .eq("user_id", userId) as { data: { id: string }[] | null };
 
   const completedCount = completions?.length || 0;
 
@@ -141,11 +141,11 @@ export async function checkCourseAchievements(userId: string): Promise<void> {
   const supabase = getSupabaseServer();
 
   // Get completed courses (enrollments with 100% progress)
-  const { data: completedCourses } = await supabase
+  const { data: completedCourses } = await (supabase as any)
     .from("course_enrollments")
     .select("id")
     .eq("user_id", userId)
-    .eq("progress_percentage", 100);
+    .eq("progress_percentage", 100) as { data: { id: string }[] | null };
 
   const count = completedCourses?.length || 0;
 
@@ -161,10 +161,10 @@ export async function checkQuizAchievements(userId: string): Promise<void> {
   const supabase = getSupabaseServer();
 
   // Get passed quizzes (score >= passing_score)
-  const { data: quizzes } = await supabase
+  const { data: quizzes } = await (supabase as any)
     .from("quiz_attempts")
     .select("id, score, quiz:quizzes(passing_score)")
-    .eq("user_id", userId);
+    .eq("user_id", userId) as { data: { id: string; score: number; quiz: { passing_score: number } | null }[] | null };
 
   if (!quizzes) return;
 
@@ -184,11 +184,11 @@ export async function checkAssessmentAchievement(
   const supabase = getSupabaseServer();
 
   // Check if user has completed assessment
-  const { data: assessments } = await supabase
+  const { data: assessments } = await (supabase as any)
     .from("assessment_results")
     .select("id")
     .eq("user_id", userId)
-    .limit(1);
+    .limit(1) as { data: { id: string }[] | null };
 
   if (assessments && assessments.length > 0) {
     await checkAndUnlockAchievement(userId, "element-explorer", 1);
@@ -204,10 +204,10 @@ export async function checkCommunityAchievements(
   const supabase = getSupabaseServer();
 
   // Get review count
-  const { data: reviews } = await supabase
+  const { data: reviews } = await (supabase as any)
     .from("course_reviews")
     .select("id")
-    .eq("user_id", userId);
+    .eq("user_id", userId) as { data: { id: string }[] | null };
 
   const reviewCount = reviews?.length || 0;
 
@@ -250,10 +250,10 @@ async function checkAndUnlockByType(
 
   try {
     // Get all achievements with this criteria type
-    const { data: achievements } = await supabase
+    const { data: achievements } = await (supabase as any)
       .from("achievements")
       .select("*")
-      .eq("is_active", true);
+      .eq("is_active", true) as { data: Achievement[] | null };
 
     if (!achievements) return results;
 
@@ -265,12 +265,12 @@ async function checkAndUnlockByType(
 
     for (const achievement of matchingAchievements) {
       // Check if already unlocked
-      const { data: existing } = await supabase
+      const { data: existing } = await (supabase as any)
         .from("user_achievements")
         .select("id")
         .eq("user_id", userId)
         .eq("achievement_id", achievement.id)
-        .single();
+        .single() as { data: { id: string } | null };
 
       if (existing) {
         results.push({ unlocked: true, achievement, isNew: false });
@@ -297,10 +297,10 @@ async function checkAndUnlockByType(
 
       if (meetsRequirement) {
         // Unlock achievement
-        const { error } = await supabase.from("user_achievements").insert({
+        const { error } = await (supabase as any).from("user_achievements").insert({
           user_id: userId,
           achievement_id: achievement.id,
-        });
+        }) as { error: Error | null };
 
         if (error) {
           logger.error("Error unlocking achievement:", error as Error);
@@ -351,11 +351,11 @@ export async function checkCheckInAchievements(
   const supabase = getSupabaseServer();
 
   // Get total check-ins from logs
-  const { data: checkIns } = await supabase
+  const { data: checkIns } = await (supabase as any)
     .from("logs")
     .select("id")
     .eq("user_id", userId)
-    .eq("type", "check_in");
+    .eq("type", "check_in") as { data: { id: string }[] | null };
 
   const checkInCount = checkIns?.length || 0;
 
@@ -384,11 +384,11 @@ export async function checkShadowWorkAchievements(
   const supabase = getSupabaseServer();
 
   // Get completed shadow sessions by element
-  const { data: sessions } = await supabase
+  const { data: sessions } = await (supabase as any)
     .from("shadow_sessions")
     .select("element")
     .eq("user_id", userId)
-    .eq("status", "completed");
+    .eq("status", "completed") as { data: { element: string }[] | null };
 
   if (!sessions) return [];
 
@@ -411,10 +411,10 @@ export async function checkEnergyBudgetAchievements(
 ): Promise<AchievementCheckResult[]> {
   const supabase = getSupabaseServer();
 
-  const { data: budgets } = await supabase
+  const { data: budgets } = await (supabase as any)
     .from("energy_budgets")
     .select("id")
-    .eq("user_id", userId);
+    .eq("user_id", userId) as { data: { id: string }[] | null };
 
   const budgetCount = budgets?.length || 0;
 
@@ -429,11 +429,11 @@ export async function checkStateTrackerAchievements(
 ): Promise<AchievementCheckResult[]> {
   const supabase = getSupabaseServer();
 
-  const { data: logs } = await supabase
+  const { data: logs } = await (supabase as any)
     .from("logs")
     .select("id")
     .eq("user_id", userId)
-    .eq("type", "state_log");
+    .eq("type", "state_log") as { data: { id: string }[] | null };
 
   const logCount = logs?.length || 0;
 
@@ -448,10 +448,10 @@ export async function checkStrategyRatingAchievements(
 ): Promise<AchievementCheckResult[]> {
   const supabase = getSupabaseServer();
 
-  const { data: ratings } = await supabase
+  const { data: ratings } = await (supabase as any)
     .from("strategy_ratings")
     .select("id")
-    .eq("user_id", userId);
+    .eq("user_id", userId) as { data: { id: string }[] | null };
 
   const ratingCount = ratings?.length || 0;
 
@@ -466,10 +466,10 @@ export async function checkQuickQuizAchievements(
 ): Promise<AchievementCheckResult[]> {
   const supabase = getSupabaseServer();
 
-  const { data: quizzes } = await supabase
+  const { data: quizzes } = await (supabase as any)
     .from("quick_quiz_results")
     .select("id")
-    .eq("user_id", userId);
+    .eq("user_id", userId) as { data: { id: string }[] | null };
 
   const quizCount = quizzes?.length || 0;
 
@@ -485,12 +485,12 @@ export async function checkProtectionModeExitAchievements(
   const supabase = getSupabaseServer();
 
   // Count transitions from protection mode to other modes
-  const { data: logs } = await supabase
+  const { data: logs } = await (supabase as any)
     .from("logs")
     .select("data")
     .eq("user_id", userId)
     .eq("type", "check_in")
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true }) as { data: { data: any }[] | null };
 
   if (!logs || logs.length < 2) return [];
 
@@ -588,7 +588,7 @@ export async function getUserAchievementProgress(userId: string) {
   const supabase = getSupabaseServer();
 
   // Get all achievements with unlock status
-  const { data: achievements } = await supabase
+  const { data: achievements } = await (supabase as any)
     .from("achievements")
     .select(
       `
@@ -599,7 +599,7 @@ export async function getUserAchievementProgress(userId: string) {
     `
     )
     .eq("user_achievements.user_id", userId)
-    .order("points", { ascending: false });
+    .order("points", { ascending: false }) as { data: any[] | null };
 
   if (!achievements)
     return { achievements: [], totalPoints: 0, earnedPoints: 0 };

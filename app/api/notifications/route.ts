@@ -104,7 +104,7 @@ export const POST = createAuthenticatedRoute(async (_request, _context, _user) =
     notificationData.action_url = action_url;
   }
 
-  const { data: notification, error } = await supabase
+  const { data: notification, error } = await (supabase as any)
     .from('notifications')
     .insert(notificationData)
     .select()
@@ -124,7 +124,7 @@ export const PUT = createAuthenticatedRoute(async (_request, _context, user) => 
 
   const updateData = { read: true };
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('notifications')
     .update(updateData)
     .eq('user_id', user.id)

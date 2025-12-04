@@ -131,7 +131,7 @@ export class MembershipRepository extends BaseRepository<'organization_members'>
         expires_at: expiresAt.toISOString(),
       };
 
-      const { data: invite, error } = await this.supabase
+      const { data: invite, error } = await (this.supabase as any)
         .from('organization_invitations')
         .insert(inviteData)
         .select()

@@ -102,11 +102,11 @@ export const DELETE = createAuthenticatedRoute(async (request, _context, user) =
   const supabase = getSupabaseServer();
 
   // Get user profile to check role
-  const { data: profile } = await supabase
+  const { data: profile } = await (supabase as any)
     .from('profiles')
     .select('role')
     .eq('user_id', user.id)
-    .single();
+    .single() as { data: { role: string } | null };
 
   const isAdmin = profile?.role === 'admin';
 

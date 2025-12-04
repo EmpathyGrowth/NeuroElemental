@@ -132,7 +132,7 @@ export class OrganizationRepository extends BaseRepository<'organizations'> {
       const insertData: OrganizationMembershipInsert = { organization_id: orgId, user_id: userId, role };
       // Use fresh admin client for cross-table operations (membership table differs from org repository)
       const adminClient = createAdminClient();
-      const { data, error } = await adminClient
+      const { data, error } = await (adminClient as any)
         .from('organization_members')
         .insert(insertData)
         .select()
@@ -156,7 +156,7 @@ export class OrganizationRepository extends BaseRepository<'organizations'> {
    */
   async removeMemberFromOrganization(orgId: string, userId: string): Promise<void> {
     try {
-      const { error } = await this.supabase
+      const { error } = await (this.supabase as any)
         .from('organization_members')
         .delete()
         .eq('organization_id', orgId)
@@ -181,7 +181,7 @@ export class OrganizationRepository extends BaseRepository<'organizations'> {
       const updateData: OrganizationMembershipUpdate = { role };
       // Use fresh admin client for cross-table operations
       const adminClient = createAdminClient();
-      const { data, error } = await adminClient
+      const { data, error } = await (adminClient as any)
         .from('organization_members')
         .update(updateData)
         .eq('organization_id', orgId)
@@ -288,7 +288,7 @@ export class OrganizationRepository extends BaseRepository<'organizations'> {
       };
       // Use fresh admin client for cross-table operations
       const adminClient = createAdminClient();
-      const { data: membership, error: memberError } = await adminClient
+      const { data: membership, error: memberError } = await (adminClient as any)
         .from('organization_members')
         .insert(memberInsertData)
         .select()
@@ -300,7 +300,7 @@ export class OrganizationRepository extends BaseRepository<'organizations'> {
       }
 
       // Mark invitation as accepted
-      await this.supabase
+      await (this.supabase as any)
         .from('organization_invitations')
         .update({ status: 'accepted', accepted_at: getCurrentTimestamp() })
         .eq('id', invitationId);

@@ -12,7 +12,7 @@ type SupabaseAny = any;
 
 const submissionSchema = z.object({
   form_slug: z.string().min(1, "Form slug required"),
-  data: z.record(z.unknown()),
+  data: z.record(z.string(), z.unknown()),
 });
 
 /**
@@ -25,7 +25,7 @@ export const POST = createPublicRoute(async (request) => {
   const parsed = submissionSchema.safeParse(body);
   if (!parsed.success) {
     throw badRequestError(
-      parsed.error.errors[0]?.message || "Invalid submission data"
+      parsed.error.issues[0]?.message || "Invalid submission data"
     );
   }
 

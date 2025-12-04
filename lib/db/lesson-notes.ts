@@ -7,13 +7,31 @@
 
 import { internalError } from "@/lib/api";
 import { logger } from "@/lib/logging";
-import { Database } from "@/lib/types/supabase";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUpdateTimestamp } from "@/lib/utils";
-import { BaseRepository } from "./base-repository";
 
-type LessonNote = Database["public"]["Tables"]["lesson_notes"]["Row"];
-type LessonNoteInsert = Database["public"]["Tables"]["lesson_notes"]["Insert"];
-type LessonNoteUpdate = Database["public"]["Tables"]["lesson_notes"]["Update"];
+/** Lesson note record */
+interface LessonNote {
+  id: string;
+  user_id: string;
+  lesson_id: string;
+  content: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/** Lesson note insert */
+interface LessonNoteInsert {
+  user_id: string;
+  lesson_id: string;
+  content: string;
+}
+
+/** Lesson note update */
+interface LessonNoteUpdate {
+  content?: string;
+  updated_at?: string;
+}
 
 /** Note with lesson info */
 export interface LessonNoteWithLesson extends LessonNote {
@@ -44,10 +62,8 @@ export interface LessonNoteWithContext extends LessonNote {
 /**
  * Lesson Notes Repository
  */
-export class LessonNotesRepository extends BaseRepository<"lesson_notes"> {
-  constructor() {
-    super("lesson_notes");
-  }
+export class LessonNotesRepository {
+  protected supabase = createAdminClient();
 
   /**
    * Get a note by user and lesson
@@ -56,15 +72,15 @@ export class LessonNotesRepository extends BaseRepository<"lesson_notes"> {
     userId: string,
     lessonId: string
   ): Promise<LessonNote | null> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("lesson_notes")
       .select("*")
       .eq("user_id", userId)
       .eq("lesson_id", lessonId)
-      .maybeSingle();
+      .maybeSingle() as { data: LessonNote | null; error: Error | null };
 
     if (error) {
-      logger.error("Error fetching lesson note", error);
+      logger.error("Error fetching lesson note", error ?? undefined);
       return null;
     }
 
@@ -75,7 +91,7 @@ export class LessonNotesRepository extends BaseRepository<"lesson_notes"> {
    * Get all notes for a user
    */
   async getUserNotes(userId: string): Promise<LessonNoteWithLesson[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("lesson_notes")
       .select(
         `
@@ -84,14 +100,14 @@ export class LessonNotesRepository extends BaseRepository<"lesson_notes"> {
       `
       )
       .eq("user_id", userId)
-      .order("updated_at", { ascending: false });
+      .order("updated_at", { ascending: false }) as { data: LessonNoteWithLesson[] | null; error: Error | null };
 
     if (error) {
-      logger.error("Error fetching user notes", error);
+      logger.error("Error fetching user notes", error ?? undefined);
       return [];
     }
 
-    return (data || []) as LessonNoteWithLesson[];
+    return data || [];
   }
 
   /**
@@ -100,7 +116,7 @@ export class LessonNotesRepository extends BaseRepository<"lesson_notes"> {
   async getUserNotesWithContext(
     userId: string
   ): Promise<LessonNoteWithContext[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("lesson_notes")
       .select(
         `
@@ -117,14 +133,14 @@ export class LessonNotesRepository extends BaseRepository<"lesson_notes"> {
       `
       )
       .eq("user_id", userId)
-      .order("updated_at", { ascending: false });
+      .order("updated_at", { ascending: false }) as { data: LessonNoteWithContext[] | null; error: Error | null };
 
     if (error) {
-      logger.error("Error fetching user notes with context", error);
+      logger.error("Error fetching user notes with context", error ?? undefined);
       return [];
     }
 
-    return (data || []) as unknown as LessonNoteWithContext[];
+    return data || [];
   }
 
   /**
@@ -134,7 +150,7 @@ export class LessonNotesRepository extends BaseRepository<"lesson_notes"> {
     userId: string,
     courseId: string
   ): Promise<LessonNoteWithLesson[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("lesson_notes")
       .select(
         `
@@ -149,14 +165,14 @@ export class LessonNotesRepository extends BaseRepository<"lesson_notes"> {
       )
       .eq("user_id", userId)
       .eq("lesson.course_modules.course_id", courseId)
-      .order("updated_at", { ascending: false });
+      .order("updated_at", { ascending: false }) as { data: LessonNoteWithLesson[] | null; error: Error | null };
 
     if (error) {
-      logger.error("Error fetching course notes", error);
+      logger.error("Error fetching course notes", error ?? undefined);
       return [];
     }
 
-    return (data || []) as unknown as LessonNoteWithLesson[];
+    return data || [];
   }
 
   /**
@@ -179,14 +195,14 @@ export class LessonNotesRepository extends BaseRepository<"lesson_notes"> {
       content,
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("lesson_notes")
       .insert(insertData)
       .select()
-      .single();
+      .single() as { data: LessonNote | null; error: Error | null };
 
     if (error || !data) {
-      logger.error("Error creating lesson note", error);
+      logger.error("Error creating lesson note", error ?? undefined);
       throw internalError("Failed to create note");
     }
 
@@ -202,15 +218,15 @@ export class LessonNotesRepository extends BaseRepository<"lesson_notes"> {
       ...getUpdateTimestamp(),
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("lesson_notes")
       .update(updateData)
       .eq("id", noteId)
       .select()
-      .single();
+      .single() as { data: LessonNote | null; error: Error | null };
 
     if (error || !data) {
-      logger.error("Error updating lesson note", error);
+      logger.error("Error updating lesson note", error ?? undefined);
       throw internalError("Failed to update note");
     }
 
@@ -221,14 +237,14 @@ export class LessonNotesRepository extends BaseRepository<"lesson_notes"> {
    * Delete a note
    */
   async deleteNote(noteId: string, userId: string): Promise<void> {
-    const { error } = await this.supabase
+    const { error } = await (this.supabase as any)
       .from("lesson_notes")
       .delete()
       .eq("id", noteId)
-      .eq("user_id", userId);
+      .eq("user_id", userId) as { error: Error | null };
 
     if (error) {
-      logger.error("Error deleting lesson note", error);
+      logger.error("Error deleting lesson note", error ?? undefined);
       throw internalError("Failed to delete note");
     }
   }
@@ -237,7 +253,17 @@ export class LessonNotesRepository extends BaseRepository<"lesson_notes"> {
    * Get note count for user
    */
   async getUserNoteCount(userId: string): Promise<number> {
-    return this.count({ user_id: userId });
+    const { count, error } = await (this.supabase as any)
+      .from("lesson_notes")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId) as { count: number | null; error: Error | null };
+
+    if (error) {
+      logger.error("Error counting notes", error ?? undefined);
+      return 0;
+    }
+
+    return count || 0;
   }
 
   /**
@@ -247,7 +273,7 @@ export class LessonNotesRepository extends BaseRepository<"lesson_notes"> {
     userId: string,
     query: string
   ): Promise<LessonNoteWithLesson[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("lesson_notes")
       .select(
         `
@@ -257,14 +283,14 @@ export class LessonNotesRepository extends BaseRepository<"lesson_notes"> {
       )
       .eq("user_id", userId)
       .ilike("content", `%${query}%`)
-      .order("updated_at", { ascending: false });
+      .order("updated_at", { ascending: false }) as { data: LessonNoteWithLesson[] | null; error: Error | null };
 
     if (error) {
-      logger.error("Error searching notes", error);
+      logger.error("Error searching notes", error ?? undefined);
       return [];
     }
 
-    return (data || []) as LessonNoteWithLesson[];
+    return data || [];
   }
 }
 

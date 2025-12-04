@@ -24,7 +24,7 @@ export async function trackApiUsage(params: {
   try {
     const supabase = createAdminClient()
 
-    const { error } = await supabase.from('api_usage_log').insert({
+    const { error } = await (supabase as any).from('api_usage_log').insert({
       organization_id: params.organizationId,
       api_key_id: params.apiKeyId,
       user_id: params.userId,
@@ -67,7 +67,7 @@ export async function incrementOrganizationMetric(
     const today = new Date().toISOString().split('T')[0]
 
     // Upsert metric (insert or increment)
-    const { error } = await supabase.rpc('increment_usage_metric', {
+    const { error } = await (supabase as any).rpc('increment_usage_metric', {
       p_organization_id: organizationId,
       p_metric_name: metric,
       p_increment: 1,
@@ -80,7 +80,7 @@ export async function incrementOrganizationMetric(
       tomorrow.setDate(tomorrow.getDate() + 1)
       const periodEnd = tomorrow.toISOString().split('T')[0]
 
-      const { error: upsertError } = await supabase
+      const { error: upsertError } = await (supabase as any)
         .from('organization_usage_metrics')
         .upsert({
           organization_id: organizationId,

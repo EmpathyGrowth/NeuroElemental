@@ -98,7 +98,7 @@ export async function createDataExportRequest(
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("data_export_requests")
       .insert({
         user_id: userId,
@@ -118,7 +118,7 @@ export async function createDataExportRequest(
         status: "pending",
       })
       .select()
-      .single();
+      .single() as { data: DataExportRequest | null; error: Error | null };
 
     if (error) {
       logger.error("Error creating data export request", error as Error);
@@ -240,7 +240,7 @@ export async function updateExportRequestStatus(
       updateData.completed_at = new Date().toISOString();
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("data_export_requests")
       .update(updateData)
       .eq("id", requestId);
@@ -292,7 +292,7 @@ export async function createDataDeletionRequest(
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24); // Token expires in 24 hours
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("data_deletion_requests")
       .insert({
         user_id: userId,
@@ -306,7 +306,7 @@ export async function createDataDeletionRequest(
         status: "pending_confirmation",
       })
       .select()
-      .single();
+      .single() as { data: DataDeletionRequest | null; error: Error | null };
 
     if (error) {
       logger.error("Error creating deletion request", error as Error);
@@ -340,11 +340,11 @@ export async function confirmDataDeletionRequest(
     const supabase = getSupabaseServer();
 
     // Find request by token
-    const { data: request, error: fetchError } = await supabase
+    const { data: request, error: fetchError } = await (supabase as any)
       .from("data_deletion_requests")
       .select("*")
       .eq("confirmation_token", confirmationToken)
-      .single();
+      .single() as { data: DataDeletionRequest | null; error: Error | null };
 
     if (fetchError || !request) {
       return { success: false, error: "Invalid or expired confirmation token" };
@@ -361,7 +361,7 @@ export async function confirmDataDeletionRequest(
     }
 
     // Confirm the request
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("data_deletion_requests")
       .update({
         status: "confirmed",
@@ -369,7 +369,7 @@ export async function confirmDataDeletionRequest(
       })
       .eq("id", request.id)
       .select()
-      .single();
+      .single() as { data: DataDeletionRequest | null; error: Error | null };
 
     if (error) {
       logger.error("Error confirming deletion request", error as Error);
@@ -439,7 +439,7 @@ export async function logDataAccess(
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase.rpc("log_data_access", {
+    const { data, error } = await (supabase as any).rpc("log_data_access", {
       p_accessed_user_id: accessedUserId,
       p_accessed_by_user_id: accessedByUserId,
       p_organization_id: access.organization_id || null,
@@ -449,14 +449,14 @@ export async function logDataAccess(
       p_reason: access.reason || null,
       p_ip_address: access.ip_address || null,
       p_user_agent: access.user_agent || null,
-    });
+    }) as { data: string | null; error: Error | null };
 
     if (error) {
       logger.error("Error logging data access", error as Error);
       return { success: false, error: error.message };
     }
 
-    return { success: true, logId: data };
+    return { success: true, logId: data ?? undefined };
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "An unexpected error occurred";
@@ -520,9 +520,9 @@ export async function getUserDataSummary(userId: string): Promise<any> {
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase.rpc("get_user_data_summary", {
+    const { data, error } = await (supabase as any).rpc("get_user_data_summary", {
       p_user_id: userId,
-    });
+    }) as { data: any; error: Error | null };
 
     if (error) {
       logger.error("Error getting user data summary", error as Error);

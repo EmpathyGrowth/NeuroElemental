@@ -59,9 +59,13 @@ function calculateTrend(
  * Requirements: 8.2, 8.3, 8.4, 8.5
  */
 export const GET = createAdminRoute(async (req, _context, _admin) => {
-  const validation = await validateQuery(req, querySchema);
+  const url = new URL(req.url);
+  const validation = querySchema.safeParse({
+    start_date: url.searchParams.get('start_date') || undefined,
+    end_date: url.searchParams.get('end_date') || undefined,
+  });
   if (!validation.success) {
-    throw validation.error;
+    throw new Error('Invalid query parameters');
   }
 
   const { start_date, end_date } = validation.data;

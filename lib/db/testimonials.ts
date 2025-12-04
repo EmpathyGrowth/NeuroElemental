@@ -2,28 +2,132 @@
  * Testimonial Repository
  * Manages testimonial data and testimonial-related operations
  *
- * Extends BaseRepository to inherit standard CRUD operations.
- * Contains domain-specific methods for testimonial management.
+ * Standalone class (testimonials table not in generated types)
  */
 
 import { internalError } from "@/lib/api";
 import { logger } from "@/lib/logging";
-import { Database } from "@/lib/types/supabase";
-import { BaseRepository } from "./base-repository";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-type Testimonial = Database["public"]["Tables"]["testimonials"]["Row"];
-type _TestimonialInsert =
-  Database["public"]["Tables"]["testimonials"]["Insert"];
-type _TestimonialUpdate =
-  Database["public"]["Tables"]["testimonials"]["Update"];
+/** Testimonial row type */
+interface Testimonial {
+  id: string;
+  name: string;
+  role: string | null;
+  content: string;
+  avatar_url: string | null;
+  element: string | null;
+  is_published: boolean;
+  display_order: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
 
 /**
  * Testimonial Repository
- * Extends BaseRepository with testimonial-specific operations
+ * Standalone class with testimonial-specific operations
  */
-export class TestimonialRepository extends BaseRepository<"testimonials"> {
-  constructor() {
-    super("testimonials");
+/** Testimonial insert type */
+interface TestimonialInsert {
+  name: string;
+  role?: string | null;
+  content: string;
+  avatar_url?: string | null;
+  element?: string | null;
+  is_published?: boolean;
+  display_order?: number;
+}
+
+/** Testimonial update type */
+interface TestimonialUpdate {
+  name?: string;
+  role?: string | null;
+  content?: string;
+  avatar_url?: string | null;
+  element?: string | null;
+  is_published?: boolean;
+  display_order?: number;
+}
+
+export class TestimonialRepository {
+  protected supabase = createAdminClient();
+
+  /**
+   * Find testimonial by ID
+   */
+  async findById(id: string): Promise<Testimonial | null> {
+    const { data, error } = await (this.supabase as any)
+      .from("testimonials")
+      .select("*")
+      .eq("id", id)
+      .single() as { data: Testimonial | null; error: { message: string } | null };
+
+    if (error) {
+      return null;
+    }
+
+    return data;
+  }
+
+  /**
+   * Create a new testimonial
+   */
+  async create(testimonial: TestimonialInsert): Promise<Testimonial> {
+    const { data, error } = await (this.supabase as any)
+      .from("testimonials")
+      .insert(testimonial)
+      .select()
+      .single() as { data: Testimonial | null; error: { message: string } | null };
+
+    if (error || !data) {
+      logger.error(
+        "Error creating testimonial",
+        error instanceof Error ? error : new Error(String(error))
+      );
+      throw internalError("Failed to create testimonial");
+    }
+
+    return data;
+  }
+
+  /**
+   * Update a testimonial
+   */
+  async update(id: string, updates: TestimonialUpdate): Promise<Testimonial> {
+    const { data, error } = await (this.supabase as any)
+      .from("testimonials")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single() as { data: Testimonial | null; error: { message: string } | null };
+
+    if (error || !data) {
+      logger.error(
+        "Error updating testimonial",
+        error instanceof Error ? error : new Error(String(error))
+      );
+      throw internalError("Failed to update testimonial");
+    }
+
+    return data;
+  }
+
+  /**
+   * Delete a testimonial
+   */
+  async delete(id: string): Promise<void> {
+    const { error } = await (this.supabase as any)
+      .from("testimonials")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      logger.error(
+        "Error deleting testimonial",
+        error instanceof Error ? error : new Error(String(error))
+      );
+      throw internalError("Failed to delete testimonial");
+    }
   }
 
   /**
@@ -32,11 +136,11 @@ export class TestimonialRepository extends BaseRepository<"testimonials"> {
    * @returns Array of published testimonials
    */
   async getPublished(): Promise<Testimonial[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("testimonials")
       .select("*")
       .eq("is_published", true)
-      .order("display_order", { ascending: false });
+      .order("display_order", { ascending: false }) as { data: Testimonial[] | null; error: { message: string } | null };
 
     if (error) {
       logger.error(
@@ -55,10 +159,10 @@ export class TestimonialRepository extends BaseRepository<"testimonials"> {
    * @returns Array of all testimonials
    */
   async getAllOrdered(): Promise<Testimonial[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("testimonials")
       .select("*")
-      .order("display_order", { ascending: false });
+      .order("display_order", { ascending: false }) as { data: Testimonial[] | null; error: { message: string } | null };
 
     if (error) {
       logger.error(
@@ -82,12 +186,12 @@ export class TestimonialRepository extends BaseRepository<"testimonials"> {
     id: string,
     displayOrder: number
   ): Promise<Testimonial> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("testimonials")
       .update({ display_order: displayOrder })
       .eq("id", id)
       .select()
-      .single();
+      .single() as { data: Testimonial | null; error: { message: string } | null };
 
     if (error || !data) {
       logger.error(
@@ -111,12 +215,12 @@ export class TestimonialRepository extends BaseRepository<"testimonials"> {
     id: string,
     isPublished: boolean
   ): Promise<Testimonial> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("testimonials")
       .update({ is_published: isPublished })
       .eq("id", id)
       .select()
-      .single();
+      .single() as { data: Testimonial | null; error: { message: string } | null };
 
     if (error || !data) {
       logger.error(
@@ -136,12 +240,12 @@ export class TestimonialRepository extends BaseRepository<"testimonials"> {
    * @returns Array of testimonials for the element
    */
   async getByElement(element: string): Promise<Testimonial[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("testimonials")
       .select("*")
       .eq("element", element)
       .eq("is_published", true)
-      .order("display_order", { ascending: false });
+      .order("display_order", { ascending: false }) as { data: Testimonial[] | null; error: { message: string } | null };
 
     if (error) {
       logger.error(

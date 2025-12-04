@@ -14,10 +14,10 @@ import { createAdminRoute, successResponse } from "@/lib/api";
 import { duplicateBlogPost } from "@/lib/content/duplication";
 
 export const POST = createAdminRoute<{ id: string }>(
-  async (_request, context, user) => {
+  async (_request, context, admin) => {
     const { id } = await context.params;
 
-    const result = await duplicateBlogPost(id, user?.id);
+    const result = await duplicateBlogPost(id, admin.userId);
 
     if (!result.success) {
       throw new Error(result.error || "Failed to duplicate blog post");

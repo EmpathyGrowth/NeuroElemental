@@ -105,7 +105,7 @@ export function CTABlockEditor({ content, onChange }: CTABlockEditorProps) {
             onUpload: (url) => updateField("backgroundImage", url || ""),
           }}
           value={typedContent.backgroundImage || ""}
-          category="blocks"
+          category="general"
           placeholder="Upload background image"
         />
       </div>

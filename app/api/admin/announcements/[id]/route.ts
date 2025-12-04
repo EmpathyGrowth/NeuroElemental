@@ -51,7 +51,7 @@ export const PATCH = createAdminRoute<{ id: string }>(
     const parsed = announcementUpdateSchema.safeParse(body);
     if (!parsed.success) {
       throw badRequestError(
-        parsed.error.errors[0]?.message || "Invalid announcement data"
+        parsed.error.issues[0]?.message || "Invalid announcement data"
       );
     }
 

@@ -259,11 +259,11 @@ export class CourseRepository extends BaseRepository<'courses'> {
       course_id: courseId,
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from('course_enrollments')
       .insert(enrollmentData)
       .select()
-      .single();
+      .single() as { data: Enrollment | null; error: Error | null };
 
     if (error) {
       logger.error('Error enrolling user in course', error instanceof Error ? error : new Error(String(error)));

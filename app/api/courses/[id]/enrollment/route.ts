@@ -24,29 +24,29 @@ export const GET = createAuthenticatedRoute<{ id: string }>(
     const supabase = await getSupabaseServer();
 
     // Get enrollment
-    const { data: enrollment, error: enrollmentError } = await supabase
+    const { data: enrollment, error: enrollmentError } = await (supabase as any)
       .from('course_enrollments')
       .select('id, progress_percentage, completed_at')
       .eq('user_id', user.id)
       .eq('course_id', courseId)
-      .single();
+      .single() as { data: Enrollment | null; error: { message: string } | null };
 
     if (enrollmentError || !enrollment) {
       throw notFoundError('Enrollment');
     }
 
     // Get all lessons for this course
-    const { data: lessons } = await supabase
+    const { data: lessons } = await (supabase as any)
       .from('course_lessons')
       .select('id')
-      .eq('course_id', courseId);
+      .eq('course_id', courseId) as { data: Array<{ id: string }> | null };
 
     // Get lesson completions for this user
-    const { data: completions } = await supabase
+    const { data: completions } = await (supabase as any)
       .from('lesson_completions')
       .select('lesson_id, completed_at')
       .eq('user_id', user.id)
-      .in('lesson_id', lessons?.map(l => l.id) || []);
+      .in('lesson_id', lessons?.map((l: { id: string }) => l.id) || []) as { data: LessonCompletion[] | null };
 
     return successResponse({
       enrollment: enrollment as Enrollment,

@@ -50,9 +50,9 @@ export const GET = createCronRoute(async (request, _context) => {
   const endOfDay = `${targetDate}T23:59:59.999Z`
 
   // Get all organizations
-  const { data: organizations, error: orgsError } = await supabase
+  const { data: organizations, error: orgsError } = await (supabase as any)
     .from('organizations')
-    .select('id')
+    .select('id') as { data: { id: string }[] | null; error: { message: string } | null }
 
   if (orgsError) {
     logger.error('Failed to fetch organizations for metrics aggregation', new Error(orgsError.message))
@@ -66,51 +66,51 @@ export const GET = createCronRoute(async (request, _context) => {
   for (const org of organizations || []) {
     try {
       // Aggregate API usage
-      const { count: apiCalls } = await supabase
+      const { count: apiCalls } = await (supabase as any)
         .from('api_usage_log')
         .select('*', { count: 'exact', head: true })
         .eq('organization_id', org.id)
         .gte('created_at', startOfDay)
-        .lte('created_at', endOfDay)
+        .lte('created_at', endOfDay) as { count: number | null }
 
       // Aggregate active users (unique users with activity)
-      const { data: activeUsersData } = await supabase
+      const { data: activeUsersData } = await (supabase as any)
         .from('activity_logs')
         .select('user_id')
         .eq('organization_id', org.id)
         .gte('created_at', startOfDay)
         .lte('created_at', endOfDay)
-        .not('user_id', 'is', null)
+        .not('user_id', 'is', null) as { data: { user_id: string }[] | null }
 
       const uniqueUsers = new Set(activeUsersData?.map(a => a.user_id) || [])
       const activeUsers = uniqueUsers.size
 
       // Aggregate assessments completed
-      const { count: assessmentsCompleted } = await supabase
+      const { count: assessmentsCompleted } = await (supabase as any)
         .from('activity_logs')
         .select('*', { count: 'exact', head: true })
         .eq('organization_id', org.id)
         .eq('action', 'assessment.completed')
         .gte('created_at', startOfDay)
-        .lte('created_at', endOfDay)
+        .lte('created_at', endOfDay) as { count: number | null }
 
       // Aggregate course access
-      const { count: coursesAccessed } = await supabase
+      const { count: coursesAccessed } = await (supabase as any)
         .from('activity_logs')
         .select('*', { count: 'exact', head: true })
         .eq('organization_id', org.id)
         .like('action', 'course.%')
         .gte('created_at', startOfDay)
-        .lte('created_at', endOfDay)
+        .lte('created_at', endOfDay) as { count: number | null }
 
       // Aggregate events attended
-      const { count: eventsAttended } = await supabase
+      const { count: eventsAttended } = await (supabase as any)
         .from('activity_logs')
         .select('*', { count: 'exact', head: true })
         .eq('organization_id', org.id)
         .eq('action', 'event.attended')
         .gte('created_at', startOfDay)
-        .lte('created_at', endOfDay)
+        .lte('created_at', endOfDay) as { count: number | null }
 
       const metrics = {
         api_calls: apiCalls || 0,
@@ -132,7 +132,7 @@ export const GET = createCronRoute(async (request, _context) => {
 
       let orgSuccess = true
       for (const metric of metricsToInsert) {
-        const { error: upsertError } = await supabase
+        const { error: upsertError } = await (supabase as any)
           .from('organization_usage_metrics')
           .upsert({
             organization_id: org.id,
@@ -143,7 +143,7 @@ export const GET = createCronRoute(async (request, _context) => {
             updated_at: getCurrentTimestamp(),
           }, {
             onConflict: 'organization_id,metric_name,period_start'
-          })
+          }) as { error: { message: string } | null }
 
         if (upsertError) {
           logger.error(`Failed to upsert ${metric.metric_name} for org ${org.id}`, new Error(upsertError.message))

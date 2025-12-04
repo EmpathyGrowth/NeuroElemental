@@ -46,10 +46,10 @@ export const GET = createAuthenticatedRoute(async (_request, _context, user) => 
 
   try {
     // Get instructor's course IDs
-    const { data: courses } = await supabase
+    const { data: courses } = await (supabase as any)
       .from('courses')
       .select('id, title')
-      .eq('instructor_id', user.id);
+      .eq('instructor_id', user.id) as { data: { id: string; title: string }[] | null };
 
     const courseIds = courses?.map((c) => c.id) || [];
 
@@ -62,7 +62,7 @@ export const GET = createAuthenticatedRoute(async (_request, _context, user) => 
     }
 
     // Get all enrollments for instructor's courses
-    const { data: enrollments } = await supabase
+    const { data: enrollments } = await (supabase as any)
       .from('course_enrollments')
       .select(`
         user_id,
@@ -72,7 +72,7 @@ export const GET = createAuthenticatedRoute(async (_request, _context, user) => 
         completed_at,
         course:courses(id, title)
       `)
-      .in('course_id', courseIds);
+      .in('course_id', courseIds) as { data: { user_id: string | null; course_id: string | null; progress_percentage: number | null; enrolled_at: string | null; completed_at: string | null; course: { id: string; title: string } | null }[] | null };
 
     // Group enrollments by user
     const userEnrollmentsMap = new Map<string, EnrollmentRecord[]>();
@@ -102,17 +102,17 @@ export const GET = createAuthenticatedRoute(async (_request, _context, user) => 
       });
     }
 
-    const { data: profiles } = await supabase
+    const { data: profiles } = await (supabase as any)
       .from('profiles')
       .select('id, full_name, email, avatar_url')
-      .in('id', userIds);
+      .in('id', userIds) as { data: { id: string; full_name: string | null; email: string; avatar_url: string | null }[] | null };
 
     // Get last activity for users from lesson_completions
-    const { data: lastActivities } = await supabase
+    const { data: lastActivities } = await (supabase as any)
       .from('lesson_completions')
       .select('user_id, completed_at')
       .in('user_id', userIds)
-      .order('completed_at', { ascending: false });
+      .order('completed_at', { ascending: false }) as { data: { user_id: string | null; completed_at: string | null }[] | null };
 
     // Create a map of user_id to last activity
     const lastActivityMap = new Map<string, string>();

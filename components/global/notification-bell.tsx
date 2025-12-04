@@ -62,8 +62,9 @@ export function NotificationBell() {
         if (!isMounted) return;
         if (error) throw error;
 
-        setNotifications((data as Notification[]) || []);
-        setUnreadCount(data?.filter((n) => !n.read).length || 0);
+        const notifications = (data || []) as Notification[];
+        setNotifications(notifications);
+        setUnreadCount(notifications.filter((n) => !n.read).length);
       } catch {
         // Silently fail - notifications table may not exist or request aborted
         if (isMounted) {
@@ -88,7 +89,7 @@ export function NotificationBell() {
   const markAsRead = async (notificationId: string) => {
     try {
       const supabase = createClient();
-      await supabase
+      await (supabase as any)
         .from("notifications")
         .update({ read: true })
         .eq("id", notificationId);
@@ -107,7 +108,7 @@ export function NotificationBell() {
 
     try {
       const supabase = createClient();
-      await supabase
+      await (supabase as any)
         .from("notifications")
         .update({ read: true })
         .eq("user_id", user.id)

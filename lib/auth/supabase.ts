@@ -87,11 +87,11 @@ export async function getCurrentUser() {
  */
 export async function getUserRole(userId: string): Promise<string | null> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("profiles")
       .select("role")
       .eq("id", userId)
-      .maybeSingle();
+      .maybeSingle() as { data: { role: string } | null; error: unknown };
 
     if (error) {
       logger.error(
@@ -154,7 +154,7 @@ export async function updateUserProfile(
     avatar_url?: string;
   }
 ) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("profiles")
     .update({
       ...updates,

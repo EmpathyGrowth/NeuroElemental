@@ -74,7 +74,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
   const { report_type, start_date, end_date, data = {}, format = 'json' } = validation.data;
 
   // Create the report
-  const { data: report, error } = await supabase
+  const { data: report, error } = await (supabase as any)
     .from('usage_reports')
     .insert({
       organization_id: id,

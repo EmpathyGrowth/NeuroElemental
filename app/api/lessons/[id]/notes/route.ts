@@ -48,7 +48,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(
 
     const parsed = noteSchema.safeParse(body);
     if (!parsed.success) {
-      throw badRequestError(parsed.error.errors[0]?.message || "Invalid note");
+      throw badRequestError(parsed.error.issues[0]?.message || "Invalid note");
     }
 
     const note = await lessonNotesRepository.upsertNote(

@@ -12,7 +12,7 @@ export const GET = createPublicRoute<{ id: string }>(async (_request, context) =
   return successResponse(data);
 });
 
-export const PATCH = createAdminRoute<{ id: string }>(async (request, context, user) => {
+export const PATCH = createAdminRoute<{ id: string }>(async (request, context, admin) => {
   const { id } = await context.params;
 
   // Validate request body
@@ -28,14 +28,14 @@ export const PATCH = createAdminRoute<{ id: string }>(async (request, context, u
   const data = await blogRepository.update(id, validation.data);
 
   // Create revision after successful update (non-blocking)
-  if (currentPost && user?.id) {
+  if (currentPost && admin.userId) {
     const oldContent = currentPost as Record<string, unknown>;
     const newContent = data as Record<string, unknown>;
     const changedFields = compareRevisions(oldContent, newContent);
     
     // Only create revision if there are actual changes
     if (changedFields.length > 0) {
-      createRevision('blog_post', id, newContent, user.id, changedFields).catch((err) => {
+      createRevision('blog_post', id, newContent, admin.userId, changedFields.join(', ')).catch((err) => {
         logger.warn('Failed to create blog post revision', err);
       });
     }

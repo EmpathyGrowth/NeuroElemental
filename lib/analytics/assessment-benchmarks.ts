@@ -79,7 +79,7 @@ export async function getAssessmentBenchmarks(
 
     // Collect all scores
     assessments.forEach((assessment) => {
-      const scores = assessment.scores as Record<string, number>;
+      const scores = (assessment as { scores: Record<string, number> }).scores;
       Object.entries(scores).forEach(([element, score]) => {
         if (element in elementScores) {
           elementScores[element as ElementType].push(score);
@@ -115,7 +115,7 @@ export async function getAssessmentBenchmarks(
       .sort(([, a], [, b]) => b - a)[0][0] as ElementType;
 
     const dominantElementCount = assessments.filter((a) => {
-      const scores = a.scores as Record<string, number>;
+      const scores = (a as { scores: Record<string, number> }).scores;
       const topElement = Object.entries(scores)
         .sort(([, a], [, b]) => b - a)[0]?.[0];
       return topElement === dominantElement;

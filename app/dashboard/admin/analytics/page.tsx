@@ -348,24 +348,32 @@ export default function AdminAnalyticsPage() {
                 <CardDescription>Daily revenue breakdown</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={data.revenueChart.slice(-7)}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip
-                      formatter={(value: number) =>
-                        `$${(value / 100).toFixed(2)}`
-                      }
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="revenue"
-                      stroke="#8884d8"
-                      fill="#8884d8"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {data.revenueChart.some(d => d.revenue > 0) ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={data.revenueChart.slice(-7)}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip
+                        formatter={(value: number) =>
+                          `$${(value / 100).toFixed(2)}`
+                        }
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="#8884d8"
+                        fill="#8884d8"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <ChartEmptyState 
+                    height={300} 
+                    title="No revenue data yet"
+                    description="Revenue will appear as transactions occur"
+                  />
+                )}
               </CardContent>
             </Card>
 
@@ -375,26 +383,34 @@ export default function AdminAnalyticsPage() {
                 <CardDescription>New signups and active users</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={data.userChart.slice(-7)}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="signups"
-                      stroke="#8884d8"
-                      name="Signups"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="active"
-                      stroke="#82ca9d"
-                      name="Active"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                {data.userChart.some(d => d.signups > 0 || d.active > 0) ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={data.userChart.slice(-7)}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line
+                        type="monotone"
+                        dataKey="signups"
+                        stroke="#8884d8"
+                        name="Signups"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="active"
+                        stroke="#82ca9d"
+                        name="Active"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <ChartEmptyState 
+                    height={300} 
+                    title="No user activity yet"
+                    description="Activity will appear as users sign up"
+                  />
+                )}
               </CardContent>
             </Card>
 
@@ -406,19 +422,25 @@ export default function AdminAnalyticsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {data.courseStats.slice(0, 3).map((course, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between"
-                    >
-                      <span className="text-sm">{course.title}</span>
-                      <Badge>
-                        {course.enrollments.toLocaleString()} students
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
+                {data.courseStats.length > 0 ? (
+                  <div className="space-y-3">
+                    {data.courseStats.slice(0, 3).map((course, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="text-sm">{course.title}</span>
+                        <Badge>
+                          {course.enrollments.toLocaleString()} students
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground text-sm">
+                    No course data available
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -428,19 +450,25 @@ export default function AdminAnalyticsPage() {
                 <CardDescription>Most visited pages this month</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {data.topPages.slice(0, 3).map((page, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between"
-                    >
-                      <span className="text-sm">{page.path}</span>
-                      <Badge variant="outline">
-                        {page.views.toLocaleString()} views
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
+                {data.topPages.length > 0 ? (
+                  <div className="space-y-3">
+                    {data.topPages.slice(0, 3).map((page, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="text-sm">{page.path}</span>
+                        <Badge variant="outline">
+                          {page.views.toLocaleString()} views
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground text-sm">
+                    No page view data available
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

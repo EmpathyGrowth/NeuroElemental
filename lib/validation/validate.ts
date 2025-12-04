@@ -135,7 +135,7 @@ export async function validateRequest<T>(
         error: NextResponse.json(
           {
             error: 'Validation failed',
-            details: result.error.errors.map(err => ({
+            details: result.error.issues.map((err) => ({
               field: err.path.join('.'),
               message: err.message,
             })),
@@ -200,7 +200,7 @@ export function validateQuery<T>(
         error: NextResponse.json(
           {
             error: 'Invalid query parameters',
-            details: result.error.errors.map(err => ({
+            details: result.error.issues.map((err) => ({
               field: err.path.join('.'),
               message: err.message,
             })),
@@ -258,7 +258,7 @@ export function validateParams<T>(
       error: NextResponse.json(
         {
           error: 'Invalid route parameters',
-          details: result.error.errors.map(err => ({
+          details: result.error.issues.map((err) => ({
             field: err.path.join('.'),
             message: err.message,
           })),

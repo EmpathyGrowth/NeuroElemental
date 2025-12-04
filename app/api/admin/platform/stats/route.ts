@@ -45,50 +45,50 @@ export const GET = createAdminRoute(async (_request, _context, _admin) => {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
   // Fetch organizations
-  const { data: organizations } = await supabase
+  const { data: organizations } = await (supabase as any)
     .from('organizations')
-    .select('id, created_at')
+    .select('id, created_at') as { data: { id: string; created_at: string }[] | null }
 
   const totalOrgs = organizations?.length || 0
   const orgsLastMonth = organizations?.filter(
-    (o) => o.created_at && new Date(o.created_at) < thisMonth
+    (o: { created_at: string }) => o.created_at && new Date(o.created_at) < thisMonth
   ).length || 0
   const orgGrowth = orgsLastMonth > 0
     ? Math.round(((totalOrgs - orgsLastMonth) / orgsLastMonth) * 100)
     : 0
 
   // Count active organizations (with credits)
-  const { data: creditBalances } = await supabase
+  const { data: creditBalances } = await (supabase as any)
     .from('credit_balances')
     .select('organization_id, balance')
-    .gt('balance', 0)
+    .gt('balance', 0) as { data: { organization_id: string; balance: number }[] | null }
 
   // Get unique org IDs with credits
-  const orgsWithCredits = new Set(creditBalances?.map((cb) => cb.organization_id) || [])
+  const orgsWithCredits = new Set(creditBalances?.map((cb: { organization_id: string }) => cb.organization_id) || [])
   const activeOrgsCount = orgsWithCredits.size
 
   // Fetch users
-  const { count: totalUsers } = await supabase
+  const { count: totalUsers } = await (supabase as any)
+    .from('profiles')
+    .select('*', { count: 'exact', head: true }) as { count: number | null }
+
+  const { count: usersThisMonth } = await (supabase as any)
     .from('profiles')
     .select('*', { count: 'exact', head: true })
+    .gte('created_at', thisMonth.toISOString()) as { count: number | null }
 
-  const { count: usersThisMonth } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true })
-    .gte('created_at', thisMonth.toISOString())
-
-  const { count: usersLastMonth } = await supabase
+  const { count: usersLastMonth } = await (supabase as any)
     .from('profiles')
     .select('*', { count: 'exact', head: true })
     .gte('created_at', lastMonth.toISOString())
-    .lt('created_at', thisMonth.toISOString())
+    .lt('created_at', thisMonth.toISOString()) as { count: number | null }
 
   const userGrowth = (usersLastMonth || 0) > 0
     ? Math.round((((usersThisMonth || 0) - (usersLastMonth || 0)) / (usersLastMonth || 1)) * 100)
     : 0
 
   // Fetch credit transactions
-  const { data: allTransactions } = await supabase
+  const { data: allTransactions } = await (supabase as any)
     .from('credit_transactions')
     .select('*') as { data: CreditTransaction[] | null }
 
@@ -106,35 +106,35 @@ export const GET = createAdminRoute(async (_request, _context, _admin) => {
     .reduce((sum, t) => sum + ((t.metadata?.price || 0) * 100), 0) || 0
 
   // Count remaining credits across all organizations
-  const { data: allCredits } = await supabase
+  const { data: allCredits } = await (supabase as any)
     .from('credit_balances')
-    .select('balance')
+    .select('balance') as { data: { balance: number }[] | null }
 
-  const totalRemaining = allCredits?.reduce((sum, cb) => sum + (cb.balance || 0), 0) || 0
+  const totalRemaining = allCredits?.reduce((sum: number, cb: { balance: number }) => sum + (cb.balance || 0), 0) || 0
 
   // Today's activity
-  const { count: transactionsToday } = await supabase
+  const { count: transactionsToday } = await (supabase as any)
     .from('credit_transactions')
     .select('*', { count: 'exact', head: true })
-    .gte('created_at', today.toISOString())
+    .gte('created_at', today.toISOString()) as { count: number | null }
 
   // Pending invitations
-  const { count: pendingInvitations } = await supabase
+  const { count: pendingInvitations } = await (supabase as any)
     .from('organization_invitations')
     .select('*', { count: 'exact', head: true })
-    .gte('expires_at', now.toISOString())
+    .gte('expires_at', now.toISOString()) as { count: number | null }
 
   // Waitlist signups
-  const { count: waitlistCount } = await supabase
+  const { count: waitlistCount } = await (supabase as any)
     .from('waitlist')
-    .select('*', { count: 'exact', head: true })
+    .select('*', { count: 'exact', head: true }) as { count: number | null }
 
   // Active coupons
-  const { count: activeCoupons } = await supabase
+  const { count: activeCoupons } = await (supabase as any)
     .from('coupons')
     .select('*', { count: 'exact', head: true })
     .eq('is_active', true)
-    .or(`expires_at.is.null,expires_at.gte.${now.toISOString()}`)
+    .or(`expires_at.is.null,expires_at.gte.${now.toISOString()}`) as { count: number | null }
 
   // Recent activity (last 10 events)
   const recentActivity: Array<{
@@ -145,7 +145,7 @@ export const GET = createAdminRoute(async (_request, _context, _admin) => {
   }> = []
 
   // Add recent organizations
-  const { data: recentOrgsData } = await supabase
+  const { data: recentOrgsData } = await (supabase as any)
     .from('organizations')
     .select('id, name, created_at')
     .order('created_at', { ascending: false })
@@ -162,7 +162,7 @@ export const GET = createAdminRoute(async (_request, _context, _admin) => {
   })
 
   // Add recent credit purchases
-  const { data: recentCreditsData } = await supabase
+  const { data: recentCreditsData } = await (supabase as any)
     .from('credit_transactions')
     .select(`
         id,
@@ -199,14 +199,14 @@ export const GET = createAdminRoute(async (_request, _context, _admin) => {
   }> = []
 
   // Check for low credit organizations (balance > 0 but < 10)
-  const { data: lowCreditBalances } = await supabase
+  const { data: lowCreditBalances } = await (supabase as any)
     .from('credit_balances')
     .select('organization_id, balance')
     .gt('balance', 0)
-    .lt('balance', 10)
+    .lt('balance', 10) as { data: { organization_id: string; balance: number }[] | null }
 
   // Count unique organizations with low credits
-  const lowCreditOrgIds = new Set(lowCreditBalances?.map((cb) => cb.organization_id) || [])
+  const lowCreditOrgIds = new Set(lowCreditBalances?.map((cb: { organization_id: string }) => cb.organization_id) || [])
 
   if (lowCreditOrgIds.size > 0) {
     alerts.push({
@@ -221,11 +221,11 @@ export const GET = createAdminRoute(async (_request, _context, _admin) => {
   const expiringInvitations = new Date(now)
   expiringInvitations.setHours(expiringInvitations.getHours() + 24)
 
-  const { count: expiringInvites } = await supabase
+  const { count: expiringInvites } = await (supabase as any)
     .from('organization_invitations')
     .select('*', { count: 'exact', head: true })
     .gte('expires_at', now.toISOString())
-    .lte('expires_at', expiringInvitations.toISOString())
+    .lte('expires_at', expiringInvitations.toISOString()) as { count: number | null }
 
   if ((expiringInvites || 0) > 0) {
     alerts.push({
@@ -240,7 +240,7 @@ export const GET = createAdminRoute(async (_request, _context, _admin) => {
   const thirtyDaysAgo = new Date(now)
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  const { data: inactiveOrgs } = await supabase
+  const { data: inactiveOrgs } = await (supabase as any)
     .from('organizations')
     .select(`
         id,
@@ -253,11 +253,11 @@ export const GET = createAdminRoute(async (_request, _context, _admin) => {
     // Check for organizations with no recent transactions
     const inactiveCount = await Promise.all(
       (inactiveOrgs as OrganizationRecord[]).map(async (org) => {
-        const { count } = await supabase
+        const { count } = await (supabase as any)
           .from('credit_transactions')
           .select('*', { count: 'exact', head: true })
           .eq('organization_id', org.id)
-          .gte('created_at', thirtyDaysAgo.toISOString())
+          .gte('created_at', thirtyDaysAgo.toISOString()) as { count: number | null }
 
         return count === 0
       })

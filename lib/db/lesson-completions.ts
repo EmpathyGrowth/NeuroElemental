@@ -50,7 +50,7 @@ export class LessonCompletionsRepository extends BaseRepository<"lesson_completi
     userId: string,
     lessonId: string
   ): Promise<LessonCompletion> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("lesson_completions")
       .upsert(
         {
@@ -63,7 +63,7 @@ export class LessonCompletionsRepository extends BaseRepository<"lesson_completi
         }
       )
       .select()
-      .single();
+      .single() as { data: LessonCompletion | null; error: Error | null };
 
     if (error || !data) {
       logger.error(
@@ -73,7 +73,7 @@ export class LessonCompletionsRepository extends BaseRepository<"lesson_completi
       throw internalError("Failed to mark lesson as completed");
     }
 
-    return data as LessonCompletion;
+    return data;
   }
 
   /**
@@ -187,10 +187,10 @@ export class LessonCompletionsRepository extends BaseRepository<"lesson_completi
     const supabase = getSupabaseServer();
 
     // Get all lessons for the course
-    const { data: allLessons, error: lessonsError } = await supabase
+    const { data: allLessons, error: lessonsError } = await (supabase as any)
       .from("course_lessons")
       .select("id")
-      .eq("course_id", courseId);
+      .eq("course_id", courseId) as { data: { id: string }[] | null; error: Error | null };
 
     if (lessonsError || !allLessons || allLessons.length === 0) {
       logger.error(
@@ -235,11 +235,11 @@ export class LessonCompletionsRepository extends BaseRepository<"lesson_completi
     const supabase = getSupabaseServer();
 
     // Lessons don't have course_id directly - need to join through modules
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("course_lessons")
       .select("module_id, course_modules!inner(course_id)")
       .eq("id", lessonId)
-      .maybeSingle();
+      .maybeSingle() as { data: { module_id: string | null; course_modules: { course_id: string } } | null; error: Error | null };
 
     if (error || !data) {
       logger.error(

@@ -25,12 +25,12 @@ export const POST = createAuthenticatedRoute(async (req, _context, user) => {
   // Verify user is member of organization
   const supabase = (await import('@/lib/db')).getSupabaseServer();
 
-  const { data: membership } = await supabase
+  const { data: membership } = await (supabase as any)
     .from('organization_members')
     .select('id, role')
     .eq('user_id', user.id)
     .eq('organization_id', organizationId)
-    .single();
+    .single() as { data: { id: string; role: string } | null };
 
   if (!membership) {
     throw badRequestError('You are not a member of this organization');

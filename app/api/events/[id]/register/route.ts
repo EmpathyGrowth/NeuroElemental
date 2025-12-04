@@ -167,7 +167,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(
           stripe_session_id: session.id,
           ticket_code: generateTicketCode(),
         };
-        const { data: registration } = (await supabase
+        const { data: registration } = (await (supabase as any)
           .from("event_registrations")
           .insert(insertData)
           .select()
@@ -195,7 +195,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(
         payment_status: "free",
         ticket_code: generateTicketCode(),
       };
-      const { data: registration, error } = (await supabase
+      const { data: registration, error } = (await (supabase as any)
         .from("event_registrations")
         .insert(freeInsertData)
         .select()
@@ -214,7 +214,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(
       }
 
       // Create notification
-      await supabase.from("notifications").insert({
+      await (supabase as any).from("notifications").insert({
         user_id: user.id,
         title: "Event Registration Confirmed",
         message: `You're registered for ${event.title}`,
@@ -286,7 +286,7 @@ export const DELETE = createAuthenticatedRoute<{ id: string }>(
       cancelled_at: getCurrentTimestamp(),
     };
 
-    const { error } = (await supabase
+    const { error } = (await (supabase as any)
       .from("event_registrations")
       .update(cancelUpdate)
       .eq("id", registration.id)) as { error: { message: string } | null };

@@ -490,7 +490,7 @@ export const eventCreateSchema = z.object({
   end_datetime: datetimeSchema,
   timezone: timezoneSchema,
   location_name: z.string().optional(),
-  location_address: z.record(z.any()).optional(),
+  location_address: z.record(z.string(), z.any()).optional(),
   online_meeting_url: urlSchema.optional(),
   price_usd: nonNegativeNumberSchema,
   capacity: positiveIntSchema.optional(),
@@ -532,7 +532,7 @@ export const eventRegistrationSchema = z.object({
  * ```
  */
 export const eventRegistrationRequestSchema = z.object({
-  attendee_info: z.record(z.unknown()).optional(),
+  attendee_info: z.record(z.string(), z.unknown()).optional(),
   payment_method: z.enum(['stripe', 'free']).optional(),
 })
 
@@ -554,8 +554,8 @@ export const eventRegistrationRequestSchema = z.object({
  * ```
  */
 export const assessmentSubmitSchema = z.object({
-  answers: z.record(z.any()),
-  scores: z.record(z.number()).optional(),
+  answers: z.record(z.string(), z.any()),
+  scores: z.record(z.string(), z.number()).optional(),
   is_organizational: z.boolean().default(false),
   organization_id: uuidSchema.optional(),
 })
@@ -572,7 +572,7 @@ export const assessmentSubmitSchema = z.object({
  * ```
  */
 export const assessmentAnswersSchema = z.object({
-  answers: z.record(z.number().int('Rating must be an integer').min(1, 'Rating must be at least 1').max(5, 'Rating must be at most 5')),
+  answers: z.record(z.string(), z.number().int('Rating must be an integer').min(1, 'Rating must be at least 1').max(5, 'Rating must be at most 5')),
 })
 
 // ============================================
@@ -614,7 +614,7 @@ export const checkoutSessionSchema = z.object({
  */
 export const webhookEventSchema = z.object({
   type: z.string(),
-  data: z.record(z.any()),
+  data: z.record(z.string(), z.any()),
 })
 
 // ============================================
@@ -674,7 +674,7 @@ export const assignmentGradeSchema = z.object({
  */
 export const quizSubmitSchema = z.object({
   quizId: uuidSchema,
-  answers: z.record(z.any()),
+  answers: z.record(z.string(), z.any()),
 })
 
 /**
@@ -777,7 +777,7 @@ export const organizationCreateSchema = z.object({
   type: z.enum(['business', 'school', 'nonprofit']),
   industry: z.string().max(100, 'Industry must be 100 characters or less').optional(),
   size_range: z.string().optional(),
-  address: z.record(z.any()).optional(),
+  address: z.record(z.string(), z.any()).optional(),
 })
 
 /**
@@ -797,7 +797,7 @@ export const organizationUpdateSchema = organizationCreateSchema
   .partial()
   .extend({
     image: urlSchema.optional(),
-    onboarding_data: z.record(z.any()).optional(),
+    onboarding_data: z.record(z.string(), z.any()).optional(),
     onboarding_done: z.boolean().optional(),
   })
 
@@ -976,7 +976,7 @@ export const creditTransactionSchema = z.object({
     'ai_tutoring',
   ]),
   amount: z.number().int('Amount must be an integer'),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 // ============================================
@@ -1050,7 +1050,7 @@ export const productCreateSchema = z.object({
   price_usd: nonNegativeNumberSchema,
   stripe_price_id: z.string().optional(),
   is_active: z.boolean().default(true),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 /**
@@ -1080,7 +1080,7 @@ export const stripeCheckoutSchema = z.object({
   priceId: z.string().min(1, 'Price ID is required'),
   successUrl: urlSchema.optional(),
   cancelUrl: urlSchema.optional(),
-  metadata: z.record(z.string()).optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
 })
 
 /**
@@ -1127,7 +1127,7 @@ export const resourceUploadSchema = z.object({
   mime_type: z.string().optional(),
   resource_type: z.string().optional(),
   access_level: z.enum(['public', 'private', 'instructor_only']).default('private'),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 // ============================================
@@ -1420,7 +1420,7 @@ export const sessionCreateRequestSchema = z.object({
  */
 export const analyticsEventSchema = z.object({
   event_name: z.string().min(1, 'Event name is required'),
-  properties: z.record(z.any()).optional(),
+  properties: z.record(z.string(), z.any()).optional(),
   timestamp: datetimeSchema.optional(),
 })
 
@@ -1481,8 +1481,8 @@ export const ssoProviderSchema = z.object({
   oauth_token_url: urlSchema.optional(),
   oauth_userinfo_url: urlSchema.optional(),
   oauth_scopes: z.array(z.string()).optional(),
-  attribute_mapping: z.record(z.string()).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  attribute_mapping: z.record(z.string(), z.string()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 }).refine(
   (data) => {
     if (data.provider_type === 'saml') {

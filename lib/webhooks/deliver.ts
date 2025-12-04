@@ -80,7 +80,7 @@ export async function triggerWebhooks(params: {
     await Promise.all(deliveryPromises)
 
     // Update last_triggered_at for these webhooks
-    await supabase
+    await (supabase as any)
       .from('webhooks')
       .update({ last_triggered_at: new Date().toISOString() })
       .in('id', webhooks.map((w) => w.id))
@@ -106,7 +106,7 @@ async function queueWebhookDelivery(params: {
     const supabase = createAdminClient()
 
     // Create delivery record
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('webhook_deliveries')
       .insert({
         webhook_id: params.webhookId,
@@ -117,7 +117,7 @@ async function queueWebhookDelivery(params: {
         next_retry_at: new Date().toISOString(), // Deliver immediately
       })
       .select()
-      .single()
+      .single() as { data: { id: string } | null; error: Error | null }
 
     if (error) {
       logger.error('Error queueing webhook delivery:', error as Error)
@@ -126,10 +126,12 @@ async function queueWebhookDelivery(params: {
 
     // Attempt delivery immediately (in background)
     // In production, you'd use a queue system like BullMQ or AWS SQS
-    attemptWebhookDelivery(data.id, params.url, params.secret, params.payload)
-      .catch((err) => logger.error('Background webhook delivery failed:', err as Error))
+    if (data) {
+      attemptWebhookDelivery(data.id, params.url, params.secret, params.payload)
+        .catch((err) => logger.error('Background webhook delivery failed:', err as Error))
+    }
 
-    return { success: true, deliveryId: data.id }
+    return { success: true, deliveryId: data?.id }
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
     logger.error('Error in queueWebhookDelivery:', err as Error)
@@ -156,7 +158,7 @@ async function attemptWebhookDelivery(
       .eq('id', deliveryId)
       .single() as { data: { attempts: number } | null; error: unknown }
 
-    await supabase
+    await (supabase as any)
       .from('webhook_deliveries')
       .update({ attempts: (current?.attempts || 0) + 1 })
       .eq('id', deliveryId)
@@ -184,7 +186,7 @@ async function attemptWebhookDelivery(
 
     if (response.ok) {
       // Success
-      await supabase
+      await (supabase as any)
         .from('webhook_deliveries')
         .update({
           status: 'success',
@@ -227,7 +229,7 @@ async function handleDeliveryFailure(
   const supabase = createAdminClient()
 
   // Get current delivery
-  const { data: delivery } = await supabase
+  const { data: delivery } = await (supabase as any)
     .from('webhook_deliveries')
     .select('attempts')
     .eq('id', deliveryId)
@@ -242,7 +244,7 @@ async function handleDeliveryFailure(
     const retryDelay = RETRY_DELAYS[attempts - 1] || RETRY_DELAYS[RETRY_DELAYS.length - 1]
     const nextRetryAt = new Date(Date.now() + retryDelay * 1000)
 
-    await supabase
+    await (supabase as any)
       .from('webhook_deliveries')
       .update({
         status: 'pending',
@@ -254,7 +256,7 @@ async function handleDeliveryFailure(
       .eq('id', deliveryId)
   } else {
     // Max attempts reached, mark as failed
-    await supabase
+    await (supabase as any)
       .from('webhook_deliveries')
       .update({
         status: 'failed',

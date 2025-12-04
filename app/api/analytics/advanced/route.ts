@@ -68,39 +68,39 @@ export const GET = createAdminRoute(async (request, _context, _admin) => {
   const endISO = end.toISOString();
 
   // Get total users
-  const { count: totalUsers } = await supabase
+  const { count: totalUsers } = await (supabase as any)
     .from("profiles")
-    .select("*", { count: "exact", head: true });
+    .select("*", { count: "exact", head: true }) as { count: number | null };
 
   // Get new users in date range
-  const { count: newUsers } = await supabase
+  const { count: newUsers } = await (supabase as any)
     .from("profiles")
     .select("*", { count: "exact", head: true })
     .gte("created_at", startISO)
-    .lte("created_at", endISO);
+    .lte("created_at", endISO) as { count: number | null };
 
   // Get users by role
-  const { data: roleData } = await supabase.from("profiles").select("role");
+  const { data: roleData } = await (supabase as any).from("profiles").select("role") as { data: { role: string }[] | null };
 
   const byRole =
-    roleData?.reduce<Record<string, number>>((acc, u) => {
+    roleData?.reduce<Record<string, number>>((acc, u: { role: string }) => {
       acc[u.role] = (acc[u.role] || 0) + 1;
       return acc;
     }, {}) || {};
 
   // Get enrollments
-  const { count: totalEnrollments } = await supabase
+  const { count: totalEnrollments } = await (supabase as any)
     .from("course_enrollments")
     .select("*", { count: "exact", head: true })
     .gte("enrolled_at", startISO)
-    .lte("enrolled_at", endISO);
+    .lte("enrolled_at", endISO) as { count: number | null };
 
   // Get top courses
-  const { data: enrollmentsByCourse } = await supabase
+  const { data: enrollmentsByCourse } = await (supabase as any)
     .from("course_enrollments")
     .select("course_id, courses(id, title)")
     .gte("enrolled_at", startISO)
-    .lte("enrolled_at", endISO);
+    .lte("enrolled_at", endISO) as { data: { course_id: string; courses: { id: string; title: string } | null }[] | null };
 
   const courseEnrollments =
     enrollmentsByCourse?.reduce<
@@ -207,17 +207,17 @@ export const GET = createAdminRoute(async (request, _context, _admin) => {
     const prevStart = new Date(start.getTime() - periodLength);
     const prevEnd = new Date(start.getTime());
 
-    const { count: prevNewUsers } = await supabase
+    const { count: prevNewUsers } = await (supabase as any)
       .from("profiles")
       .select("*", { count: "exact", head: true })
       .gte("created_at", prevStart.toISOString())
-      .lte("created_at", prevEnd.toISOString());
+      .lte("created_at", prevEnd.toISOString()) as { count: number | null };
 
-    const { count: prevEnrollments } = await supabase
+    const { count: prevEnrollments } = await (supabase as any)
       .from("course_enrollments")
       .select("*", { count: "exact", head: true })
       .gte("enrolled_at", prevStart.toISOString())
-      .lte("enrolled_at", prevEnd.toISOString());
+      .lte("enrolled_at", prevEnd.toISOString()) as { count: number | null };
 
     comparison = {
       new_users: {

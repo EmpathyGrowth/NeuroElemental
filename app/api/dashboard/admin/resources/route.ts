@@ -33,7 +33,7 @@ export const GET = createAdminRoute(async (request) => {
 
   try {
     // Fetch resources from instructor_resources table
-    let query = supabase
+    let query = (supabase as any)
       .from('instructor_resources')
       .select('id, title, description, file_url, resource_type, category, certification_level, created_at, created_by')
 
@@ -52,7 +52,7 @@ export const GET = createAdminRoute(async (request) => {
       query = query.eq('category', categoryFilter)
     }
 
-    const { data: resources, error } = await query.order('created_at', { ascending: false })
+    const { data: resources, error } = await query.order('created_at', { ascending: false }) as { data: { id: string; title: string; description: string | null; file_url: string | null; resource_type: string | null; category: string | null; certification_level: string | null; created_at: string; created_by: string | null }[] | null; error: Error | null }
 
     if (error) {
       logger.error('Error fetching resources:', error)
@@ -65,7 +65,7 @@ export const GET = createAdminRoute(async (request) => {
     try {
       const resourceIds = resources?.map(r => r.id) || []
       if (resourceIds.length > 0) {
-        const { data: downloads } = await supabase
+        const { data: downloads } = await (supabase as any)
           .from('resource_downloads')
           .select('resource_id')
           .in('resource_id', resourceIds) as { data: ResourceDownload[] | null; error: unknown }

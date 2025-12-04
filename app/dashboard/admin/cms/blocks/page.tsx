@@ -321,7 +321,7 @@ export default function ContentBlocksPage() {
                   <Select
                     value={formData.block_type}
                     onValueChange={(v) =>
-                      setFormData({ ...formData, block_type: v })
+                      setFormData({ ...formData, block_type: v as BlockType })
                     }
                   >
                     <SelectTrigger>

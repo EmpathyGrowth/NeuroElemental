@@ -71,7 +71,7 @@ export class LogsRepository extends BaseRepository<"logs"> {
     context?: Record<string, unknown>,
     userId?: string
   ): Promise<Log> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("logs")
       .insert({
         level,
@@ -81,7 +81,7 @@ export class LogsRepository extends BaseRepository<"logs"> {
         timestamp: new Date().toISOString(),
       })
       .select()
-      .single();
+      .single() as { data: Log | null; error: Error | null };
 
     if (error || !data) {
       logger.error(
@@ -91,7 +91,7 @@ export class LogsRepository extends BaseRepository<"logs"> {
       throw internalError("Failed to create log");
     }
 
-    return data as Log;
+    return data;
   }
 
   /**
@@ -127,13 +127,13 @@ export class LogsRepository extends BaseRepository<"logs"> {
     userId: string,
     limit: number = 30
   ): Promise<CheckInLog[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("logs")
       .select("*")
       .eq("user_id", userId)
       .eq("level", "info")
       .order("timestamp", { ascending: false })
-      .limit(limit);
+      .limit(limit) as { data: Log[] | null; error: Error | null };
 
     if (error) {
       logger.error(
@@ -146,20 +146,20 @@ export class LogsRepository extends BaseRepository<"logs"> {
     // Filter and transform to check-in format
     const checkIns = (data || [])
       .filter((log) => {
-        const context = log.context as any;
+        const context = log.context as Record<string, unknown> | null;
         return context?.activity_type === "daily_check_in";
       })
       .map((log) => {
-        const context = log.context as any;
+        const context = log.context as Record<string, unknown> | null;
         return {
           id: log.id,
           created_at: log.timestamp || log.id, // Fallback to ID if timestamp missing
-          element: context?.element || "",
-          energy_level: context?.energy_level || 0,
-          current_state: context?.current_state || "",
-          reflection: context?.reflection,
-          gratitude: context?.gratitude,
-          intention: context?.intention,
+          element: (context?.element as string) || "",
+          energy_level: (context?.energy_level as number) || 0,
+          current_state: (context?.current_state as string) || "",
+          reflection: context?.reflection as string | undefined,
+          gratitude: context?.gratitude as string | undefined,
+          intention: context?.intention as string | undefined,
         };
       });
 

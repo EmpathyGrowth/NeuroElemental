@@ -82,7 +82,7 @@ export class ShadowSessionRepository extends BaseRepository<"shadow_sessions"> {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("shadow_sessions")
       .select("*")
       .eq("user_id", userId)
@@ -90,7 +90,7 @@ export class ShadowSessionRepository extends BaseRepository<"shadow_sessions"> {
       .gte("started_at", sevenDaysAgo.toISOString())
       .order("started_at", { ascending: false })
       .limit(1)
-      .maybeSingle();
+      .maybeSingle() as { data: ShadowSessionRow | null; error: Error | null };
 
     if (error) {
       logger.error(
@@ -123,11 +123,11 @@ export class ShadowSessionRepository extends BaseRepository<"shadow_sessions"> {
       status: "in_progress",
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("shadow_sessions")
       .insert(insertData)
       .select()
-      .single();
+      .single() as { data: ShadowSessionRow | null; error: Error | null };
 
     if (error || !data) {
       logger.error(
@@ -154,11 +154,11 @@ export class ShadowSessionRepository extends BaseRepository<"shadow_sessions"> {
     reflection?: string
   ): Promise<ShadowSession> {
     // First get the current session to merge reflections
-    const { data: current, error: fetchError } = await this.supabase
+    const { data: current, error: fetchError } = await (this.supabase as any)
       .from("shadow_sessions")
       .select("*")
       .eq("id", sessionId)
-      .single();
+      .single() as { data: ShadowSessionRow | null; error: Error | null };
 
     if (fetchError || !current) {
       logger.error(
@@ -179,12 +179,12 @@ export class ShadowSessionRepository extends BaseRepository<"shadow_sessions"> {
       ...getUpdateTimestamp(),
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("shadow_sessions")
       .update(updateData)
       .eq("id", sessionId)
       .select()
-      .single();
+      .single() as { data: ShadowSessionRow | null; error: Error | null };
 
     if (error || !data) {
       logger.error(
@@ -211,12 +211,12 @@ export class ShadowSessionRepository extends BaseRepository<"shadow_sessions"> {
       ...getUpdateTimestamp(),
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("shadow_sessions")
       .update(updateData)
       .eq("id", sessionId)
       .select()
-      .single();
+      .single() as { data: ShadowSessionRow | null; error: Error | null };
 
     if (error || !data) {
       logger.error(
@@ -238,11 +238,11 @@ export class ShadowSessionRepository extends BaseRepository<"shadow_sessions"> {
   async getCompletedByElement(
     userId: string
   ): Promise<Record<ElementType, number>> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("shadow_sessions")
       .select("element")
       .eq("user_id", userId)
-      .eq("status", "completed");
+      .eq("status", "completed") as { data: { element: string }[] | null; error: Error | null };
 
     if (error) {
       logger.error(
@@ -315,13 +315,13 @@ export class ShadowSessionRepository extends BaseRepository<"shadow_sessions"> {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("shadow_sessions")
       .update({ status: "abandoned" })
       .eq("user_id", userId)
       .eq("status", "in_progress")
       .lt("started_at", sevenDaysAgo.toISOString())
-      .select("id");
+      .select("id") as { data: { id: string }[] | null; error: Error | null };
 
     if (error) {
       logger.error(

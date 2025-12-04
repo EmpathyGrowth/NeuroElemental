@@ -71,10 +71,10 @@ export async function authenticateRequest(
     return {
       authenticated: true,
       authMethod: 'api_key',
-      organizationId: validation.key.organization_id,
-      userId: validation.key.created_by || undefined,
-      scopes: validation.key.scopes,
-      keyId: validation.key.id,
+      organizationId: validation.key.organization_id as string | undefined,
+      userId: (validation.key.created_by as string | undefined) || undefined,
+      scopes: validation.key.scopes as string[] | undefined,
+      keyId: validation.key.id as string | undefined,
     }
   }
 

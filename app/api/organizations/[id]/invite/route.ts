@@ -35,39 +35,39 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
   const supabase = getSupabaseServer();
 
   // Get organization details
-  const { data: organization } = await supabase
+  const { data: organization } = await (supabase as any)
     .from('organizations')
     .select('name')
     .eq('id', id)
-    .single();
+    .single() as { data: { name: string } | null };
 
   if (!organization) {
     throw notFoundError('Organization');
   }
 
   // Get user's full name
-  const { data: profile } = await supabase
+  const { data: profile } = await (supabase as any)
     .from('profiles')
     .select('full_name')
     .eq('id', user.id)
-    .single();
+    .single() as { data: { full_name: string } | null };
 
   const inviterName: string = profile?.full_name || user.email || 'A team member';
 
   // Check if user is already a member
-  const { data: userProfile } = await supabase
+  const { data: userProfile } = await (supabase as any)
     .from('profiles')
     .select('id')
     .eq('email', trimmedEmail)
-    .maybeSingle();
+    .maybeSingle() as { data: { id: string } | null };
 
   if (userProfile) {
-    const { data: existingMember } = await supabase
+    const { data: existingMember } = await (supabase as any)
       .from('organization_members')
       .select('user_id')
       .eq('organization_id', id)
       .eq('user_id', userProfile.id)
-      .maybeSingle();
+      .maybeSingle() as { data: { user_id: string } | null };
 
     if (existingMember) {
       throw badRequestError('This person is already a member of the organization');
@@ -75,13 +75,13 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
   }
 
   // Check for existing pending invitation
-  const { data: existingInvite } = await supabase
+  const { data: existingInvite } = await (supabase as any)
     .from('organization_invitations')
     .select('id, expires_at')
     .eq('organization_id', id)
     .eq('email', trimmedEmail)
     .gte('expires_at', new Date().toISOString())
-    .maybeSingle();
+    .maybeSingle() as { data: { id: string; expires_at: string } | null };
 
   if (existingInvite) {
     throw badRequestError('An invitation has already been sent to this email');
@@ -91,7 +91,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
-  const { data: invitation, error: inviteError } = await supabase
+  const { data: invitation, error: inviteError } = await (supabase as any)
     .from('organization_invitations')
     .insert({
       organization_id: id,
@@ -101,7 +101,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
       expires_at: expiresAt.toISOString(),
     })
     .select()
-    .single();
+    .single() as { data: { id: string } | null; error: { message: string } | null };
 
   if (inviteError || !invitation) {
     logger.error('Error creating invitation:', inviteError ? new Error(inviteError.message) : new Error('Unknown error'));

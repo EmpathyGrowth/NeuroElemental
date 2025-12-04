@@ -29,7 +29,7 @@ const updateSchema = z.object({
     "newsletter",
     "contact",
   ]),
-  content: z.record(z.unknown()),
+  content: z.record(z.string(), z.unknown()),
 });
 
 const visibilitySchema = z.object({
@@ -64,7 +64,7 @@ export const PATCH = createAdminRoute(async (request, _context, { userId }) => {
   if (action === "visibility") {
     const parsed = visibilitySchema.safeParse(body);
     if (!parsed.success) {
-      throw badRequestError(parsed.error.errors[0]?.message || "Invalid data");
+      throw badRequestError(parsed.error.issues[0]?.message || "Invalid data");
     }
     const section = await footerContentRepository.toggleVisibility(
       parsed.data.section,
@@ -76,7 +76,7 @@ export const PATCH = createAdminRoute(async (request, _context, { userId }) => {
   // Default: update content
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
-    throw badRequestError(parsed.error.errors[0]?.message || "Invalid data");
+    throw badRequestError(parsed.error.issues[0]?.message || "Invalid data");
   }
 
   if (!VALID_SECTIONS.includes(parsed.data.section)) {

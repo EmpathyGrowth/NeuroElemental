@@ -31,8 +31,8 @@ const updateSchema = z.object({
       "custom",
     ])
     .optional(),
-  content: z.record(z.unknown()).optional(),
-  settings: z.record(z.unknown()).optional(),
+  content: z.record(z.string(), z.unknown()).optional(),
+  settings: z.record(z.string(), z.unknown()).optional(),
   is_global: z.boolean().optional(),
   is_active: z.boolean().optional(),
 });
@@ -68,7 +68,7 @@ export const PATCH = createAdminRoute(
     const parsed = updateSchema.safeParse(body);
     if (!parsed.success) {
       throw badRequestError(
-        parsed.error.errors[0]?.message || "Invalid block data"
+        parsed.error.issues[0]?.message || "Invalid block data"
       );
     }
 

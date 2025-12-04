@@ -111,11 +111,11 @@ export class CertificateRepository extends BaseRepository<"certificates"> {
    * @returns Created certificate
    */
   async createCertificate(data: CertificateInsert): Promise<Certificate> {
-    const { data: certificate, error } = await this.supabase
+    const { data: certificate, error } = await (this.supabase as any)
       .from("certificates")
       .insert(data)
       .select()
-      .single();
+      .single() as { data: Certificate | null; error: Error | null };
 
     if (error || !certificate) {
       logger.error(
@@ -125,7 +125,7 @@ export class CertificateRepository extends BaseRepository<"certificates"> {
       throw internalError("Failed to create certificate");
     }
 
-    return certificate as Certificate;
+    return certificate;
   }
 
   /**
@@ -175,12 +175,12 @@ export class CertificateRepository extends BaseRepository<"certificates"> {
     certificateId: string,
     certificateUrl: string
   ): Promise<Certificate> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("certificates")
       .update({ certificate_url: certificateUrl })
       .eq("id", certificateId)
       .select()
-      .single();
+      .single() as { data: Certificate | null; error: Error | null };
 
     if (error || !data) {
       logger.error(
@@ -190,7 +190,7 @@ export class CertificateRepository extends BaseRepository<"certificates"> {
       throw internalError("Failed to update certificate");
     }
 
-    return data as Certificate;
+    return data;
   }
 }
 

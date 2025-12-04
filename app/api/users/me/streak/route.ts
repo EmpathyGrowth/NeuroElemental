@@ -18,11 +18,11 @@ export const GET = createAuthenticatedRoute(
   async (_request, _context, user) => {
     const supabase = await getSupabaseServer();
 
-    const { data: streak, error } = await supabase
+    const { data: streak, error } = await (supabase as any)
       .from("learning_streaks")
       .select("*")
       .eq("user_id", user.id)
-      .maybeSingle();
+      .maybeSingle() as { data: { last_activity_date: string; current_streak: number; longest_streak: number; streak_history: Array<{ date: string; streak: number }> } | null; error: unknown };
 
     if (error) {
       logger.error(
@@ -64,15 +64,15 @@ export const POST = createAuthenticatedRoute(
     const today = new Date().toISOString().split("T")[0];
 
     // Get current streak
-    const { data: existingStreak } = await supabase
+    const { data: existingStreak } = await (supabase as any)
       .from("learning_streaks")
       .select("*")
       .eq("user_id", user.id)
-      .maybeSingle();
+      .maybeSingle() as { data: { last_activity_date: string; current_streak: number; longest_streak: number; streak_history: Array<{ date: string; streak: number }> } | null };
 
     // If no streak exists, create one
     if (!existingStreak) {
-      const { data: newStreak, error } = await supabase
+      const { data: newStreak, error } = await (supabase as any)
         .from("learning_streaks")
         .insert({
           user_id: user.id,
@@ -129,7 +129,7 @@ export const POST = createAuthenticatedRoute(
       { date: today, streak: newCurrentStreak },
     ];
 
-    const { data: updatedStreak, error } = await supabase
+    const { data: updatedStreak, error } = await (supabase as any)
       .from("learning_streaks")
       .update({
         current_streak: newCurrentStreak,

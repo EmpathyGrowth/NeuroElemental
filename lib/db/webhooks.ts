@@ -119,11 +119,11 @@ export class WebhookRepository extends BaseRepository<'webhooks'> {
    * @returns Created webhook
    */
   async createWebhook(data: WebhookInsert): Promise<Webhook> {
-    const { data: webhook, error } = await this.supabase
+    const { data: webhook, error } = await (this.supabase as any)
       .from('webhooks')
       .insert(data)
       .select()
-      .single();
+      .single() as { data: Webhook | null; error: Error | null };
 
     if (error || !webhook) {
       logger.error('Error creating webhook', error instanceof Error ? error : new Error(String(error)));
@@ -148,7 +148,7 @@ export class WebhookRepository extends BaseRepository<'webhooks'> {
       throw notFoundError('Webhook');
     }
 
-    const { data: webhook, error } = await this.supabase
+    const { data: webhook, error } = await (this.supabase as any)
       .from('webhooks')
       .update({
         ...data,
@@ -156,7 +156,7 @@ export class WebhookRepository extends BaseRepository<'webhooks'> {
       })
       .eq('id', webhookId)
       .select()
-      .single();
+      .single() as { data: Webhook | null; error: Error | null };
 
     if (error || !webhook) {
       logger.error('Error updating webhook', error instanceof Error ? error : new Error(String(error)));
@@ -234,11 +234,11 @@ export class WebhookRepository extends BaseRepository<'webhooks'> {
    * @returns Created delivery record
    */
   async recordDelivery(data: WebhookDeliveryInsert): Promise<WebhookDelivery> {
-    const { data: delivery, error } = await this.supabase
+    const { data: delivery, error } = await (this.supabase as any)
       .from('webhook_deliveries')
       .insert(data)
       .select()
-      .single();
+      .single() as { data: WebhookDelivery | null; error: Error | null };
 
     if (error || !delivery) {
       logger.error('Error recording webhook delivery', error instanceof Error ? error : new Error(String(error)));
@@ -254,7 +254,7 @@ export class WebhookRepository extends BaseRepository<'webhooks'> {
    * @param webhookId - Webhook ID
    */
   async updateLastTriggered(webhookId: string): Promise<void> {
-    const { error } = await this.supabase
+    const { error } = await (this.supabase as any)
       .from('webhooks')
       .update({ last_triggered_at: new Date().toISOString() })
       .eq('id', webhookId);

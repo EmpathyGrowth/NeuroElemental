@@ -165,11 +165,11 @@ class QuizRepository extends BaseRepository<'quizzes'> {
       completed_at: new Date().toISOString(),
     };
 
-    const { data: attempt, error } = await supabase
+    const { data: attempt, error } = await (supabase as any)
       .from('quiz_attempts')
       .insert(attemptData)
       .select()
-      .single();
+      .single() as { data: QuizAttempt | null; error: Error | null };
 
     if (error || !attempt) {
       throw new Error('Failed to save quiz attempt');
@@ -238,18 +238,18 @@ class QuizRepository extends BaseRepository<'quizzes'> {
     average_score: number;
   }> {
     const supabase = getSupabaseServer();
-    const { data: attempts, error } = await supabase
+    const { data: attempts, error } = await (supabase as any)
       .from('quiz_attempts')
       .select('score, passed')
-      .eq('quiz_id', quizId);
+      .eq('quiz_id', quizId) as { data: { score: number; passed: boolean }[] | null; error: Error | null };
 
     if (error || !attempts || attempts.length === 0) {
       return { total_attempts: 0, pass_rate: 0, average_score: 0 };
     }
 
     const totalAttempts = attempts.length;
-    const passedAttempts = attempts.filter(a => a.passed).length;
-    const totalScore = attempts.reduce((sum, a) => sum + a.score, 0);
+    const passedAttempts = attempts.filter((a: { passed: boolean }) => a.passed).length;
+    const totalScore = attempts.reduce((sum: number, a: { score: number }) => sum + a.score, 0);
 
     return {
       total_attempts: totalAttempts,

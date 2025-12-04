@@ -14,11 +14,11 @@ import { forbiddenError, unauthorizedError } from './error-handler';
  */
 async function checkPermissionServer(userId: string, allowedRoles: string[]): Promise<boolean> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('profiles')
     .select('role')
     .eq('id', userId)
-    .maybeSingle();
+    .maybeSingle() as { data: { role: string } | null; error: unknown };
 
   if (error || !data?.role) {
     return false;

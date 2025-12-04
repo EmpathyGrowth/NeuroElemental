@@ -74,7 +74,7 @@ export class QuickQuizRepository extends BaseRepository<"quick_quiz_results"> {
     return {
       id: row.id,
       user_id: row.user_id,
-      scores: row.scores as ElementScores,
+      scores: row.scores as unknown as ElementScores,
       primary_element: row.primary_element as ElementType,
       created_at: row.created_at,
     };
@@ -100,11 +100,11 @@ export class QuickQuizRepository extends BaseRepository<"quick_quiz_results"> {
       primary_element: primaryElement,
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("quick_quiz_results")
       .insert(insertData)
       .select()
-      .single();
+      .single() as { data: QuickQuizResultRow | null; error: Error | null };
 
     if (error || !data) {
       logger.error(
@@ -128,12 +128,12 @@ export class QuickQuizRepository extends BaseRepository<"quick_quiz_results"> {
     userId: string,
     limit: number = 10
   ): Promise<QuickQuizResult[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("quick_quiz_results")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .limit(limit) as { data: QuickQuizResultRow[] | null; error: Error | null };
 
     if (error) {
       logger.error(
@@ -176,13 +176,13 @@ export class QuickQuizRepository extends BaseRepository<"quick_quiz_results"> {
     const quizResult = this.toQuickQuizResult(quizData);
 
     // Get the user's most recent assessment result
-    const { data: assessmentData, error: assessmentError } = await this.supabase
+    const { data: assessmentData, error: assessmentError } = await (this.supabase as any)
       .from("assessment_results")
       .select("element_scores, top_element")
       .eq("user_id", userId)
       .order("completed_at", { ascending: false })
       .limit(1)
-      .maybeSingle();
+      .maybeSingle() as { data: { element_scores: unknown; top_element: string } | null; error: Error | null };
 
     if (assessmentError) {
       logger.error(

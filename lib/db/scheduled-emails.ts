@@ -2,20 +2,35 @@
  * Scheduled Email Repository
  * Manages scheduled email queue and delivery tracking
  *
- * Extends BaseRepository to inherit standard CRUD operations.
- * Contains domain-specific methods for email scheduling and management.
+ * Standalone class (scheduled_emails table not in generated types)
  */
 
 import { internalError } from "@/lib/api";
 import { logger } from "@/lib/logging";
-import { Database } from "@/lib/types/supabase";
-import { BaseRepository } from "./base-repository";
+import { Json } from "@/lib/types/supabase";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-type ScheduledEmail = Database["public"]["Tables"]["scheduled_emails"]["Row"];
-type ScheduledEmailInsert =
-  Database["public"]["Tables"]["scheduled_emails"]["Insert"];
-type _ScheduledEmailUpdate =
-  Database["public"]["Tables"]["scheduled_emails"]["Update"];
+/** Scheduled email row type */
+interface ScheduledEmail {
+  id: string;
+  to: string;
+  type: string;
+  props: Json;
+  scheduled_for: string;
+  status: string;
+  sent_at: string | null;
+  error: string | null;
+  created_at: string | null;
+}
+
+/** Scheduled email insert type */
+interface ScheduledEmailInsert {
+  to: string;
+  type: string;
+  props?: Json;
+  scheduled_for: string;
+  status?: string;
+}
 
 /**
  * Email status types
@@ -24,12 +39,10 @@ export type EmailStatus = "pending" | "sent" | "failed" | "cancelled";
 
 /**
  * Scheduled Email Repository
- * Extends BaseRepository with scheduled email-specific operations
+ * Standalone class with scheduled email-specific operations
  */
-export class ScheduledEmailRepository extends BaseRepository<"scheduled_emails"> {
-  constructor() {
-    super("scheduled_emails");
-  }
+export class ScheduledEmailRepository {
+  protected supabase = createAdminClient();
 
   /**
    * Schedule a new email
@@ -38,14 +51,14 @@ export class ScheduledEmailRepository extends BaseRepository<"scheduled_emails">
    * @returns Created scheduled email
    */
   async scheduleEmail(data: ScheduledEmailInsert): Promise<ScheduledEmail> {
-    const { data: email, error } = await this.supabase
+    const { data: email, error } = await (this.supabase as any)
       .from("scheduled_emails")
       .insert({
         ...data,
         status: data.status || "pending",
       })
       .select()
-      .single();
+      .single() as { data: ScheduledEmail | null; error: { message: string } | null };
 
     if (error || !email) {
       logger.error(
@@ -67,13 +80,13 @@ export class ScheduledEmailRepository extends BaseRepository<"scheduled_emails">
   async getPendingEmails(limit: number = 100): Promise<ScheduledEmail[]> {
     const now = new Date().toISOString();
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("scheduled_emails")
       .select("*")
       .eq("status", "pending")
       .lte("scheduled_for", now)
       .order("scheduled_for", { ascending: true })
-      .limit(limit);
+      .limit(limit) as { data: ScheduledEmail[] | null; error: { message: string } | null };
 
     if (error) {
       logger.error(
@@ -93,7 +106,7 @@ export class ScheduledEmailRepository extends BaseRepository<"scheduled_emails">
    * @returns Updated email
    */
   async markAsSent(emailId: string): Promise<ScheduledEmail> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("scheduled_emails")
       .update({
         status: "sent",
@@ -101,7 +114,7 @@ export class ScheduledEmailRepository extends BaseRepository<"scheduled_emails">
       })
       .eq("id", emailId)
       .select()
-      .single();
+      .single() as { data: ScheduledEmail | null; error: { message: string } | null };
 
     if (error || !data) {
       logger.error(
@@ -125,7 +138,7 @@ export class ScheduledEmailRepository extends BaseRepository<"scheduled_emails">
     emailId: string,
     errorMessage: string
   ): Promise<ScheduledEmail> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("scheduled_emails")
       .update({
         status: "failed",
@@ -133,7 +146,7 @@ export class ScheduledEmailRepository extends BaseRepository<"scheduled_emails">
       })
       .eq("id", emailId)
       .select()
-      .single();
+      .single() as { data: ScheduledEmail | null; error: { message: string } | null };
 
     if (error || !data) {
       logger.error(
@@ -153,12 +166,12 @@ export class ScheduledEmailRepository extends BaseRepository<"scheduled_emails">
    * @returns Updated email
    */
   async cancelEmail(emailId: string): Promise<ScheduledEmail> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("scheduled_emails")
       .update({ status: "cancelled" })
       .eq("id", emailId)
       .select()
-      .single();
+      .single() as { data: ScheduledEmail | null; error: { message: string } | null };
 
     if (error || !data) {
       logger.error(
@@ -182,7 +195,7 @@ export class ScheduledEmailRepository extends BaseRepository<"scheduled_emails">
     email: string,
     status?: EmailStatus
   ): Promise<ScheduledEmail[]> {
-    let query = this.supabase
+    let query = (this.supabase as any)
       .from("scheduled_emails")
       .select("*")
       .eq("to", email)
@@ -192,7 +205,7 @@ export class ScheduledEmailRepository extends BaseRepository<"scheduled_emails">
       query = query.eq("status", status);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query as { data: ScheduledEmail[] | null; error: { message: string } | null };
 
     if (error) {
       logger.error(
@@ -218,7 +231,7 @@ export class ScheduledEmailRepository extends BaseRepository<"scheduled_emails">
     status?: EmailStatus,
     limit?: number
   ): Promise<ScheduledEmail[]> {
-    let query = this.supabase
+    let query = (this.supabase as any)
       .from("scheduled_emails")
       .select("*")
       .eq("type", type)
@@ -232,7 +245,7 @@ export class ScheduledEmailRepository extends BaseRepository<"scheduled_emails">
       query = query.limit(limit);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query as { data: ScheduledEmail[] | null; error: { message: string } | null };
 
     if (error) {
       logger.error(
@@ -257,9 +270,9 @@ export class ScheduledEmailRepository extends BaseRepository<"scheduled_emails">
     cancelled: number;
     total: number;
   }> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("scheduled_emails")
-      .select("status");
+      .select("status") as { data: { status: string | null }[] | null; error: { message: string } | null };
 
     if (error) {
       logger.error(
@@ -274,10 +287,10 @@ export class ScheduledEmailRepository extends BaseRepository<"scheduled_emails">
       sent: 0,
       failed: 0,
       cancelled: 0,
-      total: data.length,
+      total: data?.length || 0,
     };
 
-    data.forEach((email: { status: string | null }) => {
+    (data || []).forEach((email: { status: string | null }) => {
       const status = email.status || "pending";
       if (status in stats) {
         stats[status as keyof Omit<typeof stats, "total">]++;
@@ -301,12 +314,12 @@ export class ScheduledEmailRepository extends BaseRepository<"scheduled_emails">
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysOld);
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("scheduled_emails")
       .delete()
       .in("status", statuses)
       .lt("created_at", cutoffDate.toISOString())
-      .select("id");
+      .select("id") as { data: { id: string }[] | null; error: { message: string } | null };
 
     if (error) {
       logger.error(

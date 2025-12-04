@@ -60,12 +60,12 @@ export async function getUpcomingEvents(): Promise<EventWithStats[]> {
     const supabase = getSupabaseServer();
     const now = new Date().toISOString();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("events")
       .select("*")
       .eq("is_published", true)
       .gte("start_datetime", now)
-      .order("start_datetime", { ascending: true });
+      .order("start_datetime", { ascending: true }) as { data: any[] | null; error: Error | null };
 
     if (error) {
       logger.error("Error fetching events", error);
@@ -98,10 +98,10 @@ export async function getAllEvents(): Promise<Event[]> {
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("events")
       .select("*")
-      .order("start_datetime", { ascending: false });
+      .order("start_datetime", { ascending: false }) as { data: any[] | null; error: Error | null };
 
     if (error) {
       logger.error("Error fetching all events", error);
@@ -129,11 +129,11 @@ export async function getEventBySlug(slug: string): Promise<Event | null> {
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("events")
       .select("*")
       .eq("slug", slug)
-      .single();
+      .single() as { data: any; error: Error | null };
 
     if (error) {
       logger.error("Error fetching event", error);
@@ -163,11 +163,11 @@ export async function createEvent(event: Partial<Event>) {
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("events")
       .insert([event as any])
       .select()
-      .single();
+      .single() as { data: any; error: Error | null };
 
     if (error) {
       logger.error("Error creating event", error);
@@ -192,7 +192,7 @@ export async function updateEvent(id: string, updates: Partial<Event>) {
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("events")
       .update({
         ...(updates as any),
@@ -200,7 +200,7 @@ export async function updateEvent(id: string, updates: Partial<Event>) {
       })
       .eq("id", id)
       .select()
-      .single();
+      .single() as { data: any; error: Error | null };
 
     if (error) {
       logger.error("Error updating event", error);
@@ -225,7 +225,7 @@ export async function deleteEvent(id: string) {
   try {
     const supabase = getSupabaseServer();
 
-    const { error } = await supabase.from("events").delete().eq("id", id);
+    const { error } = await (supabase as any).from("events").delete().eq("id", id) as { error: Error | null };
 
     if (error) {
       logger.error("Error deleting event", error);
@@ -253,7 +253,7 @@ export async function registerForEvent(userId: string, eventId: string) {
     // Generate a unique ticket code
     const ticketCode = `NE-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("event_registrations")
       .insert([
         {
@@ -263,7 +263,7 @@ export async function registerForEvent(userId: string, eventId: string) {
         },
       ])
       .select()
-      .single();
+      .single() as { data: any; error: Error | null };
 
     if (error) {
       logger.error("Error registering for event", error);
@@ -271,7 +271,7 @@ export async function registerForEvent(userId: string, eventId: string) {
     }
 
     // Increment spots_taken
-    await supabase.rpc("increment_event_spots", { event_id: eventId });
+    await (supabase as any).rpc("increment_event_spots", { event_id: eventId });
 
     return { data, error: null };
   } catch (err) {
@@ -294,12 +294,12 @@ export async function isUserRegistered(
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("event_registrations")
       .select("id")
       .eq("user_id", userId)
       .eq("event_id", eventId)
-      .single();
+      .single() as { data: { id: string } | null; error: Error | null };
 
     return !!data && !error;
   } catch (_err) {
@@ -314,11 +314,11 @@ export async function getEventById(id: string): Promise<Event | null> {
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("events")
       .select("*")
       .eq("id", id)
-      .single();
+      .single() as { data: any; error: Error | null };
 
     if (error) {
       logger.error("Error fetching event by ID", error);
@@ -348,7 +348,7 @@ export async function getAllEventsWithInstructor(): Promise<Event[]> {
   try {
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("events")
       .select(
         `
@@ -356,7 +356,7 @@ export async function getAllEventsWithInstructor(): Promise<Event[]> {
         instructor:profiles!events_instructor_id_fkey(full_name, email)
       `
       )
-      .order("start_datetime", { ascending: false });
+      .order("start_datetime", { ascending: false }) as { data: any[] | null; error: Error | null };
 
     if (error) {
       logger.error("Error fetching events with instructor", error);

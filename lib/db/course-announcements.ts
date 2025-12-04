@@ -7,15 +7,35 @@
 
 import { forbiddenError, internalError } from "@/lib/api";
 import { logger } from "@/lib/logging";
-import { Database } from "@/lib/types/supabase";
-import { BaseRepository } from "./base-repository";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-type CourseAnnouncement =
-  Database["public"]["Tables"]["course_announcements"]["Row"];
-type CourseAnnouncementInsert =
-  Database["public"]["Tables"]["course_announcements"]["Insert"];
-type CourseAnnouncementUpdate =
-  Database["public"]["Tables"]["course_announcements"]["Update"];
+/** Course announcement record */
+interface CourseAnnouncement {
+  id: string;
+  course_id: string;
+  instructor_id: string;
+  title: string;
+  content: string;
+  is_pinned: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Course announcement insert */
+interface CourseAnnouncementInsert {
+  course_id: string;
+  instructor_id: string;
+  title: string;
+  content: string;
+  is_pinned?: boolean;
+}
+
+/** Course announcement update */
+interface CourseAnnouncementUpdate {
+  title?: string;
+  content?: string;
+  is_pinned?: boolean;
+}
 
 /** Announcement with instructor info */
 export interface AnnouncementWithInstructor extends CourseAnnouncement {
@@ -43,10 +63,8 @@ export interface AnnouncementWithCourse extends CourseAnnouncement {
 /**
  * Course Announcements Repository
  */
-export class CourseAnnouncementsRepository extends BaseRepository<"course_announcements"> {
-  constructor() {
-    super("course_announcements");
-  }
+export class CourseAnnouncementsRepository {
+  protected supabase = createAdminClient();
 
   /**
    * Get announcements for a course
@@ -54,7 +72,7 @@ export class CourseAnnouncementsRepository extends BaseRepository<"course_announ
   async getCourseAnnouncements(
     courseId: string
   ): Promise<AnnouncementWithInstructor[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("course_announcements")
       .select(
         `
@@ -64,14 +82,14 @@ export class CourseAnnouncementsRepository extends BaseRepository<"course_announ
       )
       .eq("course_id", courseId)
       .order("is_pinned", { ascending: false })
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }) as { data: AnnouncementWithInstructor[] | null; error: Error | null };
 
     if (error) {
       logger.error("Error fetching course announcements", error);
       return [];
     }
 
-    return (data || []) as unknown as AnnouncementWithInstructor[];
+    return data || [];
   }
 
   /**
@@ -80,7 +98,7 @@ export class CourseAnnouncementsRepository extends BaseRepository<"course_announ
   async getPinnedAnnouncements(
     courseId: string
   ): Promise<AnnouncementWithInstructor[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("course_announcements")
       .select(
         `
@@ -90,14 +108,14 @@ export class CourseAnnouncementsRepository extends BaseRepository<"course_announ
       )
       .eq("course_id", courseId)
       .eq("is_pinned", true)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }) as { data: AnnouncementWithInstructor[] | null; error: Error | null };
 
     if (error) {
       logger.error("Error fetching pinned announcements", error);
       return [];
     }
 
-    return (data || []) as unknown as AnnouncementWithInstructor[];
+    return data || [];
   }
 
   /**
@@ -107,10 +125,10 @@ export class CourseAnnouncementsRepository extends BaseRepository<"course_announ
     userId: string
   ): Promise<AnnouncementWithCourse[]> {
     // First get user's enrolled courses
-    const { data: enrollments, error: enrollError } = await this.supabase
+    const { data: enrollments, error: enrollError } = await (this.supabase as any)
       .from("course_enrollments")
       .select("course_id")
-      .eq("user_id", userId);
+      .eq("user_id", userId) as { data: { course_id: string | null }[] | null; error: Error | null };
 
     if (enrollError || !enrollments || enrollments.length === 0) {
       return [];
@@ -122,7 +140,7 @@ export class CourseAnnouncementsRepository extends BaseRepository<"course_announ
     if (courseIds.length === 0) return [];
 
     // Get announcements for those courses
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("course_announcements")
       .select(
         `
@@ -133,14 +151,14 @@ export class CourseAnnouncementsRepository extends BaseRepository<"course_announ
       )
       .in("course_id", courseIds)
       .order("created_at", { ascending: false })
-      .limit(50);
+      .limit(50) as { data: AnnouncementWithCourse[] | null; error: Error | null };
 
     if (error) {
       logger.error("Error fetching user course announcements", error);
       return [];
     }
 
-    return (data || []) as unknown as AnnouncementWithCourse[];
+    return data || [];
   }
 
   /**
@@ -154,10 +172,10 @@ export class CourseAnnouncementsRepository extends BaseRepository<"course_announ
     ).toISOString();
 
     // First get user's enrolled courses
-    const { data: enrollments, error: enrollError } = await this.supabase
+    const { data: enrollments, error: enrollError } = await (this.supabase as any)
       .from("course_enrollments")
       .select("course_id")
-      .eq("user_id", userId);
+      .eq("user_id", userId) as { data: { course_id: string | null }[] | null; error: Error | null };
 
     if (enrollError || !enrollments || enrollments.length === 0) {
       return [];
@@ -168,7 +186,7 @@ export class CourseAnnouncementsRepository extends BaseRepository<"course_announ
       .filter((id): id is string => id !== null);
     if (courseIds.length === 0) return [];
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("course_announcements")
       .select(
         `
@@ -179,14 +197,14 @@ export class CourseAnnouncementsRepository extends BaseRepository<"course_announ
       )
       .in("course_id", courseIds)
       .gte("created_at", sevenDaysAgo)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }) as { data: AnnouncementWithCourse[] | null; error: Error | null };
 
     if (error) {
       logger.error("Error fetching recent announcements", error);
       return [];
     }
 
-    return (data || []) as unknown as AnnouncementWithCourse[];
+    return data || [];
   }
 
   /**
@@ -207,15 +225,33 @@ export class CourseAnnouncementsRepository extends BaseRepository<"course_announ
       is_pinned: isPinned,
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("course_announcements")
       .insert(insertData)
       .select()
-      .single();
+      .single() as { data: CourseAnnouncement | null; error: Error | null };
 
     if (error || !data) {
-      logger.error("Error creating announcement", error);
+      logger.error("Error creating announcement", error ?? undefined);
       throw internalError("Failed to create announcement");
+    }
+
+    return data;
+  }
+
+  /**
+   * Find announcement by ID
+   */
+  async findById(announcementId: string): Promise<CourseAnnouncement> {
+    const { data, error } = await (this.supabase as any)
+      .from("course_announcements")
+      .select("*")
+      .eq("id", announcementId)
+      .single() as { data: CourseAnnouncement | null; error: Error | null };
+
+    if (error || !data) {
+      logger.error("Error fetching announcement", error ?? undefined);
+      throw internalError("Announcement not found");
     }
 
     return data;
@@ -239,15 +275,15 @@ export class CourseAnnouncementsRepository extends BaseRepository<"course_announ
       ...updates,
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("course_announcements")
       .update(updateData)
       .eq("id", announcementId)
       .select()
-      .single();
+      .single() as { data: CourseAnnouncement | null; error: Error | null };
 
     if (error || !data) {
-      logger.error("Error updating announcement", error);
+      logger.error("Error updating announcement", error ?? undefined);
       throw internalError("Failed to update announcement");
     }
 
@@ -267,10 +303,10 @@ export class CourseAnnouncementsRepository extends BaseRepository<"course_announ
       throw forbiddenError("Not authorized to delete this announcement");
     }
 
-    const { error } = await this.supabase
+    const { error } = await (this.supabase as any)
       .from("course_announcements")
       .delete()
-      .eq("id", announcementId);
+      .eq("id", announcementId) as { error: Error | null };
 
     if (error) {
       logger.error("Error deleting announcement", error);
@@ -299,7 +335,17 @@ export class CourseAnnouncementsRepository extends BaseRepository<"course_announ
    * Get announcement count for course
    */
   async getCourseAnnouncementCount(courseId: string): Promise<number> {
-    return this.count({ course_id: courseId });
+    const { count, error } = await (this.supabase as any)
+      .from("course_announcements")
+      .select("*", { count: "exact", head: true })
+      .eq("course_id", courseId) as { count: number | null; error: Error | null };
+
+    if (error) {
+      logger.error("Error counting announcements", error);
+      return 0;
+    }
+
+    return count || 0;
   }
 }
 

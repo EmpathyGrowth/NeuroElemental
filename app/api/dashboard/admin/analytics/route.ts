@@ -46,9 +46,9 @@ export const GET = createAdminRoute(async (request) => {
 
   // Fetch total users
   try {
-    const { count } = await supabase
+    const { count } = await (supabase as any)
       .from('profiles')
-      .select('*', { count: 'exact', head: true })
+      .select('*', { count: 'exact', head: true }) as { count: number | null }
     analytics.overview.totalUsers = count || 0
   } catch (error) {
     logger.error('Error fetching total users:', error instanceof Error ? error : new Error(String(error)))
@@ -56,16 +56,16 @@ export const GET = createAdminRoute(async (request) => {
 
   // Fetch user growth (compare current period to previous period)
   try {
-    const { count: currentPeriodUsers } = await supabase
+    const { count: currentPeriodUsers } = await (supabase as any)
       .from('profiles')
       .select('*', { count: 'exact', head: true })
-      .gte('created_at', startDate.toISOString())
+      .gte('created_at', startDate.toISOString()) as { count: number | null }
 
-    const { count: previousPeriodUsers } = await supabase
+    const { count: previousPeriodUsers } = await (supabase as any)
       .from('profiles')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', previousStartDate.toISOString())
-      .lt('created_at', startDate.toISOString())
+      .lt('created_at', startDate.toISOString()) as { count: number | null }
 
     const current = currentPeriodUsers || 0
     const previous = previousPeriodUsers || 0
@@ -78,10 +78,10 @@ export const GET = createAdminRoute(async (request) => {
 
   // Fetch total revenue from credit transactions
   try {
-    const { data: transactions } = await supabase
+    const { data: transactions } = await (supabase as any)
       .from('credit_transactions')
       .select('metadata, created_at')
-      .eq('transaction_type', 'add')
+      .eq('transaction_type', 'add') as { data: { metadata: any; created_at: string }[] | null }
 
     const totalRevenue = transactions?.reduce((sum, t) => {
       const price = (t.metadata as { price?: number })?.price || 0
@@ -115,9 +115,9 @@ export const GET = createAdminRoute(async (request) => {
 
   // Fetch total courses
   try {
-    const { count } = await supabase
+    const { count } = await (supabase as any)
       .from('courses')
-      .select('*', { count: 'exact', head: true })
+      .select('*', { count: 'exact', head: true }) as { count: number | null }
     analytics.overview.totalCourses = count || 0
   } catch (error) {
     logger.error('Error fetching courses count:', error instanceof Error ? error : new Error(String(error)))
@@ -125,9 +125,9 @@ export const GET = createAdminRoute(async (request) => {
 
   // Fetch total events
   try {
-    const { count } = await supabase
+    const { count } = await (supabase as any)
       .from('events')
-      .select('*', { count: 'exact', head: true })
+      .select('*', { count: 'exact', head: true }) as { count: number | null }
     analytics.overview.totalEvents = count || 0
   } catch (error) {
     logger.error('Error fetching events count:', error instanceof Error ? error : new Error(String(error)))
@@ -135,10 +135,10 @@ export const GET = createAdminRoute(async (request) => {
 
   // Fetch active subscriptions (count enrollments as proxy for active subscriptions)
   try {
-    const { count } = await supabase
+    const { count } = await (supabase as any)
       .from('course_enrollments')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'active')
+      .eq('status', 'active') as { count: number | null }
     analytics.overview.activeSubscriptions = count || 0
   } catch (error) {
     logger.error('Error fetching active subscriptions:', error instanceof Error ? error : new Error(String(error)))
@@ -147,19 +147,19 @@ export const GET = createAdminRoute(async (request) => {
   // Build daily charts for revenue and users
   try {
     // Get daily signups
-    const { data: signupData } = await supabase
+    const { data: signupData } = await (supabase as any)
       .from('profiles')
       .select('created_at')
       .gte('created_at', startDate.toISOString())
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: true }) as { data: { created_at: string | null }[] | null }
 
     // Get daily transactions
-    const { data: txData } = await supabase
+    const { data: txData } = await (supabase as any)
       .from('credit_transactions')
       .select('created_at, metadata, transaction_type')
       .eq('transaction_type', 'add')
       .gte('created_at', startDate.toISOString())
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: true }) as { data: { created_at: string | null; metadata: any; transaction_type: string }[] | null }
 
     // Group by day
     const dailyData: Record<string, { signups: number; revenue: number; subscriptions: number; oneTime: number }> = {}
@@ -216,20 +216,20 @@ export const GET = createAdminRoute(async (request) => {
 
   // Fetch course stats
   try {
-    const { data: courses } = await supabase
+    const { data: courses } = await (supabase as any)
       .from('courses')
       .select('id, title')
       .eq('is_published', true)
-      .limit(10)
+      .limit(10) as { data: { id: string; title: string }[] | null }
 
     if (courses) {
       // Get enrollment counts for each course
       const courseStatsWithEnrollments = await Promise.all(
         courses.map(async (course) => {
-          const { count } = await supabase
+          const { count } = await (supabase as any)
             .from('course_enrollments')
             .select('*', { count: 'exact', head: true })
-            .eq('course_id', course.id)
+            .eq('course_id', course.id) as { count: number | null }
 
           return {
             title: course.title,
@@ -251,19 +251,19 @@ export const GET = createAdminRoute(async (request) => {
 
   // Fetch event stats
   try {
-    const { data: events } = await supabase
+    const { data: events } = await (supabase as any)
       .from('events')
       .select('id, title')
-      .limit(10)
+      .limit(10) as { data: { id: string; title: string }[] | null }
 
     if (events) {
       // Get registration counts for each event
       const eventStatsWithRegistrations = await Promise.all(
         events.map(async (event) => {
-          const { count } = await supabase
+          const { count } = await (supabase as any)
             .from('event_registrations')
             .select('*', { count: 'exact', head: true })
-            .eq('event_id', event.id)
+            .eq('event_id', event.id) as { count: number | null }
 
           return {
             title: event.title,
@@ -284,10 +284,10 @@ export const GET = createAdminRoute(async (request) => {
 
   // Fetch user demographics by role
   try {
-    const { data: usersByRole } = await supabase
+    const { data: usersByRole } = await (supabase as any)
       .from('profiles')
       .select('role')
-      .not('role', 'is', null)
+      .not('role', 'is', null) as { data: { role: string | null }[] | null }
 
     const roleCounts: Record<string, number> = {}
     usersByRole?.forEach(user => {
@@ -317,7 +317,7 @@ export const GET = createAdminRoute(async (request) => {
 
   // Fetch top instructors
   try {
-    const { data: instructors } = await supabase
+    const { data: instructors } = await (supabase as any)
       .from('profiles')
       .select(`
         id,
@@ -325,17 +325,17 @@ export const GET = createAdminRoute(async (request) => {
         email
       `)
       .eq('role', 'instructor')
-      .limit(10)
+      .limit(10) as { data: { id: string; full_name: string | null; email: string | null }[] | null }
 
     if (instructors) {
       // For each instructor, get their courses and calculate stats
       const instructorStats = await Promise.all(
         instructors.map(async (instructor) => {
           // Get instructor's courses
-          const { data: instructorCourses } = await supabase
+          const { data: instructorCourses } = await (supabase as any)
             .from('courses')
             .select('id')
-            .eq('created_by', instructor.id)
+            .eq('created_by', instructor.id) as { data: { id: string }[] | null }
 
           const courseIds = instructorCourses?.map((c) => c.id) || []
 
@@ -345,26 +345,26 @@ export const GET = createAdminRoute(async (request) => {
 
           if (courseIds.length > 0) {
             // Count students enrolled in instructor's courses
-            const { count } = await supabase
+            const { count } = await (supabase as any)
               .from('course_enrollments')
               .select('*', { count: 'exact', head: true })
-              .in('course_id', courseIds)
+              .in('course_id', courseIds) as { count: number | null }
 
             studentCount = count || 0
 
             // Sum revenue from enrollments
-            const { data: enrollments } = await supabase
+            const { data: enrollments } = await (supabase as any)
               .from('course_enrollments')
               .select('amount_paid')
-              .in('course_id', courseIds)
+              .in('course_id', courseIds) as { data: { amount_paid: number | null }[] | null }
 
             revenue = enrollments?.reduce((sum, e) => sum + (e.amount_paid || 0), 0) || 0
 
             // Get average rating from course reviews
-            const { data: reviews } = await supabase
+            const { data: reviews } = await (supabase as any)
               .from('course_reviews')
               .select('rating')
-              .in('course_id', courseIds)
+              .in('course_id', courseIds) as { data: { rating: number }[] | null }
 
             if (reviews?.length) {
               avgRating = Math.round(
@@ -396,10 +396,10 @@ export const GET = createAdminRoute(async (request) => {
 
   // Calculate revenue by category based on transaction metadata
   try {
-    const { data: allTransactions } = await supabase
+    const { data: allTransactions } = await (supabase as any)
       .from('credit_transactions')
       .select('metadata')
-      .eq('transaction_type', 'add')
+      .eq('transaction_type', 'add') as { data: { metadata: any }[] | null }
 
     const categoryRevenue: Record<string, number> = {
       'Courses': 0,

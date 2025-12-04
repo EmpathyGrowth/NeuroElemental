@@ -105,7 +105,7 @@ export const POST = createAuthenticatedRoute<{ submissionId: string }>(async (re
     updated_at: getCurrentTimestamp(),
   };
 
-  const { data: gradedSubmission, error: gradeError } = await supabase
+  const { data: gradedSubmission, error: gradeError } = await (supabase as any)
     .from('assignment_submissions')
     .update(gradeData)
     .eq('id', submissionId)
@@ -127,7 +127,7 @@ export const POST = createAuthenticatedRoute<{ submissionId: string }>(async (re
       lesson_id: submission.assignment.lesson_id,
       ...getCompletionTimestamp(),
     };
-    await supabase
+    await (supabase as any)
       .from('lesson_completions')
       .upsert(completionData);
   }
@@ -140,7 +140,7 @@ export const POST = createAuthenticatedRoute<{ submissionId: string }>(async (re
     type: 'info',
     action_url: `/assignments/${submission.assignment_id}`,
   };
-  await supabase
+  await (supabase as any)
     .from('notifications')
     .insert(notificationData);
 

@@ -94,7 +94,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
       enrolled_at: getCurrentTimestamp(),
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('course_enrollments')
       .update(updateData)
       .eq('id', existingEnrollment.id)
@@ -108,7 +108,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
     }
   } else {
     // Create new enrollment
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('course_enrollments')
       .insert(enrollmentData)
       .select()
@@ -122,7 +122,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
   }
 
   // Create a notification for the user
-  await supabase
+  await (supabase as any)
     .from('notifications')
     .insert({
       user_id: user.id,
@@ -133,7 +133,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
     });
 
   // Update course enrollment count
-  await supabase
+  await (supabase as any)
     .from('courses')
     .update({
       enrollment_count: (course.enrollment_count || 0) + 1,
@@ -167,7 +167,7 @@ export const DELETE = createAuthenticatedRoute<{ id: string }>(async (_request, 
   }
 
   // Soft delete - set payment_status to 'cancelled'
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('course_enrollments')
     .update({
       payment_status: 'cancelled',

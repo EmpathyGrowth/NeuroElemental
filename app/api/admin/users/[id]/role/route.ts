@@ -32,12 +32,12 @@ export const PATCH = createAdminRoute<{ id: string }>(async (request, context, _
     ...getUpdateTimestamp(),
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('profiles')
     .update(updateData)
     .eq('id', id)
     .select()
-    .single();
+    .single() as { data: ProfileRow | null; error: Error | null };
 
   if (error) {
     throw internalError(error.message);

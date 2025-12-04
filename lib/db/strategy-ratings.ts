@@ -88,16 +88,16 @@ export class StrategyRatingRepository extends BaseRepository<"strategy_ratings">
     }
 
     // Check if rating already exists for this user and strategy
-    const { data: existing } = await this.supabase
+    const { data: existing } = await (this.supabase as any)
       .from("strategy_ratings")
       .select("*")
       .eq("user_id", userId)
       .eq("strategy_id", data.strategy_id)
-      .maybeSingle();
+      .maybeSingle() as { data: StrategyRatingRow | null };
 
     if (existing) {
       // Update existing rating
-      const { data: updated, error } = await this.supabase
+      const { data: updated, error } = await (this.supabase as any)
         .from("strategy_ratings")
         .update({
           rating: data.rating,
@@ -105,7 +105,7 @@ export class StrategyRatingRepository extends BaseRepository<"strategy_ratings">
         })
         .eq("id", existing.id)
         .select()
-        .single();
+        .single() as { data: StrategyRatingRow | null; error: Error | null };
 
       if (error || !updated) {
         logger.error(
@@ -127,11 +127,11 @@ export class StrategyRatingRepository extends BaseRepository<"strategy_ratings">
         note: data.note || null,
       };
 
-      const { data: created, error } = await this.supabase
+      const { data: created, error } = await (this.supabase as any)
         .from("strategy_ratings")
         .insert(insertData)
         .select()
-        .single();
+        .single() as { data: StrategyRatingRow | null; error: Error | null };
 
       if (error || !created) {
         logger.error(
@@ -250,10 +250,10 @@ export class StrategyRatingRepository extends BaseRepository<"strategy_ratings">
     topRatedCount: number;
     byElement: Record<ElementType, number>;
   }> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("strategy_ratings")
       .select("element, rating")
-      .eq("user_id", userId);
+      .eq("user_id", userId) as { data: { element: string; rating: number }[] | null; error: Error | null };
 
     if (error || !data) {
       return {
@@ -283,7 +283,7 @@ export class StrategyRatingRepository extends BaseRepository<"strategy_ratings">
     let totalRating = 0;
     let topRatedCount = 0;
 
-    data.forEach((row) => {
+    data.forEach((row: { element: string; rating: number }) => {
       const element = row.element as ElementType;
       if (element in byElement) {
         byElement[element]++;

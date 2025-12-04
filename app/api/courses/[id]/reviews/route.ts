@@ -163,7 +163,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(async (request, con
     ...getTimestampFields(),
   };
 
-  const { data: review, error } = await supabase
+  const { data: review, error } = await (supabase as any)
     .from('course_reviews')
     .insert(reviewData)
     .select(`

@@ -138,7 +138,7 @@ export default function OnboardingPage() {
     setLoading(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .update({
           role: onboardingData.role,

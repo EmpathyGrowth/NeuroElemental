@@ -47,7 +47,7 @@ export const POST = createAdminRoute(async (request, _context, { userId }) => {
   const parsed = announcementSchema.safeParse(body);
   if (!parsed.success) {
     throw badRequestError(
-      parsed.error.errors[0]?.message || "Invalid announcement data"
+      parsed.error.issues[0]?.message || "Invalid announcement data"
     );
   }
 

@@ -120,7 +120,7 @@ export const POST = createAuthenticatedRoute(
 
     // Create bookmark (upsert to handle duplicates gracefully)
 
-    const { data: bookmark, error } = (await supabase
+    const { data: bookmark, error } = (await (supabase as any)
       .from("lesson_bookmarks")
       .upsert(
         {

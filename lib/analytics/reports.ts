@@ -142,7 +142,7 @@ export async function generateActivityReport(
     }
 
     // Save report
-    const { data: report, error } = await supabase
+    const { data: report, error } = await (supabase as any)
       .from('usage_reports')
       .insert({
         organization_id: organizationId,
@@ -249,7 +249,7 @@ export async function generateUsageReport(
     }
 
     // Save report
-    const { data: report, error } = await supabase
+    const { data: report, error } = await (supabase as any)
       .from('usage_reports')
       .insert({
         organization_id: organizationId,
@@ -347,7 +347,7 @@ export async function generateMembersReport(
     }
 
     // Save report
-    const { data: report, error } = await supabase
+    const { data: report, error } = await (supabase as any)
       .from('usage_reports')
       .insert({
         organization_id: organizationId,

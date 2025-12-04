@@ -52,18 +52,18 @@ export class LessonRepository extends BaseRepository<'course_lessons'> {
    * @returns Created lesson
    */
   async createLesson(data: LessonInsert): Promise<Lesson> {
-    const { data: lesson, error } = await this.supabase
+    const { data: lesson, error } = await (this.supabase as any)
       .from('course_lessons')
       .insert(data)
       .select()
-      .single();
+      .single() as { data: Lesson | null; error: Error | null };
 
     if (error || !lesson) {
       logger.error('Error creating lesson', error instanceof Error ? error : new Error(String(error)));
       throw internalError('Failed to create lesson');
     }
 
-    return lesson as Lesson;
+    return lesson;
   }
 
   /**
@@ -74,19 +74,19 @@ export class LessonRepository extends BaseRepository<'course_lessons'> {
    * @returns Updated lesson
    */
   async updateLesson(lessonId: string, data: LessonUpdate): Promise<Lesson> {
-    const { data: lesson, error } = await this.supabase
+    const { data: lesson, error } = await (this.supabase as any)
       .from('course_lessons')
       .update(data)
       .eq('id', lessonId)
       .select()
-      .single();
+      .single() as { data: Lesson | null; error: Error | null };
 
     if (error || !lesson) {
       logger.error('Error updating lesson', error instanceof Error ? error : new Error(String(error)));
       throw internalError('Failed to update lesson');
     }
 
-    return lesson as Lesson;
+    return lesson;
   }
 
   /**

@@ -40,11 +40,11 @@ export const GET = createAuthenticatedRoute<{ id: string }>(
     const supabase = getSupabaseServer();
 
     // Get rate limit configs for this organization
-    const { data: configs, error } = await supabase
+    const { data: configs, error } = await (supabase as any)
       .from("rate_limit_configs")
       .select("*")
       .eq("organization_id", id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }) as { data: any[] | null; error: Error | null };
 
     if (error) {
       throw notFoundError("Rate limit configuration");
@@ -64,18 +64,18 @@ export const GET = createAuthenticatedRoute<{ id: string }>(
     };
 
     // Get recent rate limit violations
-    const { data: violations } = await supabase
+    const { data: violations } = await (supabase as any)
       .from("rate_limit_violations")
       .select("*")
       .eq("organization_id", id)
       .order("created_at", { ascending: false })
-      .limit(10);
+      .limit(10) as { data: any[] | null };
 
     // Get current counters
-    const { data: counters } = await supabase
+    const { data: counters } = await (supabase as any)
       .from("rate_limit_counters")
       .select("*")
-      .eq("organization_id", id);
+      .eq("organization_id", id) as { data: { request_count?: number; webhook_count?: number }[] | null };
 
     return successResponse({
       config: {
@@ -122,16 +122,16 @@ export const PUT = createAuthenticatedRoute<{ id: string }>(
     const supabase = getSupabaseServer();
 
     // Check if config exists
-    const { data: existingConfig } = await supabase
+    const { data: existingConfig } = await (supabase as any)
       .from("rate_limit_configs")
       .select("id")
       .eq("organization_id", id)
-      .maybeSingle();
+      .maybeSingle() as { data: { id: string } | null };
 
-    let config;
+    let config: any;
     if (existingConfig) {
       // Update existing config
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("rate_limit_configs")
         .update({
           ...validation.data,
@@ -139,7 +139,7 @@ export const PUT = createAuthenticatedRoute<{ id: string }>(
         })
         .eq("id", existingConfig.id)
         .select()
-        .single();
+        .single() as { data: any; error: Error | null };
 
       if (error) {
         throw internalError("Failed to update rate limit configuration");
@@ -147,14 +147,14 @@ export const PUT = createAuthenticatedRoute<{ id: string }>(
       config = data;
     } else {
       // Create new config
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("rate_limit_configs")
         .insert({
           organization_id: id,
           ...validation.data,
         })
         .select()
-        .single();
+        .single() as { data: any; error: Error | null };
 
       if (error) {
         throw internalError("Failed to create rate limit configuration");

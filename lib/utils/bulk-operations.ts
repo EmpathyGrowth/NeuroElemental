@@ -55,9 +55,9 @@ export async function performBulkOperation(
 }
 
 /**
- * Export data to CSV format
+ * Export data to CSV format with column configuration
  */
-export function exportToCSV<T extends Record<string, unknown>>(
+export function exportToCSVWithColumns<T extends Record<string, unknown>>(
   data: T[],
   columns: Array<{ key: keyof T; header: string }>,
   filename: string

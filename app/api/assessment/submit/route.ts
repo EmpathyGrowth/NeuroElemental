@@ -101,7 +101,7 @@ export const POST = createOptionalAuthRoute(async (request, _context, user) => {
       }),
     };
 
-    const { error } = await supabase.from("assessments").insert(assessmentData);
+    const { error } = await (supabase as any).from("assessments").insert(assessmentData);
 
     if (error) {
       logger.error("Error saving assessment", new Error(error.message));

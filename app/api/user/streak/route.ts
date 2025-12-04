@@ -52,7 +52,7 @@ export const POST = createAuthenticatedRoute(
     const parsed = activitySchema.safeParse(body);
     if (!parsed.success) {
       throw badRequestError(
-        parsed.error.errors[0]?.message || "Invalid activity"
+        parsed.error.issues[0]?.message || "Invalid activity"
       );
     }
 

@@ -133,7 +133,7 @@ export const POST = createAdminRoute(async (request, _context, _admin) => {
     stripe_price_id,
   };
 
-  const { data: product, error } = await supabase
+  const { data: product, error } = await (supabase as any)
     .from('products')
     .insert(productData)
     .select()

@@ -50,7 +50,7 @@ export const GET = createAuthenticatedRoute<{ id: string }>(
     const { id } = await context.params;
     const supabase = await getSupabaseServer();
 
-    const { data: course, error } = await supabase
+    const { data: course, error } = await (supabase as any)
       .from('courses')
       .select(`
         *,
@@ -59,7 +59,7 @@ export const GET = createAuthenticatedRoute<{ id: string }>(
         course_lessons(count)
       `)
       .eq('id', id)
-      .single();
+      .single() as { data: { id: string; created_by: string; [key: string]: unknown } | null; error: { message: string } | null };
 
     if (error || !course) {
       throw notFoundError('Course');
@@ -89,11 +89,11 @@ export const PUT = createAuthenticatedRoute<{ id: string }>(
     const supabase = await getSupabaseServer();
 
     // Check course ownership
-    const { data: existingCourse, error: fetchError } = await supabase
+    const { data: existingCourse, error: fetchError } = await (supabase as any)
       .from('courses')
       .select('id, created_by')
       .eq('id', id)
-      .single();
+      .single() as { data: { id: string; created_by: string } | null; error: { message: string } | null };
 
     if (fetchError || !existingCourse) {
       throw notFoundError('Course');
@@ -107,7 +107,7 @@ export const PUT = createAuthenticatedRoute<{ id: string }>(
     const validation = courseUpdateSchema.safeParse(body);
 
     if (!validation.success) {
-      throw badRequestError(validation.error.errors[0]?.message || 'Invalid request body');
+      throw badRequestError(validation.error.issues[0]?.message || 'Invalid request body');
     }
 
     const updateData = validation.data;
@@ -127,7 +127,7 @@ export const PUT = createAuthenticatedRoute<{ id: string }>(
     }
 
     // Update the course
-    const { data: course, error } = await supabase
+    const { data: course, error } = await (supabase as any)
       .from('courses')
       .update({
         ...updateData,
@@ -164,7 +164,7 @@ export const DELETE = createAuthenticatedRoute<{ id: string }>(
     const supabase = await getSupabaseServer();
 
     // Check course ownership and get enrollment count
-    const { data: course, error: fetchError } = await supabase
+    const { data: course, error: fetchError } = await (supabase as any)
       .from('courses')
       .select(`
         id,
@@ -172,7 +172,7 @@ export const DELETE = createAuthenticatedRoute<{ id: string }>(
         course_enrollments(count)
       `)
       .eq('id', id)
-      .single();
+      .single() as { data: { id: string; created_by: string; course_enrollments: { count: number }[] } | null; error: { message: string } | null };
 
     if (fetchError || !course) {
       throw notFoundError('Course');

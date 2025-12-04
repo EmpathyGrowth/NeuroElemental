@@ -18,7 +18,7 @@ export const PATCH = createAdminRoute(async (req) => {
   const parsed = reorderSchema.safeParse(body);
 
   if (!parsed.success) {
-    throw badRequestError(parsed.error.errors[0]?.message || "Invalid request body");
+    throw badRequestError(parsed.error.issues[0]?.message || "Invalid request body");
   }
 
   // Update each testimonial's display order

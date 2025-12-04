@@ -242,10 +242,10 @@ async function handleSubscriptionDeleted(event: Stripe.Event): Promise<void> {
     ...getUpdateTimestamp(),
   };
 
-  const { error: updateError } = await supabase
+  const { error: updateError } = await (supabase as any)
     .from('organization_subscriptions')
     .update(subscriptionUpdate)
-    .eq('stripe_subscription_id', subscription.id)
+    .eq('stripe_subscription_id', subscription.id) as { error: { message: string } | null }
 
   if (updateError) {
     throw new Error(`Failed to update subscription status: ${updateError.message}`)
@@ -327,7 +327,7 @@ async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
   }
 
   // Store invoice in database
-  const { error: upsertError } = await supabase.from('invoices').upsert({
+  const { error: upsertError } = await (supabase as any).from('invoices').upsert({
     organization_id: organizationId,
     subscription_id: subscriptionId,
     stripe_invoice_id: invoice.id,
@@ -345,7 +345,7 @@ async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
     invoice_pdf: invoice.invoice_pdf,
     hosted_invoice_url: invoice.hosted_invoice_url,
     description: invoice.description,
-  })
+  }) as { error: { message: string } | null }
 
   if (upsertError) {
     throw new Error(`Failed to store invoice: ${upsertError.message}`)
@@ -429,7 +429,7 @@ async function handleInvoicePaymentFailed(event: Stripe.Event): Promise<void> {
   }
 
   // Update invoice in database
-  const { error: upsertError } = await supabase.from('invoices').upsert({
+  const { error: upsertError } = await (supabase as any).from('invoices').upsert({
     organization_id: organizationId,
     subscription_id: subscriptionId,
     stripe_invoice_id: invoice.id,
@@ -444,7 +444,7 @@ async function handleInvoicePaymentFailed(event: Stripe.Event): Promise<void> {
     invoice_pdf: invoice.invoice_pdf,
     hosted_invoice_url: invoice.hosted_invoice_url,
     description: invoice.description,
-  })
+  }) as { error: { message: string } | null }
 
   if (upsertError) {
     throw new Error(`Failed to update failed invoice: ${upsertError.message}`)
@@ -513,7 +513,7 @@ async function handlePaymentMethodAttached(event: Stripe.Event): Promise<void> {
   }
 
   // Store payment method
-  const { error: upsertError } = await supabase.from('payment_methods').upsert({
+  const { error: upsertError } = await (supabase as any).from('payment_methods').upsert({
     organization_id: orgSub.organization_id,
     stripe_payment_method_id: paymentMethod.id,
     type: paymentMethod.type,
@@ -524,7 +524,7 @@ async function handlePaymentMethodAttached(event: Stripe.Event): Promise<void> {
     is_default: false, // Will be updated by subscription sync
     billing_name: paymentMethod.billing_details.name,
     billing_email: paymentMethod.billing_details.email,
-  })
+  }) as { error: { message: string } | null }
 
   if (upsertError) {
     throw new Error(`Failed to store payment method: ${upsertError.message}`)
@@ -550,10 +550,10 @@ async function handlePaymentMethodDetached(event: Stripe.Event): Promise<void> {
   const supabase = getSupabaseServer()
 
   // Remove payment method from database
-  const { error: deleteError } = await supabase
+  const { error: deleteError } = await (supabase as any)
     .from('payment_methods')
     .delete()
-    .eq('stripe_payment_method_id', paymentMethod.id)
+    .eq('stripe_payment_method_id', paymentMethod.id) as { error: { message: string } | null }
 
   if (deleteError) {
     throw new Error(`Failed to delete payment method: ${deleteError.message}`)

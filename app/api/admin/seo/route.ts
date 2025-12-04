@@ -25,7 +25,7 @@ const seoSchema = z.object({
   twitter_image_url: z.string().url().optional(),
   canonical_url: z.string().url().optional(),
   robots: z.string().optional(),
-  structured_data: z.record(z.unknown()).optional(),
+  structured_data: z.record(z.string(), z.unknown()).optional(),
   custom_head_tags: z.string().optional(),
   is_noindex: z.boolean().optional(),
   is_nofollow: z.boolean().optional(),
@@ -54,7 +54,7 @@ export const POST = createAdminRoute(async (request, _context, { userId }) => {
   const parsed = seoSchema.safeParse(body);
   if (!parsed.success) {
     throw badRequestError(
-      parsed.error.errors[0]?.message || "Invalid SEO data"
+      parsed.error.issues[0]?.message || "Invalid SEO data"
     );
   }
 

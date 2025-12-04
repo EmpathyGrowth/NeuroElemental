@@ -49,7 +49,7 @@ export const POST = createAuthenticatedRoute<{ id: string }>(
     const parsed = commentSchema.safeParse(body);
     if (!parsed.success) {
       throw badRequestError(
-        parsed.error.errors[0]?.message || "Invalid comment"
+        parsed.error.issues[0]?.message || "Invalid comment"
       );
     }
 

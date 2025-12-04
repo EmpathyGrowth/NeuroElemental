@@ -40,7 +40,7 @@ export const PATCH = createAdminRoute<{ id: string }>(
       const parsed = menuUpdateSchema.safeParse(body);
       if (!parsed.success) {
         throw badRequestError(
-          parsed.error.errors[0]?.message || "Invalid menu data"
+          parsed.error.issues[0]?.message || "Invalid menu data"
         );
       }
       const menu = await navigationRepository.updateMenu(id, parsed.data);
@@ -51,7 +51,7 @@ export const PATCH = createAdminRoute<{ id: string }>(
       const parsed = menuItemUpdateSchema.safeParse(body);
       if (!parsed.success) {
         throw badRequestError(
-          parsed.error.errors[0]?.message || "Invalid menu item data"
+          parsed.error.issues[0]?.message || "Invalid menu item data"
         );
       }
       const item = await navigationRepository.updateMenuItem(id, parsed.data);

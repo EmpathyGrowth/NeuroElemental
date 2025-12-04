@@ -20,7 +20,7 @@ export const POST = createPublicRoute(async (req) => {
 
   if (!validation.success) {
     throw badRequestError(
-      validation.error.errors[0]?.message || "Invalid data"
+      validation.error.issues[0]?.message || "Invalid data"
     );
   }
 
@@ -29,7 +29,7 @@ export const POST = createPublicRoute(async (req) => {
 
   try {
     // Add to waitlist with exit-intent source
-    await supabase.from("waitlist").upsert(
+    await (supabase as any).from("waitlist").upsert(
       {
         email,
         source: `exit_intent_${context}`,
@@ -45,7 +45,7 @@ export const POST = createPublicRoute(async (req) => {
     );
 
     // Schedule immediate email with promised resources
-    await supabase.from("scheduled_emails").insert({
+    await (supabase as any).from("scheduled_emails").insert({
       to: email,
       type: "exit_intent_resources",
       props: { context, top_element },

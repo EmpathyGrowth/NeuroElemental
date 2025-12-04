@@ -27,7 +27,7 @@ export const PUT = createAdminRoute(async (request) => {
 
   // Update each module's order_index
   const updates = modules.map(async ({ id, order_index }) => {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('course_modules')
       .update({ order_index })
       .eq('id', id);
