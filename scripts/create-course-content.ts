@@ -3,12 +3,9 @@
  * Run with: npx tsx scripts/create-course-content.ts
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createScriptAdminClient } from './lib/supabase-admin';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createScriptAdminClient();
 
 async function createEnergyManagementCourse() {
   console.log('Creating Energy Management Fundamentals course content...');

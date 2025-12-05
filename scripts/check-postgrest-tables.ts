@@ -3,33 +3,9 @@
  * This helps identify tables that need to be exposed
  */
 
-import { createClient } from '@supabase/supabase-js';
-import * as fs from 'fs';
-import * as path from 'path';
+import { createScriptAdminClient } from './lib/supabase-admin';
 
-function loadEnv(): Record<string, string> {
-  const envPath = path.join(__dirname, '..', '.env');
-  const envContent = fs.readFileSync(envPath, 'utf-8');
-  const env: Record<string, string> = {};
-
-  for (const line of envContent.split('\n')) {
-    const eqIndex = line.indexOf('=');
-    if (eqIndex > 0) {
-      const key = line.substring(0, eqIndex).trim();
-      let value = line.substring(eqIndex + 1).trim();
-      if ((value.startsWith('"') && value.endsWith('"')) ||
-          (value.startsWith("'") && value.endsWith("'"))) {
-        value = value.slice(1, -1);
-      }
-      env[key] = value;
-    }
-  }
-
-  return env;
-}
-
-const env = loadEnv();
-const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createScriptAdminClient();
 
 // All tables we expect to exist
 const expectedTables = [

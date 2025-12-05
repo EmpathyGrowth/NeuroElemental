@@ -61,8 +61,9 @@ describe('Database Client Creation Properties', () => {
         // Get all TypeScript files from key directories
         const appFiles = getAllTypeScriptFiles(path.join(rootDir, 'app'), excludeDirs);
         const libFiles = getAllTypeScriptFiles(path.join(rootDir, 'lib'), excludeDirs);
+        const scriptFiles = getAllTypeScriptFiles(path.join(rootDir, 'scripts'), excludeDirs);
 
-        const allFiles = [...appFiles, ...libFiles];
+        const allFiles = [...appFiles, ...libFiles, ...scriptFiles];
 
         const violations: Array<{
             file: string;
@@ -79,6 +80,7 @@ describe('Database Client Creation Properties', () => {
             'lib/auth/supabase.ts',  // Auth wrapper creates its own client for browser-side auth
             'lib/auth/supabase-server.ts',  // Server auth wrapper
             'lib/auth/supabase-client.ts',  // Client auth wrapper
+            'scripts/lib/supabase-admin.ts',  // Script admin client utility
         ];
 
         for (const file of allFiles) {
@@ -344,33 +346,38 @@ describe('Database Client Creation Properties', () => {
 
             // Pattern 1: Check for SupabaseClient type annotations without proper typing
             // Look for: supabase: SupabaseClient (without <Database>)
-            const untypedClientPattern = /:\s*SupabaseClient(?!\s*<)/g;
-            const untypedMatches = Array.from(content.matchAll(untypedClientPattern));
+            // But allow if file has a type alias like: type SupabaseClient = ReturnType<typeof createAdminClient>
+            const hasSupabaseClientTypeAlias = /type\s+SupabaseClient\s*=\s*ReturnType\s*<\s*typeof\s+createAdminClient\s*>/.test(content);
+            
+            if (!hasSupabaseClientTypeAlias) {
+                const untypedClientPattern = /:\s*SupabaseClient(?!\s*<)/g;
+                const untypedMatches = Array.from(content.matchAll(untypedClientPattern));
 
-            for (const match of untypedMatches) {
-                const matchIndex = match.index!;
-                const lineNumber = content.substring(0, matchIndex).split('\n').length;
-                const line = lines[lineNumber - 1];
+                for (const match of untypedMatches) {
+                    const matchIndex = match.index!;
+                    const lineNumber = content.substring(0, matchIndex).split('\n').length;
+                    const line = lines[lineNumber - 1];
 
-                // Skip if this is in a comment
-                if (line.trim().startsWith('//') || line.trim().startsWith('*')) {
-                    continue;
+                    // Skip if this is in a comment
+                    if (line.trim().startsWith('//') || line.trim().startsWith('*')) {
+                        continue;
+                    }
+
+                    // Check if this line is in a multi-line comment
+                    const contentBeforeMatch = content.substring(0, matchIndex);
+                    const lastCommentStart = contentBeforeMatch.lastIndexOf('/*');
+                    const lastCommentEnd = contentBeforeMatch.lastIndexOf('*/');
+                    if (lastCommentStart > lastCommentEnd) {
+                        continue;
+                    }
+
+                    violations.push({
+                        file: normalizedPath,
+                        line: lineNumber,
+                        issue: 'Uses SupabaseClient without Database generic type',
+                        context: line.trim()
+                    });
                 }
-
-                // Check if this line is in a multi-line comment
-                const contentBeforeMatch = content.substring(0, matchIndex);
-                const lastCommentStart = contentBeforeMatch.lastIndexOf('/*');
-                const lastCommentEnd = contentBeforeMatch.lastIndexOf('*/');
-                if (lastCommentStart > lastCommentEnd) {
-                    continue;
-                }
-
-                violations.push({
-                    file: normalizedPath,
-                    line: lineNumber,
-                    issue: 'Uses SupabaseClient without Database generic type',
-                    context: line.trim()
-                });
             }
 
             // Pattern 2: Check for SupabaseClient<Database> that doesn't import from @/lib/types/supabase

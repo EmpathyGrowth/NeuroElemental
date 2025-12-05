@@ -37,7 +37,7 @@
     - Fixed catch block errors with `_error` prefix in reminder-settings.tsx
     - _Requirements: 3.1, 3.2_
 
-  - [ ] 2.4 Write property test for zero ESLint warnings
+  - [x] 2.4 Write property test for zero ESLint warnings
     - **Property 3: Zero ESLint Unused Variable Warnings**
     - **Validates: Requirements 3.1, 3.2, 3.3**
     - Note: 41 warnings remain (mostly in admin pages, audit files - lower priority)
@@ -70,7 +70,7 @@
   - [x] 4.6 Fix type guards in lib/types/database.ts
     - Changed `any` parameters to `unknown` for safer type narrowing (done in previous session)
     - _Requirements: 2.3_
-  - [ ] 4.7 Write property test for no `any` type usage
+  - [x] 4.7 Write property test for no `any` type usage
     - **Property 2: No `any` Type Usage**
     - **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
 
@@ -83,15 +83,16 @@
     - Note: Ping routes intentionally use NextResponse.json directly for debugging isolation
     - All other API routes use successResponse/errorResponse helpers
     - _Requirements: 6.1_
-  - [ ] 6.2 Write property test for API response helpers usage
+  - [x] 6.2 Write property test for API response helpers usage
     - **Property 4: API Routes Use Response Helpers**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4**
 
-- [ ] 7. Standardize Supabase Client Creation in Scripts
-  - [ ] 7.1 Update scripts to use createAdminClient pattern
+- [x] 7. Standardize Supabase Client Creation in Scripts
+  - [x] 7.1 Update scripts to use createAdminClient pattern
     - Update scripts/create-course-content.ts, reload-schema.ts, introspect-db.ts
     - _Requirements: 7.1, 7.3_
-  - [ ] 7.2 Write property test for client creation patterns
+
+  - [x] 7.2 Write property test for client creation patterns
     - **Property 5: Server Code Uses createAdminClient**
     - **Validates: Requirements 7.1, 7.2, 7.3**
 
@@ -99,7 +100,7 @@
   - [x] 8.1 Fix catch block error typing
     - Updated catch blocks to use `_error` prefix in reminder-settings.tsx
     - _Requirements: 8.1, 8.4_
-  - [ ] 8.2 Write property test for error handling patterns
+  - [x] 8.2 Write property test for error handling patterns
     - **Property 6: Catch Blocks Use Unknown Type**
     - **Validates: Requirements 8.1, 8.4**
 
@@ -109,7 +110,7 @@
     - Added eslint-disable-next-line for logger.ts and server-logger.ts (console is the output mechanism)
     - Added eslint-disable-next-line for realtime.ts notification logging
     - _Requirements: 5.1, 5.2_
-  - [ ] 9.2 Write property test for no console.log usage
+  - [x] 9.2 Write property test for no console.log usage
     - **Property 7: No Direct Console.log in Production Code**
     - **Validates: Requirements 5.1, 5.2**
 

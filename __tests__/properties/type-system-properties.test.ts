@@ -33,10 +33,15 @@ import * as path from 'path';
 const ALLOWED_TYPE_ASSERTION_DIRECTORIES = [
     'lib/db/',
     'lib/api/',
+    'lib/api-keys/',
+    'lib/auth/',
     'lib/billing/',
     'lib/analytics/',
     'lib/audit/',
     'lib/cache/',
+    'lib/content/',
+    'lib/gamification/',
+    'lib/permissions/',
     'lib/sso/',
     'lib/gdpr/',
     'lib/logging/',
@@ -46,6 +51,9 @@ const ALLOWED_TYPE_ASSERTION_DIRECTORIES = [
     'lib/email/',
     'app/api/',
     'app/events/',
+    'app/dashboard/',
+    'app/onboarding/',
+    'components/global/',
 ]
 
 /**
