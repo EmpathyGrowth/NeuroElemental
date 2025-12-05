@@ -12,7 +12,7 @@ const ipRequests = new Map<string, { count: number; startTime: number }>();
  * Note: This works per-instance. For distributed environments (Vercel, AWS Lambda),
  * use an external store like Redis/Upstash.
  */
-export function rateLimit(ip: string, config: RateLimitConfig = { limit: 10, windowMs: 60 * 1000 }) {
+export function rateLimit(ip: string, config: RateLimitConfig = { limit: 100, windowMs: 60 * 1000 }) {
   const now = Date.now();
   const record = ipRequests.get(ip);
 
