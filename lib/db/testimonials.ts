@@ -50,7 +50,9 @@ interface TestimonialUpdate {
 }
 
 export class TestimonialRepository {
-  protected supabase = createAdminClient();
+  private get supabase() {
+    return createAdminClient();
+  }
 
   /**
    * Find testimonial by ID

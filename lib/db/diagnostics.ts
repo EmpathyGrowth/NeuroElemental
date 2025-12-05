@@ -113,15 +113,24 @@ export class DiagnosticsRepository {
   // Using generic SupabaseClient because diagnostic tables
   // types need to be regenerated after migration is applied
    
-  private supabase: SupabaseClient<any>;
+  private _supabase: SupabaseClient<any> | null = null;
+  private _injectedSupabase: SupabaseClient<any> | null = null;
 
    
   constructor(supabase?: SupabaseClient<any>) {
     if (supabase) {
-      this.supabase = supabase;
-    } else {
-      this.supabase = createAdminClient();
+      this._injectedSupabase = supabase;
     }
+  }
+
+  private get supabase(): SupabaseClient<any> {
+    if (this._injectedSupabase) {
+      return this._injectedSupabase;
+    }
+    if (!this._supabase) {
+      this._supabase = createAdminClient();
+    }
+    return this._supabase;
   }
 
   // ============================================================================

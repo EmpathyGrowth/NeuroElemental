@@ -42,7 +42,9 @@ export type EmailStatus = "pending" | "sent" | "failed" | "cancelled";
  * Standalone class with scheduled email-specific operations
  */
 export class ScheduledEmailRepository {
-  protected supabase = createAdminClient();
+  private get supabase() {
+    return createAdminClient();
+  }
 
   /**
    * Schedule a new email

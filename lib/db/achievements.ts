@@ -55,7 +55,9 @@ export interface AchievementStats {
  * Provides achievement-specific operations
  */
 export class AchievementRepository {
-  protected supabase = createAdminClient();
+  private get supabase() {
+    return createAdminClient();
+  }
 
   /**
    * Get all active achievements

@@ -52,7 +52,9 @@ export interface StreakStats {
  * Learning Streaks Repository
  */
 export class LearningStreaksRepository {
-  protected supabase = createAdminClient();
+  private get supabase() {
+    return createAdminClient();
+  }
 
   /**
    * Get user's streak record

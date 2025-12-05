@@ -61,7 +61,9 @@ export interface LessonBookmarkWithContext extends LessonBookmark {
  * Lesson Bookmarks Repository
  */
 export class LessonBookmarksRepository {
-  protected supabase = createAdminClient();
+  private get supabase() {
+    return createAdminClient();
+  }
 
   /**
    * Check if lesson is bookmarked

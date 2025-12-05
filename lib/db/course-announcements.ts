@@ -64,7 +64,9 @@ export interface AnnouncementWithCourse extends CourseAnnouncement {
  * Course Announcements Repository
  */
 export class CourseAnnouncementsRepository {
-  protected supabase = createAdminClient();
+  private get supabase() {
+    return createAdminClient();
+  }
 
   /**
    * Get announcements for a course

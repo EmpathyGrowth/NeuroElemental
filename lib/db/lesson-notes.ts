@@ -63,7 +63,9 @@ export interface LessonNoteWithContext extends LessonNote {
  * Lesson Notes Repository
  */
 export class LessonNotesRepository {
-  protected supabase = createAdminClient();
+  private get supabase() {
+    return createAdminClient();
+  }
 
   /**
    * Get a note by user and lesson
