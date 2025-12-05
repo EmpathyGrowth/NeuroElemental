@@ -68,7 +68,7 @@ export default async function Home() {
     },
   };
 
-  const { hero, symptoms, problems, benefits, steps, professionals, finalCta } =
+  const { hero, problems, benefits, steps, professionals, finalCta } =
     content;
 
   return (
@@ -138,49 +138,6 @@ export default async function Home() {
 
         <TrustBar />
 
-        <section className="py-20 md:py-28 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-accent/5 to-background" />
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
-                {symptoms.title}{" "}
-                <span className="gradient-text">{symptoms.highlight}</span>
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                {symptoms.description}
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              {symptoms.cards.map((card, i) => (
-                <div
-                  key={i}
-                  className="glass-card rounded-2xl p-6 hover:shadow-xl transition-all duration-300"
-                >
-                  <div
-                    className={`flex w-full h-24 rounded-xl bg-gradient-to-br ${card.gradient} items-center justify-center mb-4`}
-                  >
-                    <card.icon size="3rem" className="opacity-80" />
-                  </div>
-                  <h3 className="text-xl font-bold text-foreground mb-3">
-                    {card.title}
-                  </h3>
-                  <p className="text-muted-foreground">{card.description}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-12 max-w-3xl mx-auto p-8 glass-premium rounded-2xl border border-primary/20 text-center relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <p className="text-xl text-foreground font-medium relative z-10">
-                {symptoms.quote.text}
-                <span className="gradient-text font-bold">
-                  {symptoms.quote.highlight}
-                </span>
-              </p>
-            </div>
-          </div>
-        </section>
 
         <section className="py-20 md:py-32 relative">
           <div className="absolute inset-0 bg-muted/30 backdrop-blur-sm" />
