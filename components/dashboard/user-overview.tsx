@@ -5,7 +5,13 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export async function UserOverview({ userId }: { userId: string }) {
-  const latestAssessment = await assessmentRepository.getLatestByUserId(userId);
+  let latestAssessment = null;
+  try {
+    latestAssessment = await assessmentRepository.getLatestByUserId(userId);
+  } catch (error) {
+    console.error("Failed to fetch latest assessment:", error);
+    // Continue with null assessment to show welcome card
+  }
 
   if (!latestAssessment) {
     return (

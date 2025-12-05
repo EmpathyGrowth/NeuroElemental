@@ -12,8 +12,12 @@ export function createAdminClient(): SupabaseClient<Database> {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    logger.error('Missing Supabase environment variables for admin client');
-    throw new Error('Supabase configuration error');
+    const missingVars = [];
+    if (!supabaseUrl) missingVars.push('NEXT_PUBLIC_SUPABASE_URL');
+    if (!supabaseKey) missingVars.push('SUPABASE_SERVICE_ROLE_KEY');
+
+    logger.error(`Missing Supabase environment variables for admin client: ${missingVars.join(', ')}`);
+    throw new Error(`Supabase configuration error: Missing ${missingVars.join(', ')}`);
   }
 
   return createClient<Database>(supabaseUrl, supabaseKey, {

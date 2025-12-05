@@ -11,11 +11,21 @@ export default async function DashboardPage() {
     redirect('/auth/sign-in');
   }
 
-  const { data: profile } = await (supabase as any)
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single() as { data: { role: string } | null };
+  let profile = null;
+
+  try {
+    const { data } = await (supabase as any)
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    profile = data;
+  } catch (error) {
+    console.error("Error fetching profile:", error);
+    // If profile fetch fails, we might want to redirect to onboarding or show an error
+    // For now, let's allow the redirect logic below to handle the missing profile
+  }
 
   if (!profile || !('role' in profile)) {
     // If no profile exists, something is wrong or they haven't completed setup
