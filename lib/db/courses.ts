@@ -6,7 +6,8 @@
  * Contains domain-specific methods for course management.
  */
 
-import { internalError } from '@/lib/api';
+// Direct import to avoid circular dependency with @/lib/api barrel
+import { internalError } from '@/lib/api/error-handler';
 import { logger } from '@/lib/logging';
 import { Database } from '@/lib/types/supabase';
 import { BaseRepository, PaginatedResult, queryBuilder } from './base-repository';

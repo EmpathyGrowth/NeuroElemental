@@ -7,7 +7,8 @@
  * need to be regenerated after migration is applied.
  */
 
-import { internalError } from '@/lib/api';
+// Direct import to avoid circular dependency with @/lib/api barrel
+import { internalError } from '@/lib/api/error-handler';
 import { logger } from '@/lib/logging';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { SupabaseClient } from '@supabase/supabase-js';

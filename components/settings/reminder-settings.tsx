@@ -2,7 +2,6 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
@@ -85,7 +84,7 @@ export function ReminderSettings({ className }: ReminderSettingsProps) {
       } else {
         throw new Error('Failed to save');
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to save reminder settings');
     } finally {
       setSaving(false);
@@ -105,7 +104,7 @@ export function ReminderSettings({ className }: ReminderSettingsProps) {
       } else {
         throw new Error('Failed to disable');
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to disable reminders');
     } finally {
       setSaving(false);

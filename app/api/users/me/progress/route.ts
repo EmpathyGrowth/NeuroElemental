@@ -25,7 +25,7 @@ export const GET = createAuthenticatedRoute(
         )
       `
         )
-        .eq("user_id", user.userId)
+        .eq("user_id", user.id)
         .order("enrolled_at", { ascending: false });
 
       if (enrollmentsError) {
@@ -36,7 +36,7 @@ export const GET = createAuthenticatedRoute(
       const { count: certificatesCount, error: certError } = await supabase
         .from("certificates")
         .select("id", { count: "exact", head: true })
-        .eq("user_id", user.userId);
+        .eq("user_id", user.id);
 
       if (certError) {
         logger.error("Error fetching certificates:", certError);

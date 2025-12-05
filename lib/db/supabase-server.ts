@@ -5,7 +5,8 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Database } from '@/lib/types/supabase'
-import type { PostgrestFilterBuilder } from '@supabase/postgrest-js'
+// PostgrestFilterBuilder imported for type documentation purposes
+import type { PostgrestFilterBuilder as _PostgrestFilterBuilder } from '@supabase/postgrest-js'
 
 // Type alias for table names
 type TableName = keyof Database['public']['Tables']
@@ -39,7 +40,7 @@ export function getSupabaseServer() {
  */
 export function getTypedTable<T extends TableName>(tableName: T) {
   const supabase = createAdminClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return supabase.from(tableName) as any
 }
 
@@ -53,11 +54,11 @@ export function getTypedTable<T extends TableName>(tableName: T) {
 export async function typedSelect<T extends TableName>(
   tableName: T,
   columns: string = '*',
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   filter?: (query: any) => any
 ): Promise<{ data: TableRow<T>[] | null; error: Error | null }> {
   const supabase = createAdminClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let query = (supabase.from(tableName) as any).select(columns)
   if (filter) {
     query = filter(query)
@@ -76,7 +77,7 @@ export async function typedInsert<T extends TableName>(
   data: TableInsert<T> | TableInsert<T>[]
 ): Promise<{ data: TableRow<T>[] | null; error: Error | null }> {
   const supabase = createAdminClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return (supabase.from(tableName) as any).insert(data).select()
 }
 

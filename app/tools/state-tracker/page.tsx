@@ -2,7 +2,8 @@
 
 import { Footer } from "@/components/footer";
 import { StateTracker } from "@/components/framework/state-tracker";
-import { ElementIcon } from "@/components/icons/element-icon";
+// ElementIcon imported but not currently used - keeping for future use
+// import { ElementIcon } from "@/components/icons/element-icon";
 import { HeroSection } from "@/components/landing/hero-section";
 import {
   ElementSelector,
@@ -35,7 +36,6 @@ import {
   AlertTriangle,
   ArrowRight,
   Heart,
-  Loader2,
   LogIn,
   PartyPopper,
   Shield,
@@ -113,18 +113,18 @@ const MODE_CONFIG = {
 };
 
 export default function StateTrackerPage() {
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: _authLoading } = useAuth();
   const [selectedElement, setSelectedElement] = useState<ElementType | null>(null);
   const [userAssessment, setUserAssessment] = useState<AssessmentResult | null>(null);
   const [stateHistory, setStateHistory] = useState<StateLog[]>([]);
   const [modeDistribution, setModeDistribution] = useState<ModeDistribution | null>(null);
   const [hasEnoughData, setHasEnoughData] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [_isLoading, setIsLoading] = useState(false);
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [showTransitionCelebration, setShowTransitionCelebration] = useState(false);
   const [previousMode, setPreviousMode] = useState<string | null>(null);
 
-  const elements = Object.values(elementsData);
+  const _elements = Object.values(elementsData);
   const elementData = selectedElement ? getElementData(selectedElement) : null;
 
   // Check if user is currently in Protection Mode (Requirements 5.4)
@@ -541,7 +541,7 @@ export default function StateTrackerPage() {
                             outerRadius={70}
                             paddingAngle={5}
                             dataKey="value"
-                            label={({ name, value }) => `${value}%`}
+                            label={({ value }) => `${value}%`}
                           >
                             {distributionChartData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />

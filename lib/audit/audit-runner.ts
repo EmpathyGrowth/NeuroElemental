@@ -3,10 +3,13 @@
  * 
  * Main entry point for running the comprehensive platform audit.
  * Orchestrates all evaluators and generates the final report.
+ * 
+ * Note: This is a CLI tool, so console.log is intentional for progress output.
  */
 
+/* eslint-disable no-console */
+
 import * as fs from 'fs';
-import * as path from 'path';
 import {
   AuditConfig,
   AuditDomain,

@@ -3,7 +3,8 @@
  * Handles organization and membership operations with proper type safety
  */
 
-import { internalError, notFoundError } from '@/lib/api';
+// Direct import to avoid circular dependency with @/lib/api barrel
+import { internalError, notFoundError } from '@/lib/api/error-handler';
 import { logger } from '@/lib/logging';
 import { toError, getCurrentTimestamp } from '@/lib/utils';
 import type { Database } from '@/lib/types/supabase';

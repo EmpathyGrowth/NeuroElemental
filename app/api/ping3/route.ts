@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const supabase = getSupabaseServer()
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('profiles')
       .select('id')
       .limit(1)

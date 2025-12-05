@@ -297,14 +297,35 @@ export interface CourseProgress {
 }
 
 // Type guards
-export function isProfile(obj: any): obj is Profile {
-  return obj && typeof obj.id === "string" && typeof obj.email === "string";
+export function isProfile(obj: unknown): obj is Profile {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "id" in obj &&
+    typeof (obj as Profile).id === "string" &&
+    "email" in obj &&
+    typeof (obj as Profile).email === "string"
+  );
 }
 
-export function isCourse(obj: any): obj is Course {
-  return obj && typeof obj.id === "string" && typeof obj.title === "string";
+export function isCourse(obj: unknown): obj is Course {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "id" in obj &&
+    typeof (obj as Course).id === "string" &&
+    "title" in obj &&
+    typeof (obj as Course).title === "string"
+  );
 }
 
-export function isPayment(obj: any): obj is Payment {
-  return obj && typeof obj.id === "string" && typeof obj.amount === "number";
+export function isPayment(obj: unknown): obj is Payment {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "id" in obj &&
+    typeof (obj as Payment).id === "string" &&
+    "amount" in obj &&
+    typeof (obj as Payment).amount === "number"
+  );
 }

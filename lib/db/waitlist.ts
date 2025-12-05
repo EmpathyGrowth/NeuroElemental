@@ -6,7 +6,8 @@
 import { logger } from '@/lib/logging';
 import { BaseRepository } from './base-repository';
 import type { Database } from '@/lib/types/supabase';
-import { internalError } from '@/lib/api';
+// Direct import to avoid circular dependency with @/lib/api barrel
+import { internalError } from '@/lib/api/error-handler';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 type WaitlistInsert = Database['public']['Tables']['waitlist']['Insert'];

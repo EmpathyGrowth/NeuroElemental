@@ -114,6 +114,7 @@ class NotificationManager {
 
   async requestPermission() {
     if (this.isServer || !('Notification' in window)) {
+      // eslint-disable-next-line no-console
       console.info('[NotificationManager] Notifications not supported');
       return false;
     }
@@ -213,6 +214,7 @@ class NotificationManager {
     
     // On server, just log and return - notifications will be sent via other means
     if (!client) {
+      // eslint-disable-next-line no-console
       console.log('[NotificationManager] Server-side notification request:', notification.title);
       return null;
     }

@@ -5,7 +5,9 @@
  * Implements DRY principles for common patterns.
  */
 
-import { getSupabaseServer, isUserOrgAdmin, isUserOrgOwner } from '@/lib/db';
+// Direct imports to avoid barrel export loading all repositories
+import { getSupabaseServer } from '@/lib/db/supabase-server';
+import { isUserOrgAdmin, isUserOrgOwner } from '@/lib/db/organizations';
 import { forbiddenError, notFoundError, internalError } from './error-handler';
 import { logger } from '@/lib/logging';
 import type { Organization } from '@/types/organizations';

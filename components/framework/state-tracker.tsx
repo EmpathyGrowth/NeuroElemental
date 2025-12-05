@@ -11,7 +11,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState } from "react";
 
 interface StateTrackerProps {
   elementSlug: string;

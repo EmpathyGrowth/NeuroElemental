@@ -139,7 +139,7 @@ interface CheckInStats {
 }
 
 export default function DailyCheckinPage() {
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: _authLoading } = useAuth();
   const [step, setStep] = useState(1);
   const [checkIn, setCheckIn] = useState<CheckInData>({
     element: null,

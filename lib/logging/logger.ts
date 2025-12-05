@@ -209,7 +209,7 @@ class Logger {
   }
 
   private log(entry: LogEntry) {
-    // On server, just use console
+    // On server, just use console (intentional - this IS the logger)
     if (this.isServer) {
       const prefix = `[${entry.level.toUpperCase()}]`;
       if (entry.level === 'error' || entry.level === 'fatal') {
@@ -217,6 +217,7 @@ class Logger {
       } else if (entry.level === 'warn') {
         console.warn(prefix, entry.message, entry.context || '');
       } else {
+        // eslint-disable-next-line no-console
         console.log(prefix, entry.message, entry.context || '');
       }
       return;

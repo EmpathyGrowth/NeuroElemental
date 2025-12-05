@@ -94,7 +94,7 @@ interface ShadowSession {
 type CompletedByElement = Record<ElementType, number>;
 
 export default function ShadowWorkPage() {
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: _authLoading } = useAuth();
   
   // Element selection state
   const [selectedElement, setSelectedElement] = useState<ElementType | null>(null);
@@ -113,7 +113,7 @@ export default function ShadowWorkPage() {
   const [completedByElement, setCompletedByElement] = useState<CompletedByElement | null>(null);
   const [showGuestModal, setShowGuestModal] = useState(false);
 
-  const elements = Object.values(elementsData);
+  const _elements = Object.values(elementsData);
   const elementData = selectedElement ? getElementData(selectedElement) : null;
 
   // Calculate total completed sessions for badge (Requirement 11.5)

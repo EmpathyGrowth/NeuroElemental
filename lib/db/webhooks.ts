@@ -6,7 +6,8 @@
  * Contains domain-specific methods for webhook management.
  */
 
-import { internalError, notFoundError } from '@/lib/api';
+// Direct import to avoid circular dependency with @/lib/api barrel
+import { internalError, notFoundError } from '@/lib/api/error-handler';
 import { logger } from '@/lib/logging';
 import { Database } from '@/lib/types/supabase';
 import { BaseRepository } from './base-repository';

@@ -74,10 +74,11 @@ class ServerLogger {
   private log(entry: ServerLogEntry) {
     const formatted = this.formatLogEntry(entry);
 
-    // Always log to console on server
+    // Always log to console on server (intentional - this IS the logger)
     switch (entry.level) {
       case 'debug':
       case 'info':
+        // eslint-disable-next-line no-console
         console.log(formatted);
         break;
       case 'warn':

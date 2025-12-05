@@ -18,7 +18,6 @@ import {
 import {
   type UserRole,
   type NavSection,
-  type DashboardConfig,
   sectionColors,
   getNavConfigByRole,
   Home,

@@ -16,12 +16,19 @@ import {
 import { getCronSecret } from '@/lib/utils/env';
 
 /**
+ * User type returned from authentication
+ * Uses Supabase User type from auth.getUser()
+ */
+import type { User } from '@supabase/supabase-js';
+type AuthenticatedUser = User;
+
+/**
  * Handler function type for authenticated routes
  */
 type AuthenticatedHandler<TParams = {}> = (
   request: NextRequest,
   context: RouteContext<TParams>,
-  user: { id: string; email?: string; [key: string]: any }
+  user: AuthenticatedUser
 ) => Promise<NextResponse>;
 
 /**
@@ -38,7 +45,7 @@ type PublicHandler<TParams = {}> = (
 type OptionalAuthHandler<TParams = {}> = (
   request: NextRequest,
   context: RouteContext<TParams>,
-  user: { id: string; email?: string; [key: string]: any } | null
+  user: AuthenticatedUser | null
 ) => Promise<NextResponse>;
 
 /**
@@ -182,7 +189,7 @@ export function createAdminRoute<TParams = {}>(
   handler: (
     request: NextRequest,
     context: RouteContext<TParams>,
-    admin: { userId: string; user: any }
+    admin: { userId: string; user: AuthenticatedUser }
   ) => Promise<NextResponse>
 ) {
   return async (

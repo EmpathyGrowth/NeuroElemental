@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MediaPickerButton } from "@/components/forms/media-picker";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Image as ImageIcon, X, Eye, Search, Share2 } from "lucide-react";
+import { AlertTriangle, Image as ImageIcon, X, Search, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ============================================================================

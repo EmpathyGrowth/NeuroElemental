@@ -8,7 +8,8 @@
  * source of truth for database operations.
  */
 
-import { internalError, notFoundError } from '@/lib/api';
+// Direct import to avoid circular dependency with @/lib/api barrel
+import { internalError, notFoundError } from '@/lib/api/error-handler';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logging';
 import { Database } from '@/lib/types/supabase';

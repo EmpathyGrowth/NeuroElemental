@@ -275,6 +275,13 @@ export function validateParams<T>(
 }
 
 /**
+ * Route context type for Next.js App Router
+ */
+interface RouteContext<TParams = Record<string, string>> {
+  params: Promise<TParams>
+}
+
+/**
  * Higher-order function that wraps an API route handler with validation
  * 
  * Automatically validates request body and passes typed data to handler.
@@ -296,11 +303,11 @@ export function validateParams<T>(
  * )
  * ```
  */
-export function withValidation<T>(
+export function withValidation<T, TParams = Record<string, string>>(
   schema: z.ZodSchema<T>,
-  handler: (request: NextRequest, data: T, context?: any) => Promise<NextResponse>
+  handler: (request: NextRequest, data: T, context?: RouteContext<TParams>) => Promise<NextResponse>
 ) {
-  return async (request: NextRequest, context?: any) => {
+  return async (request: NextRequest, context?: RouteContext<TParams>) => {
     const validation = await validateRequest(request, schema)
 
     if (!validation.success) {
@@ -340,9 +347,9 @@ export function withValidation<T>(
  * ```
  */
 export async function validateMultiple<
-  TBody = any,
-  TQuery = any,
-  TParams = any
+  TBody = unknown,
+  TQuery = unknown,
+  TParams = unknown
 >(options: {
   request?: {
     request: NextRequest

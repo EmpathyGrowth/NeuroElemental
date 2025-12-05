@@ -8,13 +8,14 @@
 
 import { internalError } from "@/lib/api";
 import { logger } from "@/lib/logging";
-import { Database, Json } from "@/lib/types/supabase";
+import { Database } from "@/lib/types/supabase";
 import { getUpdateTimestamp } from "@/lib/utils";
 import { BaseRepository } from "./base-repository";
 
 type EnergyBudgetRow = Database["public"]["Tables"]["energy_budgets"]["Row"];
-type EnergyBudgetInsert = Database["public"]["Tables"]["energy_budgets"]["Insert"];
-type EnergyBudgetUpdate = Database["public"]["Tables"]["energy_budgets"]["Update"];
+// Insert and Update types available for future use
+type _EnergyBudgetInsert = Database["public"]["Tables"]["energy_budgets"]["Insert"];
+type _EnergyBudgetUpdate = Database["public"]["Tables"]["energy_budgets"]["Update"];
 
 /**
  * Energy activity structure (stored in activities JSONB)

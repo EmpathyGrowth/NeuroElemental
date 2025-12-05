@@ -10,7 +10,6 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logging";
-import { internalError } from "@/lib/api";
 import type { Database } from "@/lib/types/supabase";
 
 type SupabaseClient = ReturnType<typeof createAdminClient>;

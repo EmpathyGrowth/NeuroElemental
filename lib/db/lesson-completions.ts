@@ -13,7 +13,7 @@ import { internalError } from "@/lib/api";
 import { logger } from "@/lib/logging";
 import { Database } from "@/lib/types/supabase";
 import { BaseRepository } from "./base-repository";
-import { getSupabaseServer } from "./index";
+import { getSupabaseServer } from "./supabase-server";
 
 type LessonCompletion =
   Database["public"]["Tables"]["lesson_completions"]["Row"];

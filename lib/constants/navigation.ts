@@ -43,7 +43,6 @@ import {
   AlertTriangle,
   Briefcase,
   PieChart,
-  Wrench,
 } from "lucide-react";
 
 /**

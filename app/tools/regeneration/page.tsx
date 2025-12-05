@@ -9,7 +9,6 @@ import { elementsData } from '@/lib/elements-data';
 import { RegenerationGuide } from '@/components/framework/regeneration-guide';
 import { ElementSelector, type ElementType, type AssessmentResult } from '@/components/tools/element-selector';
 import { useAuth } from '@/components/auth/auth-provider';
-import { cn } from '@/lib/utils';
 import { ArrowRight, Battery, Zap, Heart, Award, Star, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -33,13 +32,13 @@ interface RatingsStats {
 }
 
 export default function RegenerationPage() {
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [selectedElement, setSelectedElement] = useState<ElementType | null>(null);
   const [userAssessment, setUserAssessment] = useState<AssessmentResult | null>(null);
   const [topStrategies, setTopStrategies] = useState<StrategyRating[]>([]);
   const [ratingsStats, setRatingsStats] = useState<RatingsStats | null>(null);
   const [isLoadingAssessment, setIsLoadingAssessment] = useState(false);
-  const [isLoadingRatings, setIsLoadingRatings] = useState(false);
+  const [_isLoadingRatings, setIsLoadingRatings] = useState(false);
 
   // Fetch user assessment on mount
   const fetchUserAssessment = useCallback(async () => {
@@ -97,7 +96,7 @@ export default function RegenerationPage() {
     }
   }, [isAuthenticated, fetchUserAssessment, fetchAllRatings]);
 
-  const elements = Object.values(elementsData);
+  const _elements = Object.values(elementsData);
 
   return (
     <div className="min-h-screen bg-background">

@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { LucideIcon, FileQuestion, Inbox, Search, AlertCircle, BarChart3, Users, Calendar, FileText, Image, Settings } from 'lucide-react';
+import { LucideIcon, Inbox, Search, AlertCircle, BarChart3, Users, Calendar, FileText, Image, Settings } from 'lucide-react';
 import { Button } from './button';
 import { ReactNode } from 'react';
 

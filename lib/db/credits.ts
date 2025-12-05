@@ -3,7 +3,8 @@
  * Manages flexible consumption tracking for courses, assessments, events, etc.
  */
 
-import { internalError } from '@/lib/api';
+// Direct import to avoid circular dependency with @/lib/api barrel
+import { internalError } from '@/lib/api/error-handler';
 import { logger } from '@/lib/logging';
 import type {
     CreditTransaction,

@@ -6,7 +6,8 @@
  * Contains domain-specific methods for coupon management.
  */
 
-import { internalError } from '@/lib/api';
+// Direct import to avoid circular dependency with @/lib/api barrel
+import { internalError } from '@/lib/api/error-handler';
 import { logger } from '@/lib/logging';
 import { toError } from '@/lib/utils';
 import type { ApplicableTo, Coupon, Database, DiscountType } from '@/lib/types/supabase';

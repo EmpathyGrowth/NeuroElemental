@@ -1,9 +1,6 @@
 import { getSupabaseServer } from "@/lib/db";
 import { logger } from "@/lib/logging";
-import {
-  TOOL_ACHIEVEMENTS,
-  type AchievementDefinition,
-} from "@/lib/constants/achievements";
+import { TOOL_ACHIEVEMENTS } from "@/lib/constants/achievements";
 
 /**
  * Server-side notification helper
