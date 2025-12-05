@@ -1,7 +1,5 @@
-import { createClient } from '@/lib/supabase/client';
 import { RealtimeChannel, RealtimePostgresChangesPayload, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/types/supabase';
-import { logger } from '@/lib/logging';
 
 export interface Notification {
   id: string;
@@ -22,18 +20,47 @@ interface NotificationUpdate {
   read?: boolean;
 }
 
+/**
+ * NotificationManager - Client-side only notification handling
+ * Uses lazy initialization to avoid server-side crashes
+ */
 class NotificationManager {
-  private supabase: SupabaseClient<Database> = createClient();
+  private supabase: SupabaseClient<Database> | null = null;
   private channel: RealtimeChannel | null = null;
   private listeners: Map<string, (notification: Notification) => void> = new Map();
+  private isServer = typeof window === 'undefined';
 
-  initialize(userId: string) {
+  /**
+   * Lazy-load the Supabase client only on client side
+   */
+  private async getClient(): Promise<SupabaseClient<Database> | null> {
+    if (this.isServer) {
+      return null;
+    }
+    if (!this.supabase) {
+      try {
+        const { createClient } = await import('@/lib/supabase/client');
+        this.supabase = createClient();
+      } catch {
+        console.error('[NotificationManager] Failed to initialize Supabase client');
+        return null;
+      }
+    }
+    return this.supabase;
+  }
+
+  async initialize(userId: string) {
+    if (this.isServer) return;
+    
+    const client = await this.getClient();
+    if (!client) return;
+
     if (this.channel) {
       this.cleanup();
     }
 
     // Subscribe to notifications for this user
-    this.channel = this.supabase
+    this.channel = client
       .channel(`notifications:${userId}`)
       .on(
         'postgres_changes',
@@ -70,7 +97,7 @@ class NotificationManager {
   }
 
   private async showBrowserNotification(notification: Notification) {
-    if (!('Notification' in window)) {
+    if (this.isServer || !('Notification' in window)) {
       return;
     }
 
@@ -86,8 +113,8 @@ class NotificationManager {
   }
 
   async requestPermission() {
-    if (!('Notification' in window)) {
-      logger.info('This browser does not support notifications');
+    if (this.isServer || !('Notification' in window)) {
+      console.info('[NotificationManager] Notifications not supported');
       return false;
     }
 
@@ -109,7 +136,10 @@ class NotificationManager {
   }
 
   async getNotifications(userId: string, limit = 20): Promise<Notification[]> {
-    const { data, error } = await this.supabase
+    const client = await this.getClient();
+    if (!client) return [];
+
+    const { data, error } = await client
       .from('notifications')
       .select('*')
       .eq('user_id', userId)
@@ -117,7 +147,7 @@ class NotificationManager {
       .limit(limit);
 
     if (error) {
-      logger.error('Error fetching notifications:', error as Error);
+      console.error('[NotificationManager] Error fetching notifications:', error.message);
       return [];
     }
 
@@ -125,14 +155,17 @@ class NotificationManager {
   }
 
   async markAsRead(notificationId: string) {
+    const client = await this.getClient();
+    if (!client) return false;
+
     const update: NotificationUpdate = { read: true };
-    const { error } = await (this.supabase as any)
+    const { error } = await (client as any)
       .from('notifications')
       .update(update)
       .eq('id', notificationId);
 
     if (error) {
-      logger.error('Error marking notification as read:', error as Error);
+      console.error('[NotificationManager] Error marking notification as read:', error.message);
       return false;
     }
 
@@ -140,15 +173,18 @@ class NotificationManager {
   }
 
   async markAllAsRead(userId: string) {
+    const client = await this.getClient();
+    if (!client) return false;
+
     const update: NotificationUpdate = { read: true };
-    const { error } = await (this.supabase as any)
+    const { error } = await (client as any)
       .from('notifications')
       .update(update)
       .eq('user_id', userId)
       .eq('read', false);
 
     if (error) {
-      logger.error('Error marking all notifications as read:', error as Error);
+      console.error('[NotificationManager] Error marking all notifications as read:', error.message);
       return false;
     }
 
@@ -156,13 +192,16 @@ class NotificationManager {
   }
 
   async deleteNotification(notificationId: string) {
-    const { error } = await this.supabase
+    const client = await this.getClient();
+    if (!client) return false;
+
+    const { error } = await client
       .from('notifications')
       .delete()
       .eq('id', notificationId);
 
     if (error) {
-      logger.error('Error deleting notification:', error as Error);
+      console.error('[NotificationManager] Error deleting notification:', error.message);
       return false;
     }
 
@@ -170,14 +209,22 @@ class NotificationManager {
   }
 
   async sendNotification(notification: NotificationInsert) {
-    const { data, error } = await (this.supabase as any)
+    const client = await this.getClient();
+    
+    // On server, just log and return - notifications will be sent via other means
+    if (!client) {
+      console.log('[NotificationManager] Server-side notification request:', notification.title);
+      return null;
+    }
+
+    const { data, error } = await (client as any)
       .from('notifications')
       .insert(notification)
       .select()
       .single() as { data: Notification | null; error: Error | null };
 
     if (error) {
-      logger.error('Error sending notification:', error as Error);
+      console.error('[NotificationManager] Error sending notification:', error.message);
       return null;
     }
 
@@ -193,9 +240,10 @@ class NotificationManager {
     return data;
   }
 
-  cleanup() {
-    if (this.channel) {
-      this.supabase.removeChannel(this.channel);
+  async cleanup() {
+    const client = await this.getClient();
+    if (this.channel && client) {
+      client.removeChannel(this.channel);
       this.channel = null;
     }
     this.listeners.clear();
@@ -204,4 +252,3 @@ class NotificationManager {
 
 // Export singleton instance
 export const notificationManager = new NotificationManager();
-

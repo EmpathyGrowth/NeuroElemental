@@ -1,10 +1,31 @@
 import { getSupabaseServer } from "@/lib/db";
 import { logger } from "@/lib/logging";
-import { notificationManager } from "@/lib/notifications";
 import {
   TOOL_ACHIEVEMENTS,
   type AchievementDefinition,
 } from "@/lib/constants/achievements";
+
+/**
+ * Server-side notification helper
+ * Directly inserts into the notifications table
+ */
+async function sendServerNotification(notification: {
+  user_id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  action_url?: string;
+  read: boolean;
+}) {
+  const supabase = getSupabaseServer();
+  const { error } = await (supabase as any)
+    .from('notifications')
+    .insert(notification);
+  
+  if (error) {
+    logger.error('Error sending notification:', error as Error);
+  }
+}
 
 export interface Achievement {
   id: string;
@@ -92,7 +113,7 @@ async function checkAndUnlockAchievement(
       }
 
       // Send notification
-      await notificationManager.sendNotification({
+      await sendServerNotification({
         user_id: userId,
         title: "🏆 Achievement Unlocked!",
         message: `You earned "${achievement.name}" (+${achievement.points} points)`,
@@ -316,7 +337,7 @@ async function checkAndUnlockByType(
           `You earned "${achievement.name}"!`;
 
         // Send notification
-        await notificationManager.sendNotification({
+        await sendServerNotification({
           user_id: userId,
           title: "🏆 Achievement Unlocked!",
           message: `${celebrationMessage} (+${achievement.points} points)`,
