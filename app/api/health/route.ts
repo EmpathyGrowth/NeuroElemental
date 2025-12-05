@@ -8,7 +8,7 @@
  */
 
 import { createPublicRoute, successResponse, internalError } from '@/lib/api'
-import { getSupabaseServer } from '@/lib/db'
+import { getSupabaseServer } from '@/lib/db/supabase-server'
 import { logger } from '@/lib/logging'
 import { hasEnvVar } from '@/lib/utils/env'
 
