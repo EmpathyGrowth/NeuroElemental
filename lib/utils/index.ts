@@ -35,5 +35,6 @@ export * from './env';
 // Bulk operations utilities
 export * from './bulk-operations';
 
-// HTML sanitization utilities
-export * from './sanitize-html';
+// HTML sanitization utilities - IMPORT DIRECTLY to avoid jsdom/ESM crashes
+// export * from './sanitize-html';
+

@@ -2,7 +2,8 @@
 
 import { MediaPicker } from "@/components/forms/media-picker";
 import { Button } from "@/components/ui/button";
-import { cn, sanitizeHtml } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { sanitizeHtml } from "@/lib/utils/sanitize-html";
 import { Color } from "@tiptap/extension-color";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
@@ -13,28 +14,29 @@ import Underline from "@tiptap/extension-underline";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
-  Bold,
-  Code,
-  Heading1,
-  Heading2,
-  Heading3,
-  Image as ImageIcon,
-  Italic,
-  Link as LinkIcon,
-  List,
-  ListOrdered,
-  Quote,
-  Redo,
-  Strikethrough,
-  Underline as UnderlineIcon,
-  Undo,
+    AlignCenter,
+    AlignLeft,
+    AlignRight,
+    Bold,
+    Code,
+    Heading1,
+    Heading2,
+    Heading3,
+    Image as ImageIcon,
+    Italic,
+    Link as LinkIcon,
+    List,
+    ListOrdered,
+    Loader2,
+    Quote,
+    Redo,
+    Strikethrough,
+    Underline as UnderlineIcon,
+    Undo,
+    Upload,
 } from "lucide-react";
-import { useCallback, useEffect, useState, DragEvent } from "react";
+import { DragEvent, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Upload } from "lucide-react";
 
 interface RichTextEditorProps {
   content: string;

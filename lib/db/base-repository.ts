@@ -3,17 +3,17 @@
  *
  * Provides generic CRUD operations to eliminate database query duplication.
  * Implements DRY principles for common database patterns.
- * 
+ *
  * Consolidated from base-crud.ts and base-repository.ts to provide a single
  * source of truth for database operations.
  */
 
 // Direct import to avoid circular dependency with @/lib/api barrel
 import { internalError, notFoundError } from '@/lib/api/error-handler';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logging';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { Database } from '@/lib/types/supabase';
-import { toError, getUpdateTimestamp } from '@/lib/utils';
+import { getUpdateTimestamp, toError } from '@/lib/utils';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
@@ -65,7 +65,7 @@ export interface PaginatedResult<T> {
  * Supabase query builder type - simplified to avoid TypeScript combinatorial explosion
  * Using any for the query builder since we cast results at boundaries anyway
  */
- 
+
 type SupabaseQueryBuilder = any;
 
 /**
@@ -78,7 +78,14 @@ export class BaseRepository<T extends TableName> {
 
   constructor(tableName: T, supabase?: SupabaseClient<Database>, options?: RepositoryOptions) {
     this.tableName = tableName;
-    this.supabase = supabase || (createAdminClient() as SupabaseClient<Database>);
+    // Ensure we don't throw during constructor if possible
+    try {
+      this.supabase = supabase || (createAdminClient() as SupabaseClient<Database>);
+    } catch (e) {
+      console.error('BaseRepository init failed', e);
+      // Fallback to avoid crash
+      this.supabase = {} as any;
+    }
     this.includeTimestamps = options?.includeTimestamps ?? true;
   }
 

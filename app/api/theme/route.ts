@@ -11,14 +11,24 @@ import { themeSettingsRepository } from "@/lib/db/theme-settings";
  * Get active theme settings or CSS variables
  */
 export const GET = createPublicRoute(async (request) => {
-  const url = new URL(request.url);
-  const format = url.searchParams.get("format");
+  console.log('[API/Theme] Request received');
+  try {
+    const url = new URL(request.url);
+    const format = url.searchParams.get("format");
 
-  if (format === "css") {
-    const cssVars = await themeSettingsRepository.getThemeCssVariables();
-    return successResponse({ cssVariables: cssVars });
+    if (format === "css") {
+      console.log('[API/Theme] Fetching CSS variables');
+      const cssVars = await themeSettingsRepository.getThemeCssVariables();
+      console.log('[API/Theme] CSS variables fetched:', !!cssVars);
+      return successResponse({ cssVariables: cssVars });
+    }
+
+    console.log('[API/Theme] Fetching active theme');
+    const theme = await themeSettingsRepository.getActiveTheme();
+    console.log('[API/Theme] Active theme fetched:', !!theme);
+    return successResponse({ theme });
+  } catch (error) {
+    console.error('[API/Theme] CRITICAL ERROR:', error);
+    throw error;
   }
-
-  const theme = await themeSettingsRepository.getActiveTheme();
-  return successResponse({ theme });
 });

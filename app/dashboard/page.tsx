@@ -2,107 +2,127 @@ import { UserOverview } from '@/components/dashboard/user-overview';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
-  const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/auth/sign-in');
-  }
-
-  let profile = null;
-
   try {
-    const { data } = await (supabase as any)
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    const supabase = await createClient();
 
-    profile = data;
-  } catch (error) {
-    console.error("Error fetching profile:", error);
-    // If profile fetch fails, we might want to redirect to onboarding or show an error
-    // For now, let's allow the redirect logic below to handle the missing profile
-  }
+    const { data: { user } } = await supabase.auth.getUser();
 
-  if (!profile || !('role' in profile)) {
-    // If no profile exists, something is wrong or they haven't completed setup
-    // Redirect to onboarding or a setup page
-    redirect('/onboarding');
-  }
+    if (!user) {
+      redirect('/auth/sign-in');
+    }
 
-  // Redirect to role-specific dashboards
-  switch (profile.role) {
-    case 'admin':
-      redirect('/dashboard/admin');
-    case 'instructor':
-      redirect('/dashboard/instructor');
-    case 'student':
-      redirect('/dashboard/student');
-    case 'business':
-    case 'school':
-      redirect('/dashboard/business');
-    case 'registered':
-      // Registered users without a specific role stay on the default dashboard
-      break;
-    default:
-      // Unknown role, show default dashboard
-      break;
-  }
+    let profile = null;
 
-  // If we haven't redirected, render the default dashboard view
-  return (
-    <div className="min-h-screen px-4 sm:px-6 lg:px-8 pb-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Welcome to NeuroElemental</h1>
+    try {
+      const { data } = await (supabase as any)
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
 
-        <div className="grid gap-6 mb-6">
-          <UserOverview userId={user.id} />
-        </div>
+      profile = data;
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      // If profile fetch fails, we might want to redirect to onboarding or show an error
+      // For now, let's allow the redirect logic below to handle the missing profile
+    }
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div className="glass-card p-6 border border-border/50 rounded-xl">
-            <h2 className="text-xl font-semibold mb-2">Explore Courses</h2>
-            <p className="text-muted-foreground mb-4">
-              Discover courses to deepen your understanding
-            </p>
-            <a
-              href="/courses"
-              className="text-primary hover:underline"
-            >
-              Browse Courses →
-            </a>
+    if (!profile || !('role' in profile)) {
+      // If no profile exists, something is wrong or they haven't completed setup
+      // Redirect to onboarding or a setup page
+      redirect('/onboarding');
+    }
+
+    // Redirect to role-specific dashboards
+    switch (profile.role) {
+      case 'admin':
+        redirect('/dashboard/admin');
+      case 'instructor':
+        redirect('/dashboard/instructor');
+      case 'student':
+        redirect('/dashboard/student');
+      case 'business':
+      case 'school':
+        redirect('/dashboard/business');
+      case 'registered':
+        // Registered users without a specific role stay on the default dashboard
+        break;
+      default:
+        // Unknown role, show default dashboard
+        break;
+    }
+
+    // If we haven't redirected, render the default dashboard view
+    return (
+      <div className="min-h-screen px-4 sm:px-6 lg:px-8 pb-8">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-3xl font-bold mb-6">Welcome to NeuroElemental</h1>
+
+          <div className="grid gap-6 mb-6">
+            <UserOverview userId={user.id} />
           </div>
 
-          <div className="glass-card p-6 border border-border/50 rounded-xl">
-            <h2 className="text-xl font-semibold mb-2">Upcoming Events</h2>
-            <p className="text-muted-foreground mb-4">
-              Join workshops and community events
-            </p>
-            <a
-              href="/events"
-              className="text-primary hover:underline"
-            >
-              View Events →
-            </a>
-          </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="glass-card p-6 border border-border/50 rounded-xl">
+              <h2 className="text-xl font-semibold mb-2">Explore Courses</h2>
+              <p className="text-muted-foreground mb-4">
+                Discover courses to deepen your understanding
+              </p>
+              <a
+                href="/courses"
+                className="text-primary hover:underline"
+              >
+                Browse Courses →
+              </a>
+            </div>
 
-          <div className="glass-card p-6 border border-border/50 rounded-xl">
-            <h2 className="text-xl font-semibold mb-2">Tools & Resources</h2>
-            <p className="text-muted-foreground mb-4">
-              Practical tools for managing your energy
-            </p>
-            <a
-              href="/tools"
-              className="text-primary hover:underline"
-            >
-              Explore Tools →
-            </a>
+            <div className="glass-card p-6 border border-border/50 rounded-xl">
+              <h2 className="text-xl font-semibold mb-2">Upcoming Events</h2>
+              <p className="text-muted-foreground mb-4">
+                Join workshops and community events
+              </p>
+              <a
+                href="/events"
+                className="text-primary hover:underline"
+              >
+                View Events →
+              </a>
+            </div>
+
+            <div className="glass-card p-6 border border-border/50 rounded-xl">
+              <h2 className="text-xl font-semibold mb-2">Tools & Resources</h2>
+              <p className="text-muted-foreground mb-4">
+                Practical tools for managing your energy
+              </p>
+              <a
+                href="/tools"
+                className="text-primary hover:underline"
+              >
+                Explore Tools →
+              </a>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  } catch (error: any) {
+    // Re-throw redirects so they are handled by Next.js
+    if (error?.digest?.startsWith('NEXT_REDIRECT') || error?.message?.includes('NEXT_REDIRECT')) {
+      throw error;
+    }
+
+    console.error("CRITICAL DASHBOARD ERROR:", error);
+    return (
+      <div className="p-8 text-center text-red-500 bg-black min-h-screen">
+        <h1 className="text-2xl font-bold mb-4">Fatal Dashboard Error</h1>
+        <pre className="text-left bg-gray-900 p-4 rounded overflow-auto max-w-2xl mx-auto">
+          {JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}
+        </pre>
+        <p className="mt-4">Please report this to support.</p>
+      </div>
+    );
+  }
 }

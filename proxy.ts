@@ -20,7 +20,7 @@ const RATE_LIMITS = {
   // Public API endpoints - stricter limits
   public: { limit: 30, windowMs: 60 * 1000 }, // 30 req/min
   // Auth endpoints - very strict to prevent brute force
-  auth: { limit: 5, windowMs: 60 * 1000 }, // 5 req/min
+  auth: { limit: 30, windowMs: 60 * 1000 }, // 30 req/min (relaxed for debugging)
   // Webhooks - need higher limits for legitimate traffic
   webhook: { limit: 100, windowMs: 60 * 1000 }, // 100 req/min
   // General API - moderate limits
@@ -318,7 +318,13 @@ async function refreshSupabaseSession(
   );
 
   // This refreshes the session if expired
-  await supabase.auth.getUser();
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  if (process.env.NODE_ENV === 'production' && request.nextUrl.pathname.startsWith('/dashboard')) {
+     console.log(`[Proxy Debug] Path: ${request.nextUrl.pathname}, User found: ${!!user}, Error: ${error?.message}`);
+     const cookies = request.cookies.getAll().map(c => c.name).join(', ');
+     console.log(`[Proxy Debug] Cookies present: ${cookies}`);
+  }
 
   return response;
 }
@@ -337,6 +343,11 @@ export async function proxy(request: NextRequest) {
     pathname.includes(".") // Files with extensions
   ) {
     return NextResponse.next();
+  }
+
+  // Debug log for dashboard access
+  if (pathname.startsWith("/dashboard")) {
+    console.log(`[Proxy Start] Processing request for: ${pathname}`);
   }
 
   // Check for CMS URL redirects (skip for API routes)

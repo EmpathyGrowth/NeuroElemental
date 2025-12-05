@@ -1,10 +1,10 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { getCurrentUser, getUserProfile } from '@/lib/auth/supabase';
-import type { User } from '@supabase/supabase-js';
+import { getUserProfile } from '@/lib/auth/supabase';
 import { logger } from '@/lib/logging';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 interface UserProfile {
   id: string;
@@ -49,17 +49,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    // Get initial session
+    const supabase = createClient();
+
+    // Get initial session from cookies
     const initializeAuth = async () => {
       try {
-        const currentUser = await getCurrentUser();
-        setUser(currentUser);
+        // First get session from cookies (fast, local)
+        const { data: { session } } = await supabase.auth.getSession();
 
-        if (currentUser) {
-          await fetchProfile(currentUser.id);
+        if (session?.user) {
+          // Session exists in cookies, validate with server
+          const { data: { user }, error } = await supabase.auth.getUser();
+
+          if (error || !user) {
+            // Session cookie exists but is invalid/expired
+            setUser(null);
+            setProfile(null);
+          } else {
+            setUser(user);
+            await fetchProfile(user.id);
+          }
+        } else {
+          // No session in cookies
+          setUser(null);
+          setProfile(null);
         }
       } catch (error) {
         logger.error('Error initializing auth:', error as Error);
+        setUser(null);
+        setProfile(null);
       } finally {
         setLoading(false);
       }
@@ -67,15 +85,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
 
-    // Listen for auth changes
-    const supabase = createClient();
+    // Safety timeout: forced loading=false after 5 seconds to prevent infinite spinner
+    const timer = setTimeout(() => {
+      setLoading((prev) => {
+        if (prev) {
+          logger.warn('AuthProvider initialization timed out - forcing loading=false');
+          return false;
+        }
+        return prev;
+      });
+    }, 5000);
+
+    // Listen for auth changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null);
+        console.log('[AuthProvider] Auth state changed:', event, !!session?.user);
 
         if (session?.user) {
+          setUser(session.user);
           await fetchProfile(session.user.id);
         } else {
+          setUser(null);
           setProfile(null);
         }
 
@@ -84,6 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => {
+      clearTimeout(timer);
       subscription.unsubscribe();
     };
   }, []);

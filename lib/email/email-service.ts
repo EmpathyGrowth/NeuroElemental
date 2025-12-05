@@ -3,19 +3,15 @@ import type { Database, Json } from "@/lib/types/supabase";
 import type { JSXElementConstructor, ReactElement } from "react";
 import { Resend } from "resend";
 import type {
-  CourseCompletionProps,
-  PasswordResetProps,
-  PaymentConfirmationProps,
-  SessionReminderProps,
-  WelcomeEmailProps,
+    CourseCompletionProps,
+    PasswordResetProps,
+    PaymentConfirmationProps,
+    SessionReminderProps,
+    WelcomeEmailProps,
 } from "./templates";
-import {
-  CourseCompletionEmail,
-  PasswordResetEmail,
-  PaymentConfirmationEmail,
-  SessionReminderEmail,
-  WelcomeEmail,
-} from "./templates";
+
+// IMPORTANT: Do NOT import templates at top level to avoid jsdom/ESM crashes
+// import { ... } from "./templates";
 
 type EmailComponent = ReactElement<
   unknown,
@@ -84,6 +80,7 @@ class EmailService {
     email: string,
     props: Omit<WelcomeEmailProps, "email">
   ): Promise<EmailResult> {
+    const { WelcomeEmail } = await import("./templates");
     return this.sendEmail(
       email,
       `Welcome to NeuroElemental, ${props.name}!`,
@@ -95,6 +92,7 @@ class EmailService {
     email: string,
     props: PaymentConfirmationProps
   ): Promise<EmailResult> {
+    const { PaymentConfirmationEmail } = await import("./templates");
     return this.sendEmail(
       email,
       `Payment Confirmation - ${props.itemName}`,
@@ -106,6 +104,7 @@ class EmailService {
     email: string,
     props: SessionReminderProps
   ): Promise<EmailResult> {
+    const { SessionReminderEmail } = await import("./templates");
     const timeStr = props.scheduledAt.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
@@ -121,6 +120,7 @@ class EmailService {
     email: string,
     props: PasswordResetProps
   ): Promise<EmailResult> {
+    const { PasswordResetEmail } = await import("./templates");
     return this.sendEmail(
       email,
       "Reset Your NeuroElemental Password",
@@ -132,6 +132,7 @@ class EmailService {
     email: string,
     props: CourseCompletionProps
   ): Promise<EmailResult> {
+    const { CourseCompletionEmail } = await import("./templates");
     return this.sendEmail(
       email,
       `Congratulations! You've completed ${props.courseName}`,
@@ -472,10 +473,11 @@ export const emailService = new EmailService();
 
 // Export types
 export type {
-  CourseCompletionProps,
-  EmailResult,
-  PasswordResetProps,
-  PaymentConfirmationProps,
-  SessionReminderProps,
-  WelcomeEmailProps,
+    CourseCompletionProps,
+    EmailResult,
+    PasswordResetProps,
+    PaymentConfirmationProps,
+    SessionReminderProps,
+    WelcomeEmailProps
 };
+
