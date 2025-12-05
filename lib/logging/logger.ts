@@ -1,5 +1,3 @@
-import { createClient } from '@/lib/supabase/client';
-
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
 interface LogEntry {
@@ -32,26 +30,47 @@ interface WindowWithSentry extends Window {
   };
 }
 
+/**
+ * Server-safe Logger
+ * Only initializes browser-specific features when running in browser context
+ */
 class Logger {
-  private supabase = createClient();
+  private supabase: ReturnType<typeof import('@/lib/supabase/client').createClient> | null = null;
   private queue: LogEntry[] = [];
   private batchSize = 10;
   private flushInterval = 5000; // 5 seconds
-  private timer: NodeJS.Timeout | null = null;
+  private timer: ReturnType<typeof setInterval> | null = null;
+  private isServer = typeof window === 'undefined';
 
   constructor() {
+    // Only initialize browser features on client side
+    if (!this.isServer) {
+      this.initBrowserFeatures();
+    }
+  }
+
+  private async initBrowserFeatures() {
+    // Lazy load browser client only on client side
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      this.supabase = createClient();
+    } catch {
+      // Ignore - logging will fall back to console
+    }
+
+
     // Start batch processing
     this.startBatchProcessing();
 
     // Flush on page unload
-    if (typeof window !== 'undefined') {
-      window.addEventListener('beforeunload', () => {
-        this.flush();
-      });
-    }
+    window.addEventListener('beforeunload', () => {
+      this.flush();
+    });
   }
 
   private startBatchProcessing() {
+    if (this.isServer) return;
+    
     this.timer = setInterval(() => {
       if (this.queue.length > 0) {
         this.flush();
@@ -60,7 +79,7 @@ class Logger {
   }
 
   private async flush() {
-    if (this.queue.length === 0) return;
+    if (this.queue.length === 0 || this.isServer || !this.supabase) return;
 
     const batch = this.queue.splice(0, this.batchSize);
 
@@ -79,32 +98,28 @@ class Logger {
         url: entry.url ?? null,
         environment: entry.environment ?? 'development',
       }));
-      await this.supabase
+      
+      await (this.supabase as any)
         .from('logs')
-         
-        .insert(dbBatch as any);
+        .insert(dbBatch);
 
       // Also send critical errors to external service (e.g., Sentry)
       const criticalErrors = batch.filter(log => log.level === 'error' || log.level === 'fatal');
-      if (criticalErrors.length > 0 && typeof window !== 'undefined') {
-        // Send to external monitoring service
+      if (criticalErrors.length > 0) {
         this.sendToMonitoring(criticalErrors);
       }
     } catch (error) {
-      // Fallback to console if database fails - intentional use of console for last-resort logging
-      // when the logging system itself has failed
+      // Fallback to console if database fails
       if (process.env.NODE_ENV === 'development') {
         const err = error instanceof Error ? error : new Error(String(error));
-         
         console.error('[Logger] Failed to send logs to database:', err.message);
-        batch.forEach(log => this.consoleLog(log));
       }
     }
   }
 
   private sendToMonitoring(logs: LogEntry[]) {
-    // Integration with external monitoring service
-    // e.g., Sentry, LogRocket, etc.
+    if (this.isServer) return;
+    
     const windowWithSentry = window as unknown as WindowWithSentry;
     if (windowWithSentry.Sentry) {
       logs.forEach(log => {
@@ -116,30 +131,14 @@ class Logger {
     }
   }
 
-  private consoleLog(entry: LogEntry) {
-    const _style = this.getConsoleStyle(entry.level);
-    const _prefix = `[${entry.level.toUpperCase()}] ${entry.timestamp}`;
-
-    if (entry.context) {
-    }
-    if (entry.stack) {
-    }
-  }
-
   private getConsoleStyle(level: LogLevel): string {
     switch (level) {
-      case 'debug':
-        return 'color: #gray';
-      case 'info':
-        return 'color: #blue';
-      case 'warn':
-        return 'color: #orange; font-weight: bold';
-      case 'error':
-        return 'color: #red; font-weight: bold';
-      case 'fatal':
-        return 'color: #darkred; font-weight: bold; font-size: 1.2em';
-      default:
-        return '';
+      case 'debug': return 'color: gray';
+      case 'info': return 'color: blue';
+      case 'warn': return 'color: orange; font-weight: bold';
+      case 'error': return 'color: red; font-weight: bold';
+      case 'fatal': return 'color: darkred; font-weight: bold';
+      default: return '';
     }
   }
 
@@ -158,7 +157,6 @@ class Logger {
       environment: process.env.NODE_ENV || 'development',
     };
 
-    // Add error details
     if (error) {
       const serializedError: SerializedError = {
         name: error.name,
@@ -169,32 +167,13 @@ class Logger {
       entry.stack = error.stack;
     }
 
-    // Add browser info
-    if (typeof window !== 'undefined') {
+    // Add browser info only on client
+    if (!this.isServer) {
       entry.browser = navigator.userAgent;
       entry.url = window.location.href;
     }
 
-    // Add user info if available
-    this.addUserContext(entry);
-
     return entry;
-  }
-
-  private async addUserContext(entry: LogEntry) {
-    try {
-      const { data: { user } } = await this.supabase.auth.getUser();
-      if (user) {
-        entry.user_id = user.id;
-      }
-
-      // Add session ID from localStorage or sessionStorage
-      if (typeof window !== 'undefined') {
-        entry.session_id = sessionStorage.getItem('session_id') || undefined;
-      }
-    } catch (_error) {
-      // Ignore errors getting user context
-    }
   }
 
   private generateId(): string {
@@ -225,56 +204,31 @@ class Logger {
   fatal(message: string, error?: Error, context?: Record<string, unknown>): string {
     const entry = this.createLogEntry('fatal', message, context, error);
     this.log(entry);
-    // Immediately flush fatal errors
     this.flush();
     return entry.id || '';
   }
 
   private log(entry: LogEntry) {
-    // Console log in development
-    if (process.env.NODE_ENV === 'development') {
-      this.consoleLog(entry);
+    // On server, just use console
+    if (this.isServer) {
+      const prefix = `[${entry.level.toUpperCase()}]`;
+      if (entry.level === 'error' || entry.level === 'fatal') {
+        console.error(prefix, entry.message, entry.context || '');
+      } else if (entry.level === 'warn') {
+        console.warn(prefix, entry.message, entry.context || '');
+      } else {
+        console.log(prefix, entry.message, entry.context || '');
+      }
+      return;
     }
 
-    // Add to queue for batch processing
+    // On client, queue for batch processing
     this.queue.push(entry);
-
-    // Flush if queue is full
     if (this.queue.length >= this.batchSize) {
       this.flush();
     }
   }
 
-  // Performance monitoring
-  measurePerformance<T>(name: string, fn: () => T): T {
-    const start = performance.now();
-    try {
-      const result = fn();
-      const duration = performance.now() - start;
-      this.info(`Performance: ${name}`, { duration: `${duration}ms` });
-      return result;
-    } catch (error) {
-      const duration = performance.now() - start;
-      this.error(`Performance error: ${name}`, error instanceof Error ? error : new Error(String(error)), { duration: `${duration}ms` });
-      throw error;
-    }
-  }
-
-  async measureAsyncPerformance<T>(name: string, fn: () => Promise<T>): Promise<T> {
-    const start = performance.now();
-    try {
-      const result = await fn();
-      const duration = performance.now() - start;
-      this.info(`Async Performance: ${name}`, { duration: `${duration}ms` });
-      return result;
-    } catch (error) {
-      const duration = performance.now() - start;
-      this.error(`Async Performance error: ${name}`, error instanceof Error ? error : new Error(String(error)), { duration: `${duration}ms` });
-      throw error;
-    }
-  }
-
-  // Clean up
   destroy() {
     if (this.timer) {
       clearInterval(this.timer);
@@ -290,5 +244,3 @@ export const logger = new Logger();
 export function logError(error: Error, context?: Record<string, unknown>): string {
   return logger.error(error.message, error, context);
 }
-
-

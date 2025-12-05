@@ -3,7 +3,6 @@
  * Provides structured logging with context and error tracking
  */
 
-import { logger } from './logger';
 import { errorReporter } from '@/lib/monitoring/error-reporter';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'fatal';
@@ -75,21 +74,19 @@ class ServerLogger {
   private log(entry: ServerLogEntry) {
     const formatted = this.formatLogEntry(entry);
 
-    // In development, always log to console
-    if (this.isDevelopment) {
-      switch (entry.level) {
-        case 'debug':
-        case 'info':
-          logger.info(formatted);
-          break;
-        case 'warn':
-          logger.warn(formatted);
-          break;
-        case 'error':
-        case 'fatal':
-          logger.error(formatted);
-          break;
-      }
+    // Always log to console on server
+    switch (entry.level) {
+      case 'debug':
+      case 'info':
+        console.log(formatted);
+        break;
+      case 'warn':
+        console.warn(formatted);
+        break;
+      case 'error':
+      case 'fatal':
+        console.error(formatted);
+        break;
     }
 
     // In production, send errors to external monitoring service

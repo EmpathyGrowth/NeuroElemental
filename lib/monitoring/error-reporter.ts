@@ -8,8 +8,6 @@
  * 3. Set NEXT_PUBLIC_SENTRY_DSN environment variable
  */
 
-import { logger } from '@/lib/logging';
-
 interface ErrorContext {
   userId?: string;
   organizationId?: string;
@@ -87,7 +85,7 @@ class ErrorReporter {
    */
   captureError(error: Error, context?: ErrorContext): string | null {
     // Always log locally
-    logger.error(error.message, error, context);
+    console.error('[ErrorReporter]', error.message, context || '');
 
     if (!this.isAvailable() || !this.sentry) {
       return null;
@@ -105,7 +103,7 @@ class ErrorReporter {
       return eventId;
     } catch (reportError) {
       // Fallback logging if Sentry fails
-      logger.warn('Failed to report error to monitoring service', {
+      console.warn('[ErrorReporter] Failed to report error to monitoring service', {
         originalError: error.message,
         reportError: reportError instanceof Error ? reportError.message : String(reportError),
       });
