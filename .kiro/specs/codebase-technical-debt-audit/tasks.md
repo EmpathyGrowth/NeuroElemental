@@ -138,3 +138,26 @@
 - `components/dashboard/shared-sidebar.tsx` - Removed unused DashboardConfig import
 - `components/framework/state-tracker.tsx` - Removed unused useCallback import
 - `components/settings/reminder-settings.tsx` - Removed unused Checkbox, fixed catch block errors
+
+## Files Added/Modified in Latest Session
+
+### Scripts Standardization
+
+- `scripts/lib/supabase-admin.ts` - NEW: Shared Supabase admin client utility for scripts
+- `scripts/create-course-content.ts` - Updated to use createScriptAdminClient
+- `scripts/reload-schema.ts` - Updated to use createScriptAdminClient
+- `scripts/introspect-db.ts` - Updated to use createScriptAdminClient
+- `scripts/check-tables-exist.ts` - Updated to use createScriptAdminClient
+- `scripts/check-postgrest-tables.ts` - Updated to use createScriptAdminClient
+
+### Property Tests Added
+
+- `__tests__/properties/eslint-warnings.property.test.ts` - NEW: Tracks ESLint warning baseline (41)
+- `__tests__/properties/error-handling.property.test.ts` - NEW: Tracks catch block typing (538 baseline)
+- `__tests__/properties/console-log.property.test.ts` - NEW: Verifies no console.log in production (0 violations)
+
+### Property Tests Updated
+
+- `__tests__/properties/client-creation-properties.test.ts` - Added scripts directory scanning, added scripts/lib/supabase-admin.ts to allowed files
+- `__tests__/properties/type-system-properties.test.ts` - Expanded allowed directories for intentional type assertions
+- `__tests__/properties/route-helpers-properties.test.ts` - Added Property 4 for API response helpers usage
