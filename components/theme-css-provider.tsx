@@ -24,16 +24,26 @@ export function ThemeCssProvider({ children }: { children: React.ReactNode }) {
 
     // Fetch theme CSS variables
     fetch("/api/theme?format=css", { signal: controller.signal })
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`Theme fetch failed with status: ${res.status}`);
+        }
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+           throw new Error(`Invalid content type: ${contentType}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         if (data.cssVariables) {
           setCssVariables(data.cssVariables);
         }
       })
       .catch((error) => {
-        // Ignore abort errors, use default theme on other errors
+        // Ignore abort errors
         if (error.name !== "AbortError") {
-          // Use default theme on error
+           console.warn("[ThemeCssProvider] Failed to load theme:", error);
+           // Fallback to default/null is handled by state init
         }
       });
 

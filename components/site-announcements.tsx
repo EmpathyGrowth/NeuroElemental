@@ -70,12 +70,15 @@ export function SiteAnnouncements() {
   useEffect(() => {
     // Fetch announcements for current page
     fetch(`/api/announcements?page=${encodeURIComponent(pathname)}`)
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Failed to fetch announcements");
+        return res.json();
+      })
       .then((data) => {
         setAnnouncements(data.announcements || []);
       })
-      .catch(() => {
-        // Silently fail - announcements are non-critical
+      .catch((err) => {
+        console.warn("[SiteAnnouncements] Failed to fetch:", err);
       });
   }, [pathname]);
 
